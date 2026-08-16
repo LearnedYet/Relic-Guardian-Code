@@ -6,6 +6,8 @@ public class EnemyAttack : MonoBehaviour
     [SerializeField] private float startupDuration = 0.5f;
     [SerializeField] private float hitWindowDuration = 0.2f;
     [SerializeField] private float recoveryDuration = 0.4f;
+    [SerializeField] private GameObject startupTelegraph;
+    [SerializeField] private Animator animator;
 
     private EnemyAttackPhase currentPhase;
     private PlayerHealth currentAttackTarget;
@@ -40,6 +42,8 @@ public class EnemyAttack : MonoBehaviour
             currentAttackTarget = target;
             currentPhase = EnemyAttackPhase.Startup;
             phaseElapsedTime = 0f;
+            startupTelegraph.SetActive(true);
+            animator.SetTrigger("Attack");
             return true;
         }
 
@@ -53,6 +57,7 @@ public class EnemyAttack : MonoBehaviour
             currentPhase = EnemyAttackPhase.HitWindow;
             phaseElapsedTime = 0f;
             ApplyDamage(currentAttackTarget);
+            startupTelegraph.SetActive(false);
         }
     }
 

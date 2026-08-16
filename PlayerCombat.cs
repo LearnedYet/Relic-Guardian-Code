@@ -3,6 +3,8 @@ using UnityEngine;
 public class PlayerCombat : MonoBehaviour
 {
     [SerializeField] private float basicAttackRange = 2f;
+    [SerializeField] private float basicAttackLungeSpeed = 5f;
+    [SerializeField] private float basicAttackLungeDistance = 1f;
     [SerializeField] private LayerMask hitTargetLayers;
 
     private PlayerAnimator playerAnimator;
@@ -12,6 +14,8 @@ public class PlayerCombat : MonoBehaviour
 
     private bool isHitWindowOpen;
     private bool isAttackFacingActive;
+    private bool isBasicAttackLungeActive;
+    private float basicAttackLungeDistanceTraveled;
     private Collider currentAttackTarget;
     private Collider confirmedAttackTarget;
 
@@ -32,6 +36,7 @@ public class PlayerCombat : MonoBehaviour
     {
         isHitWindowOpen = true;
         isAttackFacingActive = false;
+        isBasicAttackLungeActive = false;
 
         if (IsCurrentAttackTargetInRange())
         {
@@ -62,6 +67,8 @@ public class PlayerCombat : MonoBehaviour
         {
             currentAttackTarget = FindNearestBasicAttackTarget();
             isAttackFacingActive = currentAttackTarget != null;
+            basicAttackLungeDistanceTraveled = 0f;
+            isBasicAttackLungeActive = currentAttackTarget != null;
 
             playerAnimator.PlayAttack();
         }
@@ -71,6 +78,20 @@ public class PlayerCombat : MonoBehaviour
             Vector3 directionToTarget = currentAttackTarget.bounds.center - transform.position;
             directionToTarget.y = 0f;
             playerMovement.FaceDirection(directionToTarget);
+
+            if (isBasicAttackLungeActive)
+            {
+                float requestedMoveDistance = basicAttackLungeSpeed * Time.deltaTime;
+                float remainingDistance = basicAttackLungeDistance - basicAttackLungeDistanceTraveled;
+                float moveDistance = Mathf.Min(requestedMoveDistance, remainingDistance);
+                playerMovement.MoveDuringAttack(directionToTarget, moveDistance);
+                basicAttackLungeDistanceTraveled += moveDistance;
+
+                if (basicAttackLungeDistanceTraveled >= basicAttackLungeDistance)
+                {
+                    isBasicAttackLungeActive = false;
+                }
+            }
         }
     }
 
