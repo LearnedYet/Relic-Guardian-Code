@@ -108,4 +108,9 @@ public class PlayerMovement : MonoBehaviour
             );
         }
     }
+
+    public void MoveDuringAttack(Vector3 direction, float distance)
+    {
+        characterController.Move(direction.normalized * distance);
+    }
 }
