@@ -314,26 +314,28 @@ Detailed learning status is maintained in `Docs/LEARNING_PROGRESS.md`.
 - Walk was visually accepted for future patrol and Run for chase. Both reuse `SK_GoblinAvatar`, loop, and were verified in Preview to remain in place.
 - Keep the gameplay root separate from the visual child. Root Motion remains disabled; chase displacement belongs to the new tracked `EnemyMovement` owner rather than the animation.
 
-### Enemy Chase Foundation and Exact Resume Point
+### Verified Enemy Chase Animation and Attack Movement Constraint
 
 - The local `NearTarget` root has a `CharacterController` with `Height = 1`, `Radius = 0.5`, and `Center = (0, 0, 0)`. Its previous Box Collider remains present for now, and `EnemyAI` is enabled.
-- Tracked `EnemyMovement.cs` currently has `[RequireComponent(typeof(CharacterController))]`, serialized `moveSpeed = 3f`, a cached `CharacterController`, and `Move(Vector3 direction)`.
-- `Move()` clears Y, returns for a zero direction, normalizes the direction, calculates `moveSpeed * Time.deltaTime`, and calls `characterController.Move(movement)`.
-- This foundation compiles with zero errors. The generic validator suggestion to null-check `GetComponent` is covered by `[RequireComponent]` at this checkpoint.
-- Chase is **not** implemented: `EnemyMovement` is not attached to `NearTarget`, `EnemyAI` has no `EnemyMovement` reference or chase branch, movement does not rotate yet, and Animator `Speed` is not synchronized from actual velocity.
-- Resume with exactly one learner edit in `EnemyMovement.cs`: add `[SerializeField] private float rotationSpeed = 10f;` directly below `moveSpeed`. Then add smooth facing inside `Move()` before attaching or wiring anything.
-- Preserve the boundary: `EnemyAI` owns attack-versus-chase decisions and supplies a direction; `EnemyMovement` owns rotation and `CharacterController` displacement; an animation owner later writes actual horizontal speed to the visual child's Animator.
+- Tracked `EnemyMovement.cs` has `[RequireComponent(typeof(CharacterController))]`, serialized `moveSpeed = 3f` and `rotationSpeed = 10f`, plus a cached `CharacterController`.
+- `Move()` clears Y, rejects zero direction, calculates a target rotation, applies one `Quaternion.Slerp` step to `transform.rotation`, normalizes the direction, and moves through `CharacterController` with a frame-rate-independent displacement.
+- `EnemyMovement` is attached to the local `NearTarget` root. `EnemyAI` has an Inspector-assigned reference and requests movement every out-of-range frame using the direction from the enemy to the player.
+- `CurrentHorizontalSpeed` exposes the CharacterController's actual XZ velocity magnitude. `Stop()` supplies a zero movement step so the reported speed is refreshed when the AI intentionally stops.
+- Tracked `EnemyAnimator.cs` is attached to the local root, receives Inspector-wired references to the Goblin child Animator and root `EnemyMovement`, and writes `CurrentHorizontalSpeed` into the Animator's `Speed` Float each frame.
+- `EnemyAI` stops before requesting an in-range attack. While `EnemyAttack.CurrentPhase` is not `Ready`, it stops and returns before any distance-based chase decision, so moving the player during Startup, Hit Window, or Recovery cannot drag the attacking Goblin forward.
+- Play Mode verified smooth facing, actual-speed Run playback, stopping at the existing `2m` attack range, transition into Attack, and no chase resumption during the active attack. The final Console was clean.
+- Preserve the boundary: `EnemyAI` owns attack-versus-chase decisions, `EnemyMovement` owns rotation and CharacterController displacement, `EnemyAttack` owns attack phases, and `EnemyAnimator` consumes actual movement state for the visual child.
 
 ## Known Issue and Next Step
 
 - The minimal player-action coordination, Basic Attack Hit Window, circular candidate acquisition, nearest single-target selection, multi-frame startup target-facing, saved-target confirmation, enemy-health receiver, and one confirmed damage checkpoints are complete and runtime-verified.
 - The occasional MCP warning `WebSocket is not initialised` is produced by the MCP package and is not a game-code warning. The latest compile completed successfully.
 - Same-frame Attack/Jump winner priority remains intentionally undefined because both scripts have execution order `0`; mutual exclusion is verified. Do not add scattered input checks to force a priority.
-- Minimal enemy health and one confirmed player-to-enemy damage result are complete. The zero-health boundary remains deferred until the planned enemy-logic pass.
+- Minimal enemy health and one confirmed player-to-enemy damage result are complete. The enemy-logic pass is now active; the next small gameplay concept is the zero-health boundary before choosing a death response.
 - The P09 female visual-child replacement, ordinary locomotion verification, and first right-hand weapon visual boundary are complete. Do not consume Root Motion or migrate damage/equipment logic onto the weapon model.
 - Multi-frame attack-facing smoothing is complete. Preserve `PlayerCombat` as the facing-lifetime owner and `PlayerMovement` as the transform-rotation owner when later attacks are added.
 - The player-owned health receiver, target-carrying timed enemy attack, range gate, visible Startup telegraph, minimal Goblin visual, Trigger-driven attack, bounded player lunge, and manual Idle/Run animation switching are verified.
-- The current next step is only the `EnemyMovement.rotationSpeed` field, followed by movement-owned smooth facing. Do not jump ahead to attaching the component, AI chase calls, Animator speed synchronization, target search, a full AI state machine, player death, combos, Dodge, hitstop, or effects in the same concept.
+- Actual-speed Goblin locomotion synchronization and attack-phase movement blocking are complete. Resume with one concept only: define how `EnemyHealth` recognizes the zero-health boundary before adding a death response. Do not introduce the full Boss action-state system until a second interruptible enemy action creates a real transition problem.
 - Unity `6000.3.19f1` repeatedly logged `UnityEditor.Graphs` null references while the Animator graph remained open across Controller edits and script reloads. The stacks contain only UnityEditor graph code, and the real gameplay loop still passed. Close or switch away from the Animator graph before judging a fresh Console regression.
 - Unity has `Application.runInBackground = false`; MCP sampling while Unity is unfocused can leave `Time.frameCount` unchanged even while real time advances. Verify frame progression before treating a timed MCP test as runtime evidence.
 - Two missing-script messages appeared during an external scene-file refresh, but a live scan found no missing component and the messages did not reproduce after Reload and the final attack regression. Treat this as a historical transient observation unless it returns.
