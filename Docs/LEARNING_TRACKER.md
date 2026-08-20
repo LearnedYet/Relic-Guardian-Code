@@ -18,7 +18,7 @@ Detailed content and teaching order belong in each track's own plan. This tracke
 
 | Track | Status | Workspace | Detailed records | Unlock condition | Next action |
 | --- | --- | --- | --- | --- | --- |
-| Relic Guardian | Active | `C:\Unity\Project\My project` | `Docs/PROJECT_PLAN.md`, `Docs/ROADMAP.md`, `Docs/LEARNING_PROGRESS.md` | Already started | Define the enemy zero-health boundary before adding a death response |
+| Relic Guardian | Active | `C:\Unity\Project\My project` | `Docs/PROJECT_PLAN.md`, `Docs/ROADMAP.md`, `Docs/LEARNING_PROGRESS.md` | Already started | Begin Combat Feel with Hitstop as one isolated concept |
 | C# foundations | Active | `C:\Unity\Learning\CSharpPractice` | `AGENTS.md`, `Docs/LEARNING_PLAN.md`, `Docs/LEARNING_PROGRESS.md` in that workspace | Already started | Continue with integer assignment and arithmetic; variable output and Console text input are verified |
 | Data structures and algorithms | Prepared, locked by Gate DS-1 | `C:\Unity\Learning\CSharpPractice\DataStructures` | `AGENTS.md`, `PREREQUISITES.md`, `LEARNING_PLAN.md`, and `LEARNING_PROGRESS.md` in that folder | Pass the observable C# readiness check in `PREREQUISITES.md`; no IQ threshold applies | Continue C# foundations, then run the four-part Gate DS-1 check and start immediately if passed |
 | Game mathematics | Embedded | Relic Guardian, C# practice, and later Graphics Lab | Record evidence in the active track's progress file | A gameplay or graphics problem needs the concept | Revisit vectors and rotations through current gameplay examples |
@@ -77,7 +77,7 @@ Do not duplicate detailed lesson notes here. Keep them in the corresponding trac
 
 Only two tracks are independently active now:
 
-1. Relic Guardian: actual-speed Goblin locomotion, chase-to-attack stopping, and attack-phase movement blocking are runtime-verified. Next define only the enemy zero-health boundary before adding the death response.
+1. Relic Guardian: the minimum attack-to-enemy-death combat loop is runtime-verified. Next learn only the Hitstop concept and choose its smallest ownership boundary before implementation.
 2. C# Practice: continue with integer assignment and arithmetic after verified variable-output and Console-input lessons.
 
 All other subjects are either embedded into those sessions or preserved behind explicit gates.
