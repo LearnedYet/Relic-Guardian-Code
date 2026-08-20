@@ -4,6 +4,30 @@ This file records daily progress, learned concepts, problems, and solutions.
 
 ---
 
+## 2026-08-20
+
+### Verified Enemy Zero-Health Boundary and Minimal Death Response
+
+#### Completed
+
+- The learner extended `EnemyHealth.TakeDamage()` with a `currentHealth <= 0` boundary after the existing damage subtraction.
+- The learner added only `gameObject.SetActive(false)` inside that branch as the prototype death response. No death animation, drops, effects, health clamping, or generalized enemy state machine were added.
+- Codex changed only the unambiguous spacing in the learner's original `if` statement.
+
+#### Verification and Next Boundary
+
+- Unity script validation reported zero errors and zero warnings, and the Console contained no errors or warnings.
+- Play Mode verified that the enemy becomes inactive on the third confirmed one-damage hit and can no longer continue moving or attacking.
+- The minimum combat loop now works end to end: attack, Hit Window confirmation, damage, enemy health reduction, zero-health detection, and a visible gameplay consequence.
+- Resume with one concept only: introduce Hitstop as the first Combat Feel topic. Keep Knockback, VFX, SFX, Camera Shake, death animation, and reusable damage data separate.
+
+### Proposed Combo Attack Refactor
+
+- A read-only inspection of the five player scripts, current Animator Controller, local Override Controller, and Attack1 Animation Events identified the reusable-data boundary, current input-loss behaviour during attacks, finish-event ownership issue, and the need for unique Animator override slots.
+- The proposed two-hit architecture, responsibilities, risks, staged migration, and acceptance criteria are recorded in [`COMBO_ATTACK_ARCHITECTURE.md`](COMBO_ATTACK_ARCHITECTURE.md). Its status is **Proposed**; no combo code has been implemented.
+
+---
+
 ## 2026-08-19
 
 ### Verified Enemy Locomotion Synchronization and Attack Movement Constraint

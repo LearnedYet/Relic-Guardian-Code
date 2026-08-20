@@ -103,9 +103,9 @@
   - [x] Implement and runtime-verify the bounded startup lunge, stopping it at the Hit Window or maximum travel distance and leaving no-target attacks stationary.
   - [ ] Add a target stop-distance refinement if later collision/overlap testing shows it is needed.
 - [ ] Combo attack
-- [ ] Enemy health
+- [x] Enemy health
   - [x] Store prototype current health and receive a supplied damage amount.
-  - [ ] Define the zero-health boundary and death response.
+  - [x] Define and runtime-verify the zero-health boundary and minimal inactive-object death response.
 - [ ] Damage system
   - [x] Apply one fixed prototype damage result to the saved, Hit Window-confirmed target.
   - [ ] Define reusable attack damage data when more than one damage value is needed.
