@@ -359,3 +359,5 @@ The important engineering evidence is not merely that a combo animation plays. I
 ## Update Rule
 
 Keep the status as **Proposed** until implementation begins. During implementation, record only completed and verified steps. When the two-hit acceptance criteria pass, change the status to **Implemented and runtime-verified** and link the corresponding development-log checkpoint.
+
+Keep this tracked document in every future sync to the code-focused GitHub repository so the published code and its architecture record do not drift apart.
