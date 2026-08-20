@@ -151,8 +151,10 @@
   - [x] Import and preview non-Root-Motion sword-and-shield Walk and Run clips; reserve Walk for patrol and Run for chase.
   - [x] Add and manually verify `Speed`-driven `Idle <-> Run` Animator transitions.
   - [x] Add a root `CharacterController` locally and create the reusable tracked `EnemyMovement.Move(Vector3 direction)` displacement boundary.
-  - [ ] Add movement-owned smooth facing, expose actual horizontal speed, attach `EnemyMovement`, and connect out-of-range chase requests from `EnemyAI`.
-  - [ ] Synchronize the Goblin Animator `Speed` parameter from actual movement and runtime-verify chase-to-attack-to-idle behaviour.
+  - [x] Add movement-owned smooth facing, attach `EnemyMovement`, and connect out-of-range chase requests from `EnemyAI`.
+  - [x] Expose actual horizontal speed from `EnemyMovement` for presentation consumers.
+  - [x] Synchronize the Goblin Animator `Speed` parameter from actual movement and runtime-verify chase-to-attack behaviour.
+  - [x] Add an explicit zero-movement boundary and prevent chase from resuming before the active enemy attack returns to `Ready`.
 - [ ] Attack
 - [ ] Death
 

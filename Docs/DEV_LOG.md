@@ -4,6 +4,50 @@ This file records daily progress, learned concepts, problems, and solutions.
 
 ---
 
+## 2026-08-19
+
+### Verified Enemy Locomotion Synchronization and Attack Movement Constraint
+
+#### Completed
+
+- The learner exposed `EnemyMovement.CurrentHorizontalSpeed` from the root `CharacterController.velocity`, removed Y, and returned the horizontal magnitude for presentation consumers.
+- The learner created `EnemyAnimator`, wired the Goblin child Animator and root `EnemyMovement` through serialized references, and synchronized the Animator Float parameter with `animator.SetFloat("Speed", enemyMovement.CurrentHorizontalSpeed)` each `Update()`.
+- Runtime observation verified that the Goblin plays Run while actually chasing and returns through the existing attack flow instead of using AI intent as animation speed.
+- When stopping movement by omitting `CharacterController.Move()` left the last reported speed active, the learner added `EnemyMovement.Stop()` with a zero movement call and connected it to the in-range branch.
+- A second runtime test exposed a separate state-coordination bug: moving the player away during an active enemy attack made `EnemyAI` resume chase while the attack animation continued. The learner added an early guard that stops and returns while `EnemyAttack.CurrentPhase` is not `Ready`.
+- The learner initially placed `Stop()` in the chase branch, then moved it to the in-range branch after reviewing the behavioural consequence. Codex changed only unambiguous spacing and blank-line formatting.
+
+#### Verification and Architecture Learning
+
+- Static validation reported zero errors for `EnemyAI`, `EnemyMovement`, and `EnemyAnimator`; the final Unity Console contained zero errors and zero warnings.
+- The learner reported the final Play Mode sequence working: actual chase movement drives Run, entering range stops movement and enters Attack, and moving the player during the active attack no longer makes the Goblin slide after them.
+- The learner identified that repeatedly adding state checks would not scale to a Boss with Block, Parried, Guard Broken, Hit, and Death. The agreed evolution path is to keep this ordinary-enemy guard minimal now, then introduce a centralized enemy action-state owner with explicit transition and interruption rules when a second interruptible action is implemented.
+- Actual-speed Animator synchronization and attack-phase movement coordination remain **Practising** until reconstructed or extended with less guidance.
+
+---
+
+## 2026-08-18
+
+### Verified Minimal Enemy Chase Movement and Smooth Facing
+
+#### Completed
+
+- The learner added serialized `rotationSpeed = 10f` to `EnemyMovement` and implemented movement-owned facing with `Quaternion.LookRotation(direction)` plus a per-call `Quaternion.Slerp` step assigned to `transform.rotation`.
+- The learner correctly repaired the first attempt after identifying that ignoring the `Slerp` return value would calculate a rotation without applying it.
+- `EnemyMovement` is attached to the local `NearTarget` root and keeps `CharacterController` displacement and transform rotation together.
+- `EnemyAI` now has an Inspector-assigned `EnemyMovement` reference. While `distanceToTarget <= attackRange`, it retains the existing attack request; otherwise it calculates `attackTarget.transform.position - transform.position` and requests `enemyMovement.Move(directionToTarget)` every frame.
+- Codex changed only the unambiguous field-grouping order in `EnemyAI`; the learner entered all chase and rotation behaviour in the actual files.
+
+#### Verification and Learning Scope
+
+- Unity static validation reported zero errors for both changed scripts. The final Console contained zero errors and zero warnings.
+- With `NearTarget` temporarily moved from `(0, 1, 1.2)` to `(0, 1, 4)`, Play Mode visibly verified smooth facing, movement toward the player, stopping when the enemy entered the existing `2m` attack range, and transition into the existing attack loop.
+- After the test, `NearTarget` was restored and saved at `(0, 1, 1.2)`.
+- The learner correctly explained that one `Slerp` call normally applies only part of the turn and that smooth facing therefore requires repeated per-frame `Move()` calls while chasing.
+- Actual horizontal-speed exposure and Goblin Animator `Speed` synchronization remain the next separate concepts. Chase movement and smooth facing remain **Practising** until later reconstruction or extension with less support.
+
+---
+
 ## 2026-08-16
 
 ### Verified Bounded Player Basic-Attack Startup Lunge
