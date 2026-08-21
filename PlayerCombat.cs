@@ -2,9 +2,7 @@ using UnityEngine;
 
 public class PlayerCombat : MonoBehaviour
 {
-    [SerializeField] private float basicAttackRange = 2f;
-    [SerializeField] private float basicAttackLungeSpeed = 5f;
-    [SerializeField] private float basicAttackLungeDistance = 1f;
+    [SerializeField] private PlayerAttackData[] attacks;
     [SerializeField] private LayerMask hitTargetLayers;
 
     private PlayerAnimator playerAnimator;
@@ -16,12 +14,19 @@ public class PlayerCombat : MonoBehaviour
     private bool isAttackFacingActive;
     private bool isBasicAttackLungeActive;
     private float basicAttackLungeDistanceTraveled;
+    private bool isComboWindowOpen;
     private Collider currentAttackTarget;
     private Collider confirmedAttackTarget;
+    private int currentAttackIndex;
 
     public bool IsHitWindowOpen
     {
         get { return isHitWindowOpen; }
+    }
+
+    private PlayerAttackData CurrentAttackData
+    {
+        get { return attacks[currentAttackIndex]; }
     }
 
     private void Awake()
@@ -45,7 +50,7 @@ public class PlayerCombat : MonoBehaviour
 
             if (enemyHealth != null)
             {
-                enemyHealth.TakeDamage(1);
+                enemyHealth.TakeDamage(CurrentAttackData.Damage);
             }
         }
         else
@@ -60,17 +65,22 @@ public class PlayerCombat : MonoBehaviour
         confirmedAttackTarget = null;
     }
 
+    public void OpenComboWindow()
+    {
+        isComboWindowOpen = true;
+    }
+
+    public void CloseComboWindow()
+    {
+        isComboWindowOpen = false;
+    }
+
     private void Update()
     {
         if (playerInputReader.ConsumeAttack()
             && playerActionController.TryStartBasicAttack(playerMovement.IsGrounded))
         {
-            currentAttackTarget = FindNearestBasicAttackTarget();
-            isAttackFacingActive = currentAttackTarget != null;
-            basicAttackLungeDistanceTraveled = 0f;
-            isBasicAttackLungeActive = currentAttackTarget != null;
-
-            playerAnimator.PlayAttack();
+            StartAttackStep(0);
         }
 
         if (isAttackFacingActive && currentAttackTarget != null)
@@ -81,13 +91,13 @@ public class PlayerCombat : MonoBehaviour
 
             if (isBasicAttackLungeActive)
             {
-                float requestedMoveDistance = basicAttackLungeSpeed * Time.deltaTime;
-                float remainingDistance = basicAttackLungeDistance - basicAttackLungeDistanceTraveled;
+                float requestedMoveDistance = CurrentAttackData.LungeSpeed * Time.deltaTime;
+                float remainingDistance = CurrentAttackData.LungeDistance - basicAttackLungeDistanceTraveled;
                 float moveDistance = Mathf.Min(requestedMoveDistance, remainingDistance);
                 playerMovement.MoveDuringAttack(directionToTarget, moveDistance);
                 basicAttackLungeDistanceTraveled += moveDistance;
 
-                if (basicAttackLungeDistanceTraveled >= basicAttackLungeDistance)
+                if (basicAttackLungeDistanceTraveled >= CurrentAttackData.LungeDistance)
                 {
                     isBasicAttackLungeActive = false;
                 }
@@ -95,9 +105,24 @@ public class PlayerCombat : MonoBehaviour
         }
     }
 
+    private void StartAttackStep(int attackIndex)
+    {
+        currentAttackIndex = attackIndex;
+        currentAttackTarget = FindNearestBasicAttackTarget();
+        isAttackFacingActive = currentAttackTarget != null;
+        basicAttackLungeDistanceTraveled = 0f;
+        isBasicAttackLungeActive = currentAttackTarget != null;
+
+        playerAnimator.PlayAttack();
+    }
+
     private Collider[] FindBasicAttackCandidates()
     {
-        return Physics.OverlapSphere(transform.position, basicAttackRange, hitTargetLayers);
+        return Physics.OverlapSphere(
+            transform.position,
+            CurrentAttackData.TargetRange,
+            hitTargetLayers
+        );
     }
 
     private bool IsCurrentAttackTargetInRange()
