@@ -2,10 +2,11 @@
 
 ## Status
 
-- **Proposed**
+- **Implementation in progress; two-hit combo not yet functional**
 - Read-only inspection completed: 2026-08-20
-- Implementation has not started.
-- This document records the intended architecture and migration boundary. It must not be treated as evidence that the combo system already works.
+- Final four-clip light-attack asset set prepared: 2026-08-21
+- Attack1 replacement, one-entry attack data, indexed runtime foundation, reusable step initialization, and authored Combo Window boundaries completed: 2026-08-21.
+- This document records both verified implementation and intended architecture. Unimplemented items are labelled explicitly and must not be treated as evidence that Attack2 works.
 
 ## Purpose
 
@@ -24,6 +25,17 @@ The design should later allow Attack3 to be added mainly through another attack-
 
 Adding Attack3 will still require an Animator state or override slot, transitions, Animation Events, and runtime verification. The goal is to avoid duplicated C# attack-flow logic, not to eliminate all content setup.
 
+## Prepared Animation Set
+
+The learner previewed and approved this eventual four-step presentation order:
+
+1. `Attack_4Combo_1_Inplace`
+2. `Attack_4Combo_2_Inplace`
+3. `Attack_4Combo_3_Inplace`
+4. `Attack_3Combo_3_Inplace`
+
+All four clips are locally imported under ignored `Assets/LocalLicensed/PowerfulSwordPack/Katana/LightCombo/` as non-looping Humanoid clips. This does not change the first implementation target: validate the reusable architecture with Attack1 and Attack2 before extending it to Attack3 and Attack4.
+
 ## Verified Current Baseline
 
 The following facts come from a read-only inspection of the current scripts, Animator Controller, local Animator Override Controller, and current Attack1 animation metadata.
@@ -32,17 +44,16 @@ The following facts come from a read-only inspection of the current scripts, Ani
 
 `PlayerCombat` currently owns:
 
-- Basic Attack range.
-- Basic Attack lunge speed and maximum lunge distance.
-- Shared target LayerMask.
-- attack-facing and lunge runtime flags.
-- travelled lunge distance.
-- the target selected at attack start.
-- the target reconfirmed during the Hit Window.
-- nearest-target search and Hit Window-time target reconfirmation.
-- a hard-coded one-damage call.
+- one serialized `PlayerAttackData[] attacks` configuration array;
+- `currentAttackIndex` and `CurrentAttackData` lookup;
+- reusable `StartAttackStep(int attackIndex)` initialization;
+- the shared target LayerMask;
+- attack-facing, lunge, travelled-distance, current-target, and confirmed-target runtime state;
+- nearest-target search and Hit Window-time target reconfirmation;
+- damage, target range, lunge speed, and lunge distance read from the current attack-data entry;
+- independent `isHitWindowOpen` and `isComboWindowOpen` states plus their open/close event receivers.
 
-`Update()` consumes one Attack request and immediately attempts to enter the current `BasicAttack` action. An input received while the action is not `Free` is consumed and discarded; there is no Combo Window or queued input yet.
+The Prefab currently configures one Attack1 entry: damage `1`, target range `2`, lunge speed `5`, and lunge distance `1`. `Update()` still uses the original compound initial-attack condition, so an Attack request received while the coarse action is not `Free` is consumed and discarded. The Combo Window exists and is animation-authored, but no input reads it and no queue exists yet.
 
 ### PlayerActionController
 
@@ -79,13 +90,15 @@ This responsibility boundary is already suitable for multiple attack steps and s
 
 The active local Attack1 override currently contains:
 
-| Normalized time | Event | Current receiver |
-| --- | --- | --- |
-| `0.28813133` | `OpenHitWindow` | `PlayerCombat` |
-| `0.54219955` | `CloseHitWindow` | `PlayerCombat` |
-| `0.9739899` | `FinishBasicAttack` | `PlayerActionController` |
+| Approximate frame | Normalized time | Event | Current receiver |
+| --- | --- | --- | --- |
+| `9.7` | `0.2771416` | `OpenHitWindow` | `PlayerCombat` |
+| `11.6` | `0.3302259` | `OpenComboWindow` | `PlayerCombat` |
+| `12.3` | `0.3512039` | `CloseHitWindow` | `PlayerCombat` |
+| `21.7` | `0.6189415` | `CloseComboWindow` | `PlayerCombat` |
+| `34.2` | `0.9763113` | `FinishBasicAttack` | `PlayerActionController` |
 
-The first two events already enter the combat coordinator. The finish event currently bypasses `PlayerCombat`, so combat runtime state has no single end-of-attack cleanup boundary.
+Hit and Combo Window events enter the combat coordinator independently. The finish event still bypasses `PlayerCombat`, so combat runtime state does not yet have a single end-of-attack cleanup boundary. `ComboTransitionPoint` and Restart Window events do not exist yet.
 
 ### Current Animator Structure
 
@@ -99,6 +112,8 @@ The project-owned Animator Controller currently has:
 - no Attack2 state.
 
 The active local `KatanaAnimationOverrides` contains one mapping from the tracked `SwordAndShieldSlash` placeholder to the local Attack1 clip.
+
+The same local Override Controller maps the base locomotion `Idle` placeholder to looping Humanoid `Idle_ver_B`. Root Motion remains disabled. This presentation mapping is local/ignored and does not change combo gameplay ownership.
 
 ## Architectural Decisions
 
@@ -209,13 +224,21 @@ If coarse action is Attacking and the Combo Window is open:
 -> store queued Attack input
 -> do not change animation immediately
 
-At the authored combo branch point:
+At the authored ComboTransitionPoint:
 -> if an input is queued and another attack-data entry exists
    -> increment currentAttackIndex
    -> initialize the next step through the same reusable path
    -> PlayerAnimator.PlayAttack(currentAttackIndex)
 -> otherwise
-   -> allow the current animation to complete
+   -> mark that the earliest transition point has been reached
+
+After ComboTransitionPoint and while the Combo Window remains open:
+-> a later valid Attack input may start the next step immediately
+
+After CloseComboWindow and while an explicit Restart Window is open:
+-> a valid Attack input resets the chain to index 0
+-> start a fresh Attack1 through the same reusable path
+-> this late-recovery cancel is a confirmed target design, not implemented behaviour
 
 At final attack completion:
 -> PlayerCombat clears all attack runtime state
@@ -234,7 +257,20 @@ The Combo Window answers:
 
 They may occur at different times and may overlap only if the authored animation needs it. One must not be reused as the other.
 
-For consistent animation timing, an input accepted during the Combo Window should normally set a queued flag. The transition to Attack2 should occur at one authored branch point rather than immediately on the exact frame the player presses the button.
+For consistent animation timing, an input accepted before the earliest transition point should set a queued flag rather than cutting the main strike immediately. After that point, a later input may transition immediately while the Combo Window remains open. This hybrid rule preserves a minimum authored strike while avoiding an unnecessary wait for input entered during the compatible recovery pose.
+
+## Combo Transition and Restart Windows Must Stay Separate
+
+`ComboTransitionPoint` is a one-time event, not a duration. It marks the earliest frame at which Attack1 may enter Attack2. Runtime state must remember that the point has passed if inputs arriving later in the still-open Combo Window should transition immediately.
+
+The learner also wants the interval after `CloseComboWindow` and before final completion to accept a fresh Attack1. That behaviour is a separate late-recovery cancel or Restart Window:
+
+- Combo Window input requests the next combo step, Attack2.
+- Restart Window input resets the chain and requests Attack1.
+- Startup before `OpenComboWindow` accepts neither.
+- With no accepted input, `FinishAttack` performs cleanup and returns to `Free`.
+
+Do not infer Restart Window state from `isComboWindowOpen == false`; that value is also false before the Combo Window opens. Use an explicit state/event or another equally clear attack-phase representation when this behaviour is implemented.
 
 ## Intended Animation Event Contract
 
@@ -243,10 +279,12 @@ Each attack animation may use the same method names, but each clip owns its own 
 - `OpenHitWindow`
 - `CloseHitWindow`
 - `OpenComboWindow` (when another step is available)
-- `CloseComboWindow` or a separate authored branch event
+- `ComboTransitionPoint` (earliest transition decision)
+- `CloseComboWindow`
+- `OpenAttackRestartWindow` (later, only if the confirmed restart design is implemented)
 - `FinishAttack`
 
-The exact separation between “stop accepting input” and “consume the queued input” should be chosen while authoring Attack1-to-Attack2 timing. If those moments differ visually, use two explicit events instead of making one method perform both at an unclear time.
+The exact separation between “accept next-step input,” “permit transition,” and “accept a fresh Attack1 restart” must remain explicit. Do not make one event perform all three responsibilities.
 
 The finish event should enter `PlayerCombat`, not call `PlayerActionController` directly. `PlayerCombat` must clean its runtime state before releasing the coarse action.
 
@@ -274,7 +312,7 @@ The current compound condition consumes the Attack request before it knows wheth
 
 If Attack1 transitions into Attack2 while an outgoing Attack1 event can still fire, a late finish or window event could mutate Attack2 state.
 
-The minimal two-hit test must inspect this behaviour. If necessary, events should carry an attack-step index and `PlayerCombat` should reject events that do not match `currentAttackIndex`.
+The same risk applies when the later Restart Window starts a fresh Attack1 before the previous Attack1 reaches its old `FinishAttack`. The minimal two-hit test must inspect this behaviour. Events should carry an attack-step/sequence identity, or use another explicit guard, so `PlayerCombat` rejects stale events that do not belong to the current execution.
 
 ### Interruptions Need One Cleanup Boundary
 
@@ -300,21 +338,22 @@ Keeping targeting in `PlayerCombat` is appropriate while only one policy exists.
 
 Perform and verify one step at a time.
 
-1. Preview and select one compatible Attack2 animation. Do not add combo code yet.
-2. Add the minimal inline `PlayerAttackData` type and configure only Attack1.
-3. Make the existing single attack read damage, range, lunge speed, and lunge distance from that one data entry. Verify no gameplay change.
+1. **Completed:** preview and select the intended sequence, then import the four approved local clips.
+2. **Completed:** add the minimal inline `PlayerAttackData` type and configure only Attack1.
+3. **Completed and runtime-regressed:** make the existing single attack read damage, range, lunge speed, and lunge distance from that one data entry.
 4. Rename the coarse `BasicAttack` action to `Attacking`, keeping existing behaviour unchanged.
-5. Add `currentAttackIndex` and current-data lookup, initially fixed to index `0`. Verify Attack1 again.
-6. Centralize one reusable attack-step initialization path. Keep only Attack1 active.
+5. **Completed and runtime-regressed:** add `currentAttackIndex` and current-data lookup, initially fixed to index `0`.
+6. **Completed:** centralize reusable `StartAttackStep(int attackIndex)`. Keep only Attack1 active.
 7. Route the finish Animation Event through `PlayerCombat`, perform centralized cleanup, and then return the coarse action to `Free`.
 8. Add an Animator attack-index parameter and evolve `PlayerAnimator` to accept an index. Verify Attack1 before adding another state.
 9. Add a unique Attack2 placeholder/state and a second local override mapping. Configure and preview its transitions.
-10. Add and visually verify the Combo Window events without input buffering.
-11. Add queued Attack input only during the valid Combo Window.
-12. At one authored branch point, consume the queue and start Attack2 through the same reusable initialization path.
+10. **Authored and statically verified:** add independent `OpenComboWindow` and `CloseComboWindow` state plus Attack1 events. Runtime input does not consume the state yet.
+11. **Exact resume point:** add `isAttackQueued` and route input so only a request during the valid Combo Window sets it. Do not add Attack2 in this step.
+12. Add the earliest `ComboTransitionPoint`, remember whether it has passed, and start Attack2 through the reusable initialization path. Inputs queued before the point wait; valid inputs after the point may transition immediately.
 13. Verify both paths: `Attack1 -> Free` without input and `Attack1 -> Attack2 -> Free` with valid input.
-14. Test invalid timing, repeated input, no-target attacks, target loss, target death, and animation-event cleanup.
-15. Review whether a hypothetical Attack3 requires copied combat-flow code. Refactor only if that review exposes duplication.
+14. Add the separately authored Restart Window only after the two-hit path works: late-recovery input resets to Attack1, while startup input remains rejected.
+15. Add stale-event protection, then test invalid timing, repeated input, no-target attacks, target loss, target death, Attack1 restart, and animation-event cleanup.
+16. Review whether a hypothetical Attack3 requires copied combat-flow code. Refactor only if that review exposes duplication.
 
 ## Acceptance Criteria for the First Two-Hit Checkpoint
 

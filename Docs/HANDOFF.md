@@ -55,6 +55,7 @@ Assets/
         PlayerMovement.cs
         PlayerAnimator.cs
         PlayerCombat.cs
+        PlayerAttackData.cs
         PlayerActionState.cs
         PlayerActionController.cs
         PlayerHealth.cs
@@ -117,6 +118,7 @@ In this project's current Input Actions Editor, selecting `Jump` shows `Action P
 
 - Obtains `Animator` and `PlayerMovement` through `GetComponent<T>()` in `Awake()`.
 - Writes all five required reference-controller parameters: `Speed`, `MotionSpeed`, `Grounded`, `Jump`, and `FreeFall`.
+- Uses playback speed `1` while movement strength is `0`, so the locomotion Blend Tree's Idle clip continues playing instead of freezing on its first frame. Non-zero movement still supplies `CurrentMovementStrength`.
 - Exposes `PlayAttack()`, which sets the project-owned Animator Controller's `Attack` Trigger.
 - Is attached to the reusable `RelicGuardianPlayer` Prefab.
 - Locomotion, `Grounded`, `Jump`, and `FreeFall` synchronization are verified.
@@ -326,6 +328,31 @@ Detailed learning status is maintained in `Docs/LEARNING_PROGRESS.md`.
 - Play Mode verified smooth facing, actual-speed Run playback, stopping at the existing `2m` attack range, transition into Attack, and no chase resumption during the active attack. The final Console was clean.
 - Preserve the boundary: `EnemyAI` owns attack-versus-chase decisions, `EnemyMovement` owns rotation and CharacterController displacement, `EnemyAttack` owns attack phases, and `EnemyAnimator` consumes actual movement state for the visual child.
 
+### Local Katana Visual and Final Light-Attack Asset Preparation
+
+- The reusable right-hand attachment boundary is unchanged. The currently equipped local visual is `Frozen_Katana_Blue`; the learner visually adjusted and approved its grip, and the former `P09Sword02Visual` is inactive.
+- The final planned light-attack presentation order is:
+  1. `Attack_4Combo_1_Inplace`
+  2. `Attack_4Combo_2_Inplace`
+  3. `Attack_4Combo_3_Inplace`
+  4. `Attack_3Combo_3_Inplace`
+- The four FBXs and their Unity import metadata are present under ignored `Assets/LocalLicensed/PowerfulSwordPack/Katana/LightCombo/`.
+- Live Unity inspection confirmed four non-looping Humanoid AnimationClips. Their importer uses the package Avatar at `Assets/LocalLicensed/PowerfulSwordPack/Avatar/Modeling_T-Pose_Grrrru_Man(recommend).FBX`, and the final related Console query contained no errors.
+- Asset preparation has progressed into the first implementation checkpoint. Only `Attack_4Combo_1_Inplace` is connected as Attack1; Attack2, Attack3, and Attack4 remain unconnected.
+
+### Current Attack1, Data, Combo-Window, and Idle Checkpoint
+
+- The active local Override mapping is `SwordAndShieldSlash -> Attack_4Combo_1_Inplace`. Attack1 remains one Animator state driven by the existing `Attack` Trigger; there is no Animator `AttackIndex` and no Attack2 state.
+- Attack1 is a non-looping Humanoid clip using the package Avatar. Apply Root Motion remains off. Its current events are approximately Frame `9.7` `OpenHitWindow`, `11.6` `OpenComboWindow`, `12.3` `CloseHitWindow`, `21.7` `CloseComboWindow`, and `34.2` `FinishBasicAttack`.
+- `PlayerAttackData.cs` is an inline serializable configuration class with private serialized `damage`, `targetRange`, `lungeSpeed`, and `lungeDistance` plus read-only properties. The player Prefab currently has one Attack1 element configured as `1`, `2`, `5`, and `1`.
+- `PlayerCombat` owns `currentAttackIndex`, returns `attacks[currentAttackIndex]` through `CurrentAttackData`, and initializes index `0` through reusable `StartAttackStep(int attackIndex)`. Damage, acquisition range, lunge speed, and lunge distance now read from current data; the one-entry Attack1 regression passed.
+- `PlayerCombat` now has independent `isComboWindowOpen`, `OpenComboWindow()`, and `CloseComboWindow()`. The field is expected to produce an unused-field Console warning because input queueing has not been implemented yet.
+- The next concept is only `isAttackQueued` plus input routing: a grounded request while `Free` starts Attack1, while a request during the open Combo Window only sets the queue. Do not add Attack2 or transition logic in that same step.
+- The confirmed later flow is hybrid: input before the earliest `ComboTransitionPoint` queues; input after that point while the Combo Window remains open may enter Attack2 immediately. `ComboTransitionPoint` and its runtime-ready state are not implemented.
+- The learner also wants `CloseComboWindow -> FinishAttack` to become a separately represented Restart Window in which Attack input starts a fresh Attack1. This is not implemented and cannot be inferred from `isComboWindowOpen == false`, because startup has the same value.
+- Before enabling Attack2 or the Restart Window, prevent stale outgoing `FinishAttack`/window events from mutating a newly started attack execution.
+- Local licensed `Idle_ver_B` is a looping Humanoid Idle mapped through `Idle -> Idle_ver_B`. It uses the existing source Avatar, keeps Root Motion off, and matches Attack1's Original Root Transform Rotation basis. The learner approved the final attack-to-idle blend with no extra turn.
+
 ## Known Issue and Next Step
 
 - The minimal player-action coordination, Basic Attack Hit Window, circular candidate acquisition, nearest single-target selection, multi-frame startup target-facing, saved-target confirmation, enemy-health receiver, and one confirmed damage checkpoints are complete and runtime-verified.
@@ -335,8 +362,9 @@ Detailed learning status is maintained in `Docs/LEARNING_PROGRESS.md`.
 - The P09 female visual-child replacement, ordinary locomotion verification, and first right-hand weapon visual boundary are complete. Do not consume Root Motion or migrate damage/equipment logic onto the weapon model.
 - Multi-frame attack-facing smoothing is complete. Preserve `PlayerCombat` as the facing-lifetime owner and `PlayerMovement` as the transform-rotation owner when later attacks are added.
 - The player-owned health receiver, target-carrying timed enemy attack, range gate, visible Startup telegraph, minimal Goblin visual, Trigger-driven attack, bounded player lunge, and manual Idle/Run animation switching are verified.
-- Actual-speed Goblin locomotion synchronization, attack-phase movement blocking, and the minimum combat loop through enemy deactivation are complete. Resume with one concept only: learn Hitstop and choose its smallest ownership boundary before implementation. Do not combine it with Knockback, VFX, SFX, Camera Shake, or a full Boss action-state system.
-- The proposed two-hit refactor is documented in `Docs/COMBO_ATTACK_ARCHITECTURE.md`. Keep that tracked file in every future sync to the code-focused GitHub repository and update its status only from implemented, verified evidence.
+- Actual-speed Goblin locomotion synchronization, attack-phase movement blocking, and the minimum combat loop through enemy deactivation are complete. Hitstop remains deferred while the approved combo-refactor path is resumed.
+- Combo implementation has begun but remains Attack1-only. Resume with one concept: add `isAttackQueued` and split initial-attack versus open-Combo-Window input handling. Do not add Attack2, Animator `AttackIndex`, `ComboTransitionPoint`, Restart Window, or large state-machine infrastructure in that same step.
+- The in-progress two-hit architecture and confirmed later Restart Window are documented in `Docs/COMBO_ATTACK_ARCHITECTURE.md`. Keep that tracked file in every future sync to the code-focused GitHub repository and distinguish verified implementation from target design.
 - Unity `6000.3.19f1` repeatedly logged `UnityEditor.Graphs` null references while the Animator graph remained open across Controller edits and script reloads. The stacks contain only UnityEditor graph code, and the real gameplay loop still passed. Close or switch away from the Animator graph before judging a fresh Console regression.
 - Unity has `Application.runInBackground = false`; MCP sampling while Unity is unfocused can leave `Time.frameCount` unchanged even while real time advances. Verify frame progression before treating a timed MCP test as runtime evidence.
 - Two missing-script messages appeared during an external scene-file refresh, but a live scan found no missing component and the messages did not reproduce after Reload and the final attack regression. Treat this as a historical transient observation unless it returns.
@@ -360,7 +388,7 @@ Detailed learning status is maintained in `Docs/LEARNING_PROGRESS.md`.
 - `HEROIC FANTASY CREATURES FULL PACK VOL 1 v2.51.unitypackage` (`3,030,509,498` bytes) was imported into the isolated AssetLab only; the full package remains outside the main project.
 - P09 and the narrowed katana-animation subset are imported into the **local main-project workspace** under ignored `Assets/LocalLicensed/`; both remain licensed external dependencies. The full Powerful Sword package and `Sword slashes PRO` remain unimported.
 - `P09ModularHumanoidLite` requires lilToon for visible materials and contains an optional MagicaCloth 2 setup package, nested installers, and demo scripts/content. Test dependencies in isolation and do not blindly import the nested packages.
-- `Powerful Sword Pack` is mostly Humanoid FBX animation content, has no C# scripts, and includes both movement and in-place attack variants. Later select one weapon family and one attack clip instead of importing hundreds of clips.
+- `Powerful Sword Pack` is mostly Humanoid FBX animation content, has no C# scripts, and includes both movement and in-place attack variants. The full package remains in the isolated AssetLab; only the four approved in-place light-attack clips are copied into the ignored main-project folder.
 - `Sword slashes PRO` contains Built-in/URP/HDRP shader variants, demo scripts, an auto-running editor shader changer, and a complete `Packages/manifest.json`. Exclude the manifest and editor/demo scripts. Its manifest requests Shader Graph `17.0.4`, while the current project uses URP `17.3.0` and must retain its own package set.
 - The Heroic Fantasy archive contains `30` creatures and `1,802` assets. The selected ordinary enemy is the sword-and-shield Goblin. Its Generic Rig, own Avatar, two URP/Lit materials, Prefab references, and 82 separate animation FBXs were inspected in AssetLab.
 - The main project imported only `SK_Goblin.FBX`, `Goblin.prefab`, two materials, eight required PBR textures, `IdleSwordShield`, `Attack1SwordShield`, `WalkNormalSwordShield`, and `RunSwordShield` under ignored `Assets/LocalLicensed/HeroicFantasyCreatures/Goblin/`. The original `Goblin_Controller.controller`, `_RM` locomotion variants, Demo scene, other creatures, and unrelated variants remain excluded. Add later clips one at a time only when their gameplay owner is ready.
@@ -368,9 +396,10 @@ Detailed learning status is maintained in `Docs/LEARNING_PROGRESS.md`.
 - The animation source model moved about `1.011` metres along local Z in the audit scene. The P09 male also played the retargeted attack and visibly moved from the green start marker toward the orange finish marker; the learner confirmed the result.
 - P09's materials rendered correctly after replacing incompatible lilToon `1.10.3` with official pinned `2.3.3`. The earlier shader error was `redefinition of 'LIGHTMAP_ON'` in `Hidden/ltspass_opaque` under Unity `6000.3.19f1` and URP `17.3.0`.
 - The P09 hierarchy originally contained `Weapon/Sword` with a `ParentConstraint`. Its verified sources are `Weapon_Target_Hand_R` and `WeaponTarget_Back`; hand weight `1` and back weight `0` place the existing sword at the right hand.
-- In the main project this boundary is now explicitly named `RightHandWeaponSocket`, with `P09Sword02Visual` as its only child. MCP verified identity local transform on the child, the P09 weapon FBX and Sword 02 material, and the still-active constraint. Replace or align only the visual child for a future weapon; keep the reusable socket stable.
+- In the main project this boundary is explicitly named `RightHandWeaponSocket`. `P09Sword02Visual` was its first replaceable child and is now inactive; the approved equipped visual is `Frozen_Katana_Blue`. Keep the reusable socket stable and change only the weapon-specific child alignment.
 - The minimum confirmed-damage loop, local katana Basic Attack override, and code-driven bounded Basic Attack startup lunge are verified. The lunge follows only the target saved at attack start, stops at the Hit Window or travel limit, never retargets, and leaves Hit Window-time confirmation authoritative. Do not enable global Root Motion as a shortcut.
 - Future combo work should use a separate combo-input/transition window: no follow-up input plays the full first-attack recovery, while a valid queued input transitions into the matching second clip before that recovery finishes. Do not reuse the damage Hit Window as the combo-input window.
+- The local Dark Fantasy Katana conversion is also licensed-only. The equipped `Frozen_Katana_Blue` Prefab and its dependencies live under ignored `Assets/LocalLicensed/DarkFantasyKatana/`; do not stage or publish them in the code-focused repository.
 - Temporary audit artifacts still exist and were intentionally not deleted during this handoff: `C:\Users\c8618\AppData\Local\Temp\relic_guardian_katana_audit_20260805` and the recoverable old-package backup `C:\Users\c8618\AppData\Local\Temp\RelicGuardianAssetLab_lilToon_1.10.3_backup_20260805`.
 
 ## Verified Environment Note
@@ -381,6 +410,12 @@ Detailed learning status is maintained in `Docs/LEARNING_PROGRESS.md`.
 - Keep the DX11 launch argument while developing this project unless a later driver or Unity update resolves the DX12 behaviour.
 
 ## Git
+
+- Current HEAD at this handoff: `2db605129d8061e63a550a56dc4b51e48477f1f8` on `main`.
+- The current working tree is intentionally not clean. Tracked modifications include the player Animator Controller, local player Prefab, `PlayerAnimator.cs`, `PlayerCombat.cs`, `SampleScene.unity`, and the six active project documents. `PlayerAttackData.cs` plus its `.meta` are currently untracked.
+- Do not overwrite, restore, reset, or discard these changes. Inspect the live diff before any future edit.
+- `Assets/LocalLicensed/` remains ignored. `Idle_ver_B`, the four katana clips, P09/Goblin resources, and local `KatanaAnimationOverrides` changes must not be committed or uploaded.
+- Unity MCP must be explicitly returned to `My project@f22d513a32eb5447` for gameplay work. `RelicGuardianAssetLab@d0fae1ba933aab0e` is inspection-only and must not remain the active target when changing the main project.
 
 - Branch: `main`
 - Initial commit: `3fc7c9a Initial Unity project setup`

@@ -13,8 +13,14 @@ public class PlayerAnimator : MonoBehaviour
 
     private void Update()
     {
+        float animationPlaybackSpeed = playerMovement.CurrentMovementStrength;
+        if (animationPlaybackSpeed == 0f)
+        {
+            animationPlaybackSpeed = 1f;
+        }
+
         animator.SetFloat("Speed", playerMovement.CurrentSpeed);
-        animator.SetFloat("MotionSpeed", playerMovement.CurrentMovementStrength);
+        animator.SetFloat("MotionSpeed", animationPlaybackSpeed);
         animator.SetBool("Grounded", playerMovement.IsGrounded);
         animator.SetBool("Jump", playerMovement.IsJumping);
         animator.SetBool("FreeFall", playerMovement.IsFalling);

@@ -4,6 +4,49 @@ This file records daily progress, learned concepts, problems, and solutions.
 
 ---
 
+## 2026-08-21
+
+### Began the Reusable Combo-Attack Runtime Foundation
+
+#### Completed and Verified
+
+- Replaced the active Attack1 presentation with local licensed `Attack_4Combo_1_Inplace` through `KatanaAnimationOverrides`; the existing single-attack flow, one confirmed damage result, movement/Jump recovery, and Root Motion-off boundary passed Play Mode regression.
+- Added inline serializable `PlayerAttackData` with `damage`, `targetRange`, `lungeSpeed`, and `lungeDistance`. `PlayerCombat` now reads those values from an `attacks` array through `CurrentAttackData`; the Prefab currently has one configured Attack1 entry with values `1`, `2`, `5`, and `1`.
+- Added `currentAttackIndex`, fixed the first accepted attack to index `0`, and extracted reusable `StartAttackStep(int attackIndex)` initialization without adding Attack2.
+- Added independent `isComboWindowOpen`, `OpenComboWindow()`, and `CloseComboWindow()` runtime boundaries. They do not yet read or queue Attack input.
+- Authored the active Attack1 events at approximately Frames `9.7` `OpenHitWindow`, `11.6` `OpenComboWindow`, `12.3` `CloseHitWindow`, `21.7` `CloseComboWindow`, and `34.2` `FinishBasicAttack`.
+- Imported local licensed `Idle_ver_B`, configured it as looping Humanoid with the existing source Avatar, and mapped `Idle -> Idle_ver_B` in the local Override Controller. Matching its Root Transform Rotation basis to Attack1 removed the visible post-attack turn; the learner approved the final `Attack1 -> Idle_ver_B` result.
+- Static validation of `PlayerCombat.cs` reported zero errors. The current unused-field warning for `isComboWindowOpen` is expected until the next input-queue step. Licensed assets and the local Override Controller remain ignored by Git.
+
+#### Confirmed Design, Not Yet Implemented
+
+- During the Combo Window, Attack input requests Attack2. Input before the earliest authored transition point is queued; after that point and while the window remains open, later input may transition immediately.
+- `ComboTransitionPoint` is a one-time authored event that marks the earliest allowed Attack1-to-Attack2 transition. It is separate from `CloseComboWindow`; neither its method nor its runtime-ready flag exists yet.
+- The learner additionally wants `CloseComboWindow -> FinishAttack` to act as a later Restart Window: Attack input there starts a fresh Attack1 rather than Attack2. This requires a separate restart-window state/event because `isComboWindowOpen == false` also describes startup before the window opens.
+- A stale outgoing `FinishAttack` or window event must not reset or mutate a newly started attack step. Event step/sequence validation remains a required design safeguard before late-recovery Attack1 restart is enabled.
+
+#### Exact Resume Point
+
+- Continue with one concept only: add `isAttackQueued` and route a consumed Attack request so that an initial grounded request still starts Attack1, while a request during the open Combo Window only sets the queue. Do not add Attack2, `ComboTransitionPoint`, Restart Window, or Animator `AttackIndex` in the same step.
+- `PlayerActionState` is still `Free`/`BasicAttack`, `PlayerAnimator.PlayAttack()` still sets only the existing `Attack` Trigger, and `FinishBasicAttack` still calls `PlayerActionController` directly. These later migration steps are intentionally unfinished.
+
+### Prepared the Final Light-Attack Animation Set and Katana Visual
+
+#### Completed
+
+- The learner used the local `Animation Browser` to preview the P09 female character with the selected weapon and compare mixed animation sequences before gameplay integration.
+- The final four-step light-attack presentation order is `Attack_4Combo_1_Inplace`, `Attack_4Combo_2_Inplace`, `Attack_4Combo_3_Inplace`, then `Attack_3Combo_3_Inplace`.
+- All four FBXs were copied into the ignored local folder `Assets/LocalLicensed/PowerfulSwordPack/Katana/LightCombo/` with their import metadata. Unity recognizes four non-looping Humanoid `AnimationClip` sub-assets, and each correctly references the package Avatar.
+- The local player Prefab now uses `Frozen_Katana_Blue` beneath the existing right-hand weapon boundary. The learner adjusted and approved the grip visually; the old `P09Sword02Visual` remains inactive rather than being used as the equipped visual.
+- The final Unity Console check contained no errors related to the four imported clips.
+
+#### Historical Boundary After Asset Preparation
+
+- Combo gameplay implementation has **not** started. No new Animator attack states, parameters, Animation Events, `PlayerAttackData`, or combo-input code were added in this preparation step.
+- This boundary was later completed on the same date; use the newer checkpoint above for the current resume point.
+- The other three clips are prepared now to avoid repeated importing, but they must not be connected as a four-hit combo in the same learning step.
+- Licensed character, weapon, and animation assets remain under ignored `Assets/LocalLicensed/` paths and are not intended for the code-focused GitHub repository.
+
 ## 2026-08-20
 
 ### Verified Enemy Zero-Health Boundary and Minimal Death Response
