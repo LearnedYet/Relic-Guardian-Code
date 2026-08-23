@@ -2,14 +2,14 @@
 
 ## Status
 
-- **Configured through Attack4; Attack1 -> Attack2 checkpoint verified, complete four-hit acceptance pending**
+- **Implemented and runtime-verified for Attack1 -> Attack2 -> Attack3 -> Attack4 -> Free**
 - Read-only inspection completed: 2026-08-20
 - Final four-clip light-attack asset set prepared: 2026-08-21
 - Attack1 replacement, one-entry attack data, indexed runtime foundation, reusable step initialization, and authored Combo Window boundaries completed: 2026-08-21.
 - Queued Attack input routing completed and runtime-verified: 2026-08-22.
 - Indexed Attack2 presentation, hybrid queue consumption, two damage windows, centralized cleanup, and two-hit runtime acceptance completed: 2026-08-22.
 - Attack-step event identity, Attack1-3 Restart Windows, and Attack3/4 indexed content extension completed: 2026-08-23.
-- This document distinguishes the verified two-hit baseline from the configured and partially runtime-checked four-hit extension. General recovery cancellation remains deferred until Dodge or Block exists.
+- Complete four-hit runtime acceptance passed on 2026-08-23. General recovery cancellation remains deferred until Dodge or Block exists.
 
 ## Purpose
 

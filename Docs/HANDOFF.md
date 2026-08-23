@@ -338,7 +338,7 @@ Detailed learning status is maintained in `Docs/LEARNING_PROGRESS.md`.
   4. `Attack_3Combo_3_Inplace`
 - The four FBXs and their Unity import metadata are present under ignored `Assets/LocalLicensed/PowerfulSwordPack/Katana/LightCombo/`.
 - Live Unity inspection confirmed four non-looping Humanoid AnimationClips. Their importer uses the package Avatar at `Assets/LocalLicensed/PowerfulSwordPack/Avatar/Modeling_T-Pose_Grrrru_Man(recommend).FBX`, and the final related Console query contained no errors.
-- Asset integration now reaches all four selected clips. Attack3/4 use tracked placeholders and ignored local Override mappings; the complete four-hit acceptance pass remains pending.
+- Asset integration and runtime acceptance now reach all four selected clips. Attack3/4 use tracked placeholders and ignored local Override mappings.
 
 ### Four-Step Combo Extension Checkpoint
 
@@ -365,7 +365,8 @@ Detailed learning status is maintained in `Docs/LEARNING_PROGRESS.md`.
 - Multi-frame attack-facing smoothing is complete. Preserve `PlayerCombat` as the facing-lifetime owner and `PlayerMovement` as the transform-rotation owner when later attacks are added.
 - The player-owned health receiver, target-carrying timed enemy attack, range gate, visible Startup telegraph, minimal Goblin visual, Trigger-driven attack, bounded player lunge, and manual Idle/Run animation switching are verified.
 - Actual-speed Goblin locomotion synchronization, attack-phase movement blocking, and the minimum combat loop through enemy deactivation are complete. Hitstop remains deferred while the approved combo-refactor path is resumed.
-- The reusable Attack1-to-Attack2 path remains runtime-verified; the four-step extension and Restart paths are configured and partially runtime-checked. Resume with the complete four-hit acceptance pass before starting another gameplay concept.
+- The complete Attack1 -> Attack2 -> Attack3 -> Attack4 path is runtime-verified. Acceptance covered each non-follow-up ending, four independent damage results, Attack1-3 Combo and Restart behavior, invalid timing rejection, Attack4 movement/Jump recovery, final state cleanup, and a clean Console.
+- Resume by choosing the first real Dodge or Block action and designing its action priority and attack-cancel permission one concept at a time. Keep general recovery cancellation deferred until that concrete consumer exists.
 - Keep `Docs/COMBO_ATTACK_ARCHITECTURE.md` in every code-focused GitHub sync and distinguish the verified two-hit baseline, configured four-hit extension, and deferred recovery-cancel design.
 - Unity `6000.3.19f1` repeatedly logged `UnityEditor.Graphs` null references while the Animator graph remained open across Controller edits and script reloads. The stacks contain only UnityEditor graph code, and the real gameplay loop still passed. Close or switch away from the Animator graph before judging a fresh Console regression.
 - Unity has `Application.runInBackground = false`; MCP sampling while Unity is unfocused can leave `Time.frameCount` unchanged even while real time advances. Verify frame progression before treating a timed MCP test as runtime evidence.

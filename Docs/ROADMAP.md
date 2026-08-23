@@ -79,7 +79,7 @@
 - Basic Attack now uses a code-driven limited-distance startup lunge toward the same target saved at attack start. It does not retarget; if the target escapes the lunge and Hit Window range, the attack misses. `PlayerMovement` remains responsible for `CharacterController` displacement, and opposite in-range/no-target Play Mode tests passed.
 - The active local presentation is now `Attack_4Combo_1_Inplace`, and looping `Idle_ver_B` is the local equipped-weapon Idle override. The learner approved the final attack-to-idle transition after matching Root Transform Rotation; Apply Root Motion remains off.
 - `PlayerAttackData` now provides per-step damage, target range, lunge speed, and lunge distance. The Prefab has two configured prototype entries, and `PlayerCombat` advances through them with reusable indexed initialization.
-- The reusable indexed combo is configured through Attack4. Attack1-3 have Combo and Restart windows, all Animation Events carry step identity, Attack3/4 presentation/data are connected, and Restart timing plus Attack4 grounding were runtime-corrected. A final complete four-hit acceptance pass remains before marking the four-step checkpoint fully runtime-verified; general Dodge/Block/recovery cancellation remains deferred.
+- The complete reusable indexed Attack1-4 combo is runtime-verified. Attack1-3 have Combo and Restart windows, all Animation Events carry step identity, all four Hit Windows apply one damage result, invalid timing is rejected, and Attack4 restores movement/Jump with clean final state. General Dodge/Block/recovery cancellation remains deferred.
 
 ---
 
@@ -120,7 +120,7 @@
   - [x] Add explicit late-recovery Restart Windows for Attack1-3; their input resets the chain through the reusable Attack1 path.
   - [x] Build and verify the reusable indexed attack flow and Combo Window with Attack1 and Attack2 before extending it to all four selected clips.
   - [x] Configure Attack3/4 data, tracked placeholders, local overrides, Animator states/transitions, and indexed Animation Events without adding copied combat-flow methods.
-  - [ ] Run and record the complete four-hit acceptance pass, including no-follow-up endings, four damage windows, Restart from Attack1-3, invalid timing, final recovery, and a clean Console/state snapshot.
+  - [x] Run and record the complete four-hit acceptance pass, including no-follow-up endings, four damage windows, Restart from Attack1-3, invalid timing, final recovery, and a clean Console/state snapshot.
   - [ ] Design recovery cancellation together with the first real Dodge or Block action; separate action priority from authored cancel permission.
 - [x] Enemy health
   - [x] Store prototype current health and receive a supplied damage amount.

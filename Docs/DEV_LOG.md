@@ -22,7 +22,9 @@ This file records daily progress, learned concepts, problems, and solutions.
 
 - Attack4 `FinishAttack(3)` is authored at approximately Frame `71`, and `Attack4 -> Idle` uses Exit Time `1` so normal completion can release gameplay ownership before leaving the state.
 - A general recovery-cancel/interrupt system is deliberately deferred until a real Dodge or Block action exists. Future work should distinguish action priority from authored cancel permission and reuse one centralized attack-cancellation cleanup boundary.
-- The four-step presentation and reusable indexed flow are configured and partially runtime-checked. Resume by running a clean four-hit acceptance pass, including stopping at Attack2/Attack3, completing Attack4, damage per step, invalid timing, Restart from steps 1-3, and final Console/state inspection. Do not claim the complete four-hit checkpoint runtime-verified until that pass succeeds.
+- The learner completed the clean four-hit acceptance pass. Attack1, Attack2, and Attack3 each end and restore control when no next step is requested; the complete Attack1 -> Attack2 -> Attack3 -> Attack4 path plays correctly; all four Hit Windows apply one damage result; Attack1-3 Combo and Restart timing behaves correctly; startup/window-external input is rejected; and Attack4 returns movement and Jump after completion.
+- Final acceptance also confirmed the attack index, action state, all windows, and queued/transition state clean up correctly, with no Unity Console error. The four-step indexed combo is now implemented and runtime-verified.
+- Resume after this checkpoint by selecting the first real Dodge or Block action and designing one interruption rule at a time. Do not add a movement-only recovery-cancel subsystem before a concrete interrupting action exists.
 
 ## 2026-08-22
 
