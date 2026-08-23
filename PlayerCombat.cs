@@ -15,6 +15,9 @@ public class PlayerCombat : MonoBehaviour
     private bool isBasicAttackLungeActive;
     private float basicAttackLungeDistanceTraveled;
     private bool isComboWindowOpen;
+    private bool isAttackQueued;
+    private bool isRestartWindowOpen;
+    private bool hasReachedComboTransitionPoint;
     private Collider currentAttackTarget;
     private Collider confirmedAttackTarget;
     private int currentAttackIndex;
@@ -29,6 +32,16 @@ public class PlayerCombat : MonoBehaviour
         get { return attacks[currentAttackIndex]; }
     }
 
+    private bool HasNextAttack
+    {
+        get { return currentAttackIndex + 1 < attacks.Length; }
+    }
+
+    private bool IsCurrentAttackStep(int attackIndex)
+    {
+        return attackIndex == currentAttackIndex;
+    }
+
     private void Awake()
     {
         playerAnimator = GetComponent<PlayerAnimator>();
@@ -37,8 +50,13 @@ public class PlayerCombat : MonoBehaviour
         playerMovement = GetComponent<PlayerMovement>();
     }
 
-    public void OpenHitWindow()
+    public void OpenHitWindow(int attackIndex)
     {
+        if (!IsCurrentAttackStep(attackIndex))
+        {
+            return;
+        }
+
         isHitWindowOpen = true;
         isAttackFacingActive = false;
         isBasicAttackLungeActive = false;
@@ -59,28 +77,100 @@ public class PlayerCombat : MonoBehaviour
         }
     }
 
-    public void CloseHitWindow()
+    public void CloseHitWindow(int attackIndex)
     {
+        if (!IsCurrentAttackStep(attackIndex))
+        {
+            return;
+        }
+
         isHitWindowOpen = false;
         confirmedAttackTarget = null;
     }
 
-    public void OpenComboWindow()
+    public void OpenComboWindow(int attackIndex)
     {
+        if (!IsCurrentAttackStep(attackIndex))
+        {
+            return;
+        }
+
         isComboWindowOpen = true;
     }
 
-    public void CloseComboWindow()
+    public void ComboTransitionPoint(int attackIndex)
     {
+        if (!IsCurrentAttackStep(attackIndex))
+        {
+            return;
+        }
+
+        hasReachedComboTransitionPoint = true;
+        TryStartQueuedAttack();
+    }
+
+    public void EnterRestartWindow(int attackIndex)
+    {
+        if (!IsCurrentAttackStep(attackIndex))
+        {
+            return;
+        }
+
         isComboWindowOpen = false;
+        isRestartWindowOpen = true;
+    }
+
+    public void FinishAttack(int attackIndex)
+    {
+        if (!IsCurrentAttackStep(attackIndex))
+        {
+            return;
+        }
+
+        isHitWindowOpen = false;
+        isComboWindowOpen = false;
+        isRestartWindowOpen = false;
+        isAttackQueued = false;
+        hasReachedComboTransitionPoint = false;
+        currentAttackTarget = null;
+        confirmedAttackTarget = null;
+        isAttackFacingActive = false;
+        isBasicAttackLungeActive = false;
+        basicAttackLungeDistanceTraveled = 0f;
+        currentAttackIndex = 0;
+        playerActionController.FinishBasicAttack();
     }
 
     private void Update()
     {
-        if (playerInputReader.ConsumeAttack()
-            && playerActionController.TryStartBasicAttack(playerMovement.IsGrounded))
+        bool attackRequested = playerInputReader.ConsumeAttack();
+
+        if (attackRequested)
         {
-            StartAttackStep(0);
+            if (playerActionController.CurrentActionState == PlayerActionState.Free
+                && playerActionController.TryStartBasicAttack(playerMovement.IsGrounded))
+            {
+                isAttackQueued = false;
+                hasReachedComboTransitionPoint = false;
+                StartAttackStep(0);
+            }
+            else if (playerActionController.CurrentActionState == PlayerActionState.BasicAttack
+                && isComboWindowOpen)
+            {
+                isAttackQueued = true;
+
+                if (hasReachedComboTransitionPoint)
+                {
+                    TryStartQueuedAttack();
+                }
+            }
+            else if (playerActionController.CurrentActionState == PlayerActionState.BasicAttack
+                && isRestartWindowOpen)
+            {
+                isAttackQueued = false;
+                hasReachedComboTransitionPoint = false;
+                StartAttackStep(0);
+            }
         }
 
         if (isAttackFacingActive && currentAttackTarget != null)
@@ -105,15 +195,30 @@ public class PlayerCombat : MonoBehaviour
         }
     }
 
+    private void TryStartQueuedAttack()
+    {
+        if (!isAttackQueued || !HasNextAttack)
+        {
+            return;
+        }
+
+        int nextAttackIndex = currentAttackIndex + 1;
+        isAttackQueued = false;
+        isComboWindowOpen = false;
+        hasReachedComboTransitionPoint = false;
+        StartAttackStep(nextAttackIndex);
+    }
+
     private void StartAttackStep(int attackIndex)
     {
         currentAttackIndex = attackIndex;
+        isRestartWindowOpen = false;
         currentAttackTarget = FindNearestBasicAttackTarget();
         isAttackFacingActive = currentAttackTarget != null;
         basicAttackLungeDistanceTraveled = 0f;
         isBasicAttackLungeActive = currentAttackTarget != null;
 
-        playerAnimator.PlayAttack();
+        playerAnimator.PlayAttack(currentAttackIndex);
     }
 
     private Collider[] FindBasicAttackCandidates()

@@ -338,19 +338,21 @@ Detailed learning status is maintained in `Docs/LEARNING_PROGRESS.md`.
   4. `Attack_3Combo_3_Inplace`
 - The four FBXs and their Unity import metadata are present under ignored `Assets/LocalLicensed/PowerfulSwordPack/Katana/LightCombo/`.
 - Live Unity inspection confirmed four non-looping Humanoid AnimationClips. Their importer uses the package Avatar at `Assets/LocalLicensed/PowerfulSwordPack/Avatar/Modeling_T-Pose_Grrrru_Man(recommend).FBX`, and the final related Console query contained no errors.
-- Asset preparation has progressed into the first implementation checkpoint. Only `Attack_4Combo_1_Inplace` is connected as Attack1; Attack2, Attack3, and Attack4 remain unconnected.
+- Asset integration now reaches all four selected clips. Attack3/4 use tracked placeholders and ignored local Override mappings; the complete four-hit acceptance pass remains pending.
 
-### Current Attack1, Data, Combo-Window, and Idle Checkpoint
+### Four-Step Combo Extension Checkpoint
 
-- The active local Override mapping is `SwordAndShieldSlash -> Attack_4Combo_1_Inplace`. Attack1 remains one Animator state driven by the existing `Attack` Trigger; there is no Animator `AttackIndex` and no Attack2 state.
-- Attack1 is a non-looping Humanoid clip using the package Avatar. Apply Root Motion remains off. Its current events are approximately Frame `9.7` `OpenHitWindow`, `11.6` `OpenComboWindow`, `12.3` `CloseHitWindow`, `21.7` `CloseComboWindow`, and `34.2` `FinishBasicAttack`.
-- `PlayerAttackData.cs` is an inline serializable configuration class with private serialized `damage`, `targetRange`, `lungeSpeed`, and `lungeDistance` plus read-only properties. The player Prefab currently has one Attack1 element configured as `1`, `2`, `5`, and `1`.
-- `PlayerCombat` owns `currentAttackIndex`, returns `attacks[currentAttackIndex]` through `CurrentAttackData`, and initializes index `0` through reusable `StartAttackStep(int attackIndex)`. Damage, acquisition range, lunge speed, and lunge distance now read from current data; the one-entry Attack1 regression passed.
-- `PlayerCombat` now has independent `isComboWindowOpen`, `OpenComboWindow()`, and `CloseComboWindow()`. The field is expected to produce an unused-field Console warning because input queueing has not been implemented yet.
-- The next concept is only `isAttackQueued` plus input routing: a grounded request while `Free` starts Attack1, while a request during the open Combo Window only sets the queue. Do not add Attack2 or transition logic in that same step.
-- The confirmed later flow is hybrid: input before the earliest `ComboTransitionPoint` queues; input after that point while the Combo Window remains open may enter Attack2 immediately. `ComboTransitionPoint` and its runtime-ready state are not implemented.
-- The learner also wants `CloseComboWindow -> FinishAttack` to become a separately represented Restart Window in which Attack input starts a fresh Attack1. This is not implemented and cannot be inferred from `isComboWindowOpen == false`, because startup has the same value.
-- Before enabling Attack2 or the Restart Window, prevent stale outgoing `FinishAttack`/window events from mutating a newly started attack execution.
+- The project-owned Controller has Int `AttackIndex`, tracked empty `Attack2Placeholder`, `BasicAttack -> Attack2` using `Attack` plus `AttackIndex == 1`, and an unconditional Attack2 return at Exit Time `0.9`. `PlayerAnimator.PlayAttack(int)` writes the index before setting the Trigger.
+- The ignored local Override mappings are `SwordAndShieldSlash -> Attack_4Combo_1_Inplace`, `Attack2Placeholder -> Attack_4Combo_2_Inplace`, and `Idle -> Idle_ver_B`. Root Motion remains off.
+- Attack1 events are approximately Frames `9.70` `OpenHitWindow`, `11.56` `OpenComboWindow`, `12.22` `CloseHitWindow`, `12.43` `ComboTransitionPoint`, `21.66` `CloseComboWindow`, and `34.17` `FinishAttack`. Attack2 events are Frames `8` `OpenHitWindow`, `12` `CloseHitWindow`, and `35.03` `FinishAttack`.
+- The Prefab contains two inline `PlayerAttackData` entries, each currently configured as damage `1`, target range `2`, lunge speed `5`, and lunge distance `1`.
+- `PlayerCombat` owns queueing, transition-ready state, `HasNextAttack`, and reusable `TryStartQueuedAttack()`. Early valid input waits until the transition event; later valid input inside the still-open window advances immediately. Bounds checking prevents index `2` with two entries.
+- Both clips finish through `PlayerCombat.FinishAttack()`, which clears all attack runtime state before returning the coarse action to `Free`.
+- The learner runtime-verified the no-follow-up path, one valid Attack2, window-external input rejection, repeated-input bounds, two independent damage results, Attack2 retaining `BasicAttack` until its own finish, movement/Jump recovery, and final clean state. Final static validation and Console error checks were clean.
+- Every attack Event now carries an authored step index and is rejected when it does not match `currentAttackIndex`. Attack1-3 use atomic `EnterRestartWindow(int)` boundaries and direct Animator paths back to Attack1; runtime checks confirmed early rejection and responsive late restart.
+- The Prefab has four prototype data entries. Attack3/4 states, tracked placeholders, ignored local Override mappings, indexed transitions, and Events are configured without copied combat-flow methods. Attack4 uses index `3`, not `4`.
+- Attack4 Root Transform Position (Y) now matches the first three clips' Feet basis. Its Finish Event is approximately Frame `71`, and its return transition uses Exit Time `1`.
+- Do not implement a movement-only recovery-cancel subsystem before Dodge or Block exists. Future interruption work should separate priority from cancel permission and centralize attack cancellation cleanup.
 - Local licensed `Idle_ver_B` is a looping Humanoid Idle mapped through `Idle -> Idle_ver_B`. It uses the existing source Avatar, keeps Root Motion off, and matches Attack1's Original Root Transform Rotation basis. The learner approved the final attack-to-idle blend with no extra turn.
 
 ## Known Issue and Next Step
@@ -363,8 +365,8 @@ Detailed learning status is maintained in `Docs/LEARNING_PROGRESS.md`.
 - Multi-frame attack-facing smoothing is complete. Preserve `PlayerCombat` as the facing-lifetime owner and `PlayerMovement` as the transform-rotation owner when later attacks are added.
 - The player-owned health receiver, target-carrying timed enemy attack, range gate, visible Startup telegraph, minimal Goblin visual, Trigger-driven attack, bounded player lunge, and manual Idle/Run animation switching are verified.
 - Actual-speed Goblin locomotion synchronization, attack-phase movement blocking, and the minimum combat loop through enemy deactivation are complete. Hitstop remains deferred while the approved combo-refactor path is resumed.
-- Combo implementation has begun but remains Attack1-only. Resume with one concept: add `isAttackQueued` and split initial-attack versus open-Combo-Window input handling. Do not add Attack2, Animator `AttackIndex`, `ComboTransitionPoint`, Restart Window, or large state-machine infrastructure in that same step.
-- The in-progress two-hit architecture and confirmed later Restart Window are documented in `Docs/COMBO_ATTACK_ARCHITECTURE.md`. Keep that tracked file in every future sync to the code-focused GitHub repository and distinguish verified implementation from target design.
+- The reusable Attack1-to-Attack2 path remains runtime-verified; the four-step extension and Restart paths are configured and partially runtime-checked. Resume with the complete four-hit acceptance pass before starting another gameplay concept.
+- Keep `Docs/COMBO_ATTACK_ARCHITECTURE.md` in every code-focused GitHub sync and distinguish the verified two-hit baseline, configured four-hit extension, and deferred recovery-cancel design.
 - Unity `6000.3.19f1` repeatedly logged `UnityEditor.Graphs` null references while the Animator graph remained open across Controller edits and script reloads. The stacks contain only UnityEditor graph code, and the real gameplay loop still passed. Close or switch away from the Animator graph before judging a fresh Console regression.
 - Unity has `Application.runInBackground = false`; MCP sampling while Unity is unfocused can leave `Time.frameCount` unchanged even while real time advances. Verify frame progression before treating a timed MCP test as runtime evidence.
 - Two missing-script messages appeared during an external scene-file refresh, but a live scan found no missing component and the messages did not reproduce after Reload and the final attack regression. Treat this as a historical transient observation unless it returns.
