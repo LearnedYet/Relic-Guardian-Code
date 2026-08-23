@@ -4,6 +4,7 @@ public class PlayerAnimator : MonoBehaviour
 {
     private Animator animator;
     private PlayerMovement playerMovement;
+    private int attackIndex;
 
     private void Awake()
     {
@@ -26,8 +27,9 @@ public class PlayerAnimator : MonoBehaviour
         animator.SetBool("FreeFall", playerMovement.IsFalling);
     }
 
-    public void PlayAttack()
+    public void PlayAttack(int attackIndex)
     {
+        animator.SetInteger("AttackIndex", attackIndex);
         animator.SetTrigger("Attack");
     }
 }

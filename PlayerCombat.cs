@@ -1,3 +1,4 @@
+using NUnit.Framework;
 using UnityEngine;
 
 public class PlayerCombat : MonoBehaviour
@@ -15,6 +16,8 @@ public class PlayerCombat : MonoBehaviour
     private bool isBasicAttackLungeActive;
     private float basicAttackLungeDistanceTraveled;
     private bool isComboWindowOpen;
+    private bool isAttackQueued;
+    private bool hasReachedComboTransitionPoint;
     private Collider currentAttackTarget;
     private Collider confirmedAttackTarget;
     private int currentAttackIndex;
@@ -27,6 +30,11 @@ public class PlayerCombat : MonoBehaviour
     private PlayerAttackData CurrentAttackData
     {
         get { return attacks[currentAttackIndex]; }
+    }
+
+    private bool HasNextAttack
+    {
+        get { return currentAttackIndex + 1 < attacks.Length; }
     }
 
     private void Awake()
@@ -70,17 +78,55 @@ public class PlayerCombat : MonoBehaviour
         isComboWindowOpen = true;
     }
 
+    public void ComboTransitionPoint()
+    {
+        hasReachedComboTransitionPoint = true;
+        TryStartQueuedAttack();
+    }
+
     public void CloseComboWindow()
     {
         isComboWindowOpen = false;
     }
 
+    public void FinishAttack()
+    {
+        isHitWindowOpen = false;
+        isComboWindowOpen = false;
+        isAttackQueued = false;
+        hasReachedComboTransitionPoint = false;
+        currentAttackTarget = null;
+        confirmedAttackTarget = null;
+        isAttackFacingActive = false;
+        isBasicAttackLungeActive = false;
+        basicAttackLungeDistanceTraveled = 0f;
+        currentAttackIndex = 0;
+        playerActionController.FinishBasicAttack();
+    }
+
     private void Update()
     {
-        if (playerInputReader.ConsumeAttack()
-            && playerActionController.TryStartBasicAttack(playerMovement.IsGrounded))
+        bool attackRequested = playerInputReader.ConsumeAttack();
+
+        if (attackRequested)
         {
-            StartAttackStep(0);
+            if (playerActionController.CurrentActionState == PlayerActionState.Free
+                && playerActionController.TryStartBasicAttack(playerMovement.IsGrounded))
+            {
+                isAttackQueued = false;
+                hasReachedComboTransitionPoint = false;
+                StartAttackStep(0);
+            }
+            else if (playerActionController.CurrentActionState == PlayerActionState.BasicAttack
+                && isComboWindowOpen)
+            {
+                isAttackQueued = true;
+
+                if (hasReachedComboTransitionPoint)
+                {
+                    TryStartQueuedAttack();
+                }
+            }
         }
 
         if (isAttackFacingActive && currentAttackTarget != null)
@@ -105,6 +151,20 @@ public class PlayerCombat : MonoBehaviour
         }
     }
 
+    private void TryStartQueuedAttack()
+    {
+        if (!isAttackQueued || !HasNextAttack)
+        {
+            return;
+        }
+
+        int nextAttackIndex = currentAttackIndex + 1;
+        isAttackQueued = false;
+        isComboWindowOpen = false;
+        hasReachedComboTransitionPoint = false;
+        StartAttackStep(nextAttackIndex);
+    }
+
     private void StartAttackStep(int attackIndex)
     {
         currentAttackIndex = attackIndex;
@@ -113,7 +173,7 @@ public class PlayerCombat : MonoBehaviour
         basicAttackLungeDistanceTraveled = 0f;
         isBasicAttackLungeActive = currentAttackTarget != null;
 
-        playerAnimator.PlayAttack();
+        playerAnimator.PlayAttack(currentAttackIndex);
     }
 
     private Collider[] FindBasicAttackCandidates()

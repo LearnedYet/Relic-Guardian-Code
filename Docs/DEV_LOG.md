@@ -4,6 +4,46 @@ This file records daily progress, learned concepts, problems, and solutions.
 
 ---
 
+## 2026-08-22
+
+### Implemented and Runtime-Verified the First Two-Hit Combo
+
+#### Completed
+
+- Added `hasReachedComboTransitionPoint` plus an Attack1 `ComboTransitionPoint` event at approximately Frame `12.43`, after `CloseHitWindow` and before `CloseComboWindow`. Runtime inspection verified the one-time event persists as cross-frame state.
+- Added Animator Int `AttackIndex`; `PlayerAnimator.PlayAttack(int attackIndex)` writes the index before setting the existing `Attack` Trigger. Attack1 remained index `0` and passed animation, one-hit damage, movement, and Jump regression.
+- Added tracked empty `Attack2Placeholder.anim`, an `Attack2` Animator state, indexed `BasicAttack -> Attack2` transition, and an unconditional `Attack2 -> Idle Walk Run Blend` return. The ignored local Override maps the new placeholder to `Attack_4Combo_2_Inplace`.
+- Expanded the player Prefab to two `PlayerAttackData` entries. Both currently use prototype values damage `1`, target range `2`, lunge speed `5`, and lunge distance `1`.
+- Authored Attack2 events at Frames `8` `OpenHitWindow`, `12` `CloseHitWindow`, and approximately `35.03` `FinishAttack`. Attack2 intentionally has no Combo Window yet.
+- Routed both Attack1 and Attack2 completion through `PlayerCombat.FinishAttack()`. It clears windows, queued/transition state, targets, facing/lunge state, travelled distance, and current index before requesting `PlayerActionController` to return to `Free`.
+- Added `HasNextAttack` and reusable `TryStartQueuedAttack()`. Input before the transition point waits in the queue; input after the point while the Combo Window remains open starts the next indexed step immediately. The bounds check prevents an invalid index `2` while only two entries exist.
+
+#### Runtime Acceptance
+
+- The learner verified Attack1 alone returns to `Free`, a valid second click produces exactly one Attack2, window-external input does not enter Attack2, and repeated clicking does not skip/repeat Attack2 or access index `2`.
+- The learner verified Attack1 and Attack2 each apply one damage result during their own Hit Windows, Attack2 remains within the active `BasicAttack` action until its own finish, and movement/Jump recover after the final step.
+- Final runtime inspection showed all windows and Combo flags false, `currentAttackIndex == 0`, Animator `AttackIndex == 0`, and `CurrentActionState == Free`. Static script validation and the Unity Console error query were clean.
+
+#### Exact Resume Point
+
+- The reusable two-hit checkpoint is implemented and runtime-verified. Next add explicit stale-animation-event identity protection before implementing the separately confirmed late-recovery Restart Window or extending the chain to Attack3.
+- Attack3/Attack4, Restart Window, explicit stale-event sequence guards, and `PlayerActionState.BasicAttack -> Attacking` renaming remain unimplemented.
+
+### Verified Queued Attack Input Routing
+
+#### Completed and Verified
+
+- The learner added `isAttackQueued` to `PlayerCombat` and split the single consumed Attack request from its state-dependent handling.
+- A valid grounded request while `PlayerActionState.Free` clears any stale queue and still starts Attack1 through `StartAttackStep(0)`.
+- A request while `PlayerActionState.BasicAttack` queues only when `isComboWindowOpen` is true; it does not start another animation or add Attack2.
+- The learner initially wrote `isComboWindowOpen = true` in the condition, then corrected the assignment-versus-read error so the Combo Window is not forced open by input handling.
+- Runtime inspection verified `isAttackQueued == false` for an Attack input before the Combo Window and `isAttackQueued == true` for input during the authored Combo Window. Static validation reported zero errors and zero warnings, and the final Unity Console error query was empty.
+
+#### Exact Resume Point
+
+- Continue with one concept only: add the runtime boundary that records whether the authored `ComboTransitionPoint` has been reached, without adding Attack2 or consuming the queue yet.
+- Keep Restart Window, Animator `AttackIndex`, Attack2 presentation, stale-event protection, and `PlayerActionController` refactoring separate.
+
 ## 2026-08-21
 
 ### Began the Reusable Combo-Attack Runtime Foundation
@@ -13,10 +53,10 @@ This file records daily progress, learned concepts, problems, and solutions.
 - Replaced the active Attack1 presentation with local licensed `Attack_4Combo_1_Inplace` through `KatanaAnimationOverrides`; the existing single-attack flow, one confirmed damage result, movement/Jump recovery, and Root Motion-off boundary passed Play Mode regression.
 - Added inline serializable `PlayerAttackData` with `damage`, `targetRange`, `lungeSpeed`, and `lungeDistance`. `PlayerCombat` now reads those values from an `attacks` array through `CurrentAttackData`; the Prefab currently has one configured Attack1 entry with values `1`, `2`, `5`, and `1`.
 - Added `currentAttackIndex`, fixed the first accepted attack to index `0`, and extracted reusable `StartAttackStep(int attackIndex)` initialization without adding Attack2.
-- Added independent `isComboWindowOpen`, `OpenComboWindow()`, and `CloseComboWindow()` runtime boundaries. They do not yet read or queue Attack input.
+- Added independent `isComboWindowOpen`, `OpenComboWindow()`, and `CloseComboWindow()` runtime boundaries. Queued input was added and verified in the following checkpoint.
 - Authored the active Attack1 events at approximately Frames `9.7` `OpenHitWindow`, `11.6` `OpenComboWindow`, `12.3` `CloseHitWindow`, `21.7` `CloseComboWindow`, and `34.2` `FinishBasicAttack`.
 - Imported local licensed `Idle_ver_B`, configured it as looping Humanoid with the existing source Avatar, and mapped `Idle -> Idle_ver_B` in the local Override Controller. Matching its Root Transform Rotation basis to Attack1 removed the visible post-attack turn; the learner approved the final `Attack1 -> Idle_ver_B` result.
-- Static validation of `PlayerCombat.cs` reported zero errors. The current unused-field warning for `isComboWindowOpen` is expected until the next input-queue step. Licensed assets and the local Override Controller remain ignored by Git.
+- Static validation of `PlayerCombat.cs` reported zero errors. Licensed assets and the local Override Controller remain ignored by Git.
 
 #### Confirmed Design, Not Yet Implemented
 

@@ -75,11 +75,11 @@
 - Per-frame in-range requests do not reset the attack because `EnemyAttack.TryStartAttack()` accepts only while `Ready`. Target search, chase, and attack cancellation after leaving range remain separate later concepts.
 - `EnemyAttack` now owns an Inspector-assigned `startupTelegraph` object reference. A successful attack entry activates the red placeholder for `Startup`, and the successful Hit Window entry deactivates it. Static validation, a non-persistent phase test, and the learner's real-scene visual check all verified the expected visible interval.
 - The `3,030,509,498`-byte Heroic Fantasy Creatures Vol.1 archive was imported only into the isolated AssetLab for inspection. The main project contains the narrowed Generic-Rig, URP/Lit sword-and-shield Goblin model/Prefab, required materials and textures, plus only the selected in-place Idle, Attack, Walk, and Run animations.
-- Health clamping, death, combos, Dodge, hitstop, and effects remain deferred.
+- Health clamping, production death presentation, combo extension beyond Attack2, Dodge, hitstop, and effects remain deferred.
 - Basic Attack now uses a code-driven limited-distance startup lunge toward the same target saved at attack start. It does not retarget; if the target escapes the lunge and Hit Window range, the attack misses. `PlayerMovement` remains responsible for `CharacterController` displacement, and opposite in-range/no-target Play Mode tests passed.
 - The active local presentation is now `Attack_4Combo_1_Inplace`, and looping `Idle_ver_B` is the local equipped-weapon Idle override. The learner approved the final attack-to-idle transition after matching Root Transform Rotation; Apply Root Motion remains off.
-- `PlayerAttackData` now provides per-step damage, target range, lunge speed, and lunge distance. `PlayerCombat` has one configured Attack1 entry, `currentAttackIndex`, `CurrentAttackData`, and reusable `StartAttackStep(int)` initialization.
-- Attack1 now has independent Hit and Combo Window events. The Combo Window runtime bool is present but intentionally unused until the next learning step adds queued input; Attack2, `ComboTransitionPoint`, Restart Window, and stale-event protection are not implemented.
+- `PlayerAttackData` now provides per-step damage, target range, lunge speed, and lunge distance. The Prefab has two configured prototype entries, and `PlayerCombat` advances through them with reusable indexed initialization.
+- The first two-hit combo is runtime-verified: Attack1 alone returns to `Free`; valid window input enters Attack2; window-external and repeated inputs remain bounded; both steps apply one confirmed damage result; and final cleanup restores index/state. Restart Window, Attack3/4, and explicit stale-event identity protection are not implemented.
 
 ---
 
@@ -112,16 +112,19 @@
   - [x] Extract the existing single-attack configuration into minimal inline `PlayerAttackData` and verify the one-entry behaviour remains unchanged.
   - [x] Add `currentAttackIndex`, reusable `StartAttackStep(int)`, and independent Hit/Combo Window runtime boundaries while keeping only Attack1 active.
   - [x] Author Attack1 `OpenComboWindow` and `CloseComboWindow` events separately from the Hit Window.
-  - [ ] Add `isAttackQueued` and consume Attack input as a queued next-step request only while the Combo Window is open.
-  - [ ] Add the authored earliest `ComboTransitionPoint`, Attack2 Animator presentation, and stale-event protection.
+  - [x] Add `isAttackQueued` and runtime-verify that Attack input queues only while the authored Combo Window is open.
+  - [x] Add and runtime-verify the authored `ComboTransitionPoint` runtime-ready boundary.
+  - [x] Add Animator `AttackIndex`, a tracked Attack2 placeholder/state, local Attack2 override, indexed transitions, data, and Hit/finish Events.
+  - [x] Consume queued input at or after the transition point through the reusable indexed path and runtime-verify the two-hit acceptance paths.
+  - [ ] Add explicit stale-animation-event identity protection before enabling a Restart Window or extending the chain.
   - [ ] Add the separately confirmed late-recovery Restart Window only after the two-hit path works; its input resets the chain to Attack1.
-  - [ ] Build and verify the reusable indexed attack flow and Combo Window with Attack1 and Attack2 before extending it to all four selected clips.
+  - [x] Build and verify the reusable indexed attack flow and Combo Window with Attack1 and Attack2 before extending it to all four selected clips.
 - [x] Enemy health
   - [x] Store prototype current health and receive a supplied damage amount.
   - [x] Define and runtime-verify the zero-health boundary and minimal inactive-object death response.
 - [ ] Damage system
   - [x] Apply one fixed prototype damage result to the saved, Hit Window-confirmed target.
-  - [x] Define reusable per-step damage, target range, lunge speed, and lunge distance through inline `PlayerAttackData`; only Attack1 is configured so far.
+  - [x] Define reusable per-step damage, target range, lunge speed, and lunge distance through inline `PlayerAttackData`; Attack1 and Attack2 are configured with prototype values.
 - [ ] Minimal enemy attack loop
   - [x] Add a player-owned health receiver boundary.
   - [x] Connect one enemy-owned damage call to the player receiver and verify `3 -> 2`.
