@@ -7,6 +7,7 @@ public class PlayerInputReader : MonoBehaviour
     [SerializeField] private Vector2 lookInput;
     private bool jumpRequested;
     private bool attackRequested;
+    private bool lockOnRequested;
 
     public Vector2 MoveInput
     {
@@ -56,5 +57,17 @@ public class PlayerInputReader : MonoBehaviour
         bool wasJumpRequested = jumpRequested;
         jumpRequested = false;
         return wasJumpRequested;
+    }
+
+    public void OnLockOn()
+    {
+        lockOnRequested = true;
+    }
+
+    public bool ConsumeLockOn()
+    {
+        bool wasLockOnRequested = lockOnRequested;
+        lockOnRequested = false;
+        return wasLockOnRequested;
     }
 }

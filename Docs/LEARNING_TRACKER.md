@@ -18,7 +18,7 @@ Detailed content and teaching order belong in each track's own plan. This tracke
 
 | Track | Status | Workspace | Detailed records | Unlock condition | Next action |
 | --- | --- | --- | --- | --- | --- |
-| Relic Guardian | Active | `C:\Unity\Project\My project` | `Docs/PROJECT_PLAN.md`, `Docs/ROADMAP.md`, `Docs/LEARNING_PROGRESS.md`, `Docs/COMBO_ATTACK_ARCHITECTURE.md` | Already started | Choose Dodge or Block as the first real interrupting action and design one priority/cancel rule |
+| Relic Guardian | Active | `C:\Unity\Project\My project` | `Docs/PROJECT_PLAN.md`, `Docs/ROADMAP.md`, `Docs/LEARNING_PROGRESS.md`, `Docs/COMBO_ATTACK_ARCHITECTURE.md` | Already started | Add locked directional locomotion presentation with selected in-place Katana clips |
 | C# foundations | Active | `C:\Unity\Learning\CSharpPractice` | `AGENTS.md`, `Docs/LEARNING_PLAN.md`, `Docs/LEARNING_PROGRESS.md` in that workspace | Already started | Continue with integer assignment and arithmetic; variable output and Console text input are verified |
 | Data structures and algorithms | Prepared, locked by Gate DS-1 | `C:\Unity\Learning\CSharpPractice\DataStructures` | `AGENTS.md`, `PREREQUISITES.md`, `LEARNING_PLAN.md`, and `LEARNING_PROGRESS.md` in that folder | Pass the observable C# readiness check in `PREREQUISITES.md`; no IQ threshold applies | Continue C# foundations, then run the four-part Gate DS-1 check and start immediately if passed |
 | Game mathematics | Embedded | Relic Guardian, C# practice, and later Graphics Lab | Record evidence in the active track's progress file | A gameplay or graphics problem needs the concept | Revisit vectors and rotations through current gameplay examples |
@@ -77,7 +77,7 @@ Do not duplicate detailed lesson notes here. Keep them in the corresponding trac
 
 Only two tracks are independently active now:
 
-1. Relic Guardian: the complete indexed Attack1-4 combo is runtime-verified, including four damage results, Attack1-3 Restart, invalid timing rejection, and final cleanup. Next choose Dodge or Block as the first real interrupting action and design one priority/cancel rule; recovery cancellation should grow from that concrete need.
+1. Relic Guardian: the complete indexed Attack1-4 combo remains verified, and the first usable lock-on targeting, movement-facing, combat-target priority, and dual-camera mode are implemented. Next add locked directional locomotion presentation with selectively imported in-place Katana clips; keep Root Motion off and defer Dodge/Block interruption rules.
 2. C# Practice: continue with integer assignment and arithmetic after verified variable-output and Console-input lessons.
 
 All other subjects are either embedded into those sessions or preserved behind explicit gates.

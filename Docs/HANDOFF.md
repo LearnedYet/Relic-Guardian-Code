@@ -451,3 +451,41 @@ Detailed learning status is maintained in `Docs/LEARNING_PROGRESS.md`.
 - Verified Goblin attack animation commit: `5e24756 Add enemy Animator attack trigger hook`.
 - Current archive checkpoint subject: `Archive player lunge and enemy chase foundation`. Use `git log -1 --oneline` for its final hash after the focused commit.
 - Intentional uncommitted changes after this archive commit: `Assets/RelicGuardian/Player/RelicGuardianPlayer.prefab` contains the local-only P09 visual integration, weapon boundary, ignored animation override reference, and local health attachment; `Assets/RelicGuardian/Player/Animator/RelicGuardianPlayer.controller` contains local presentation tuning; `Assets/Scenes/SampleScene.unity` contains local Goblin/telegraph/Animator wiring, the enabled `EnemyAI`, the new root `CharacterController`, prior player-prefab references, and mixed Unity serialization changes. The ignored `Assets/LocalLicensed/HeroicFantasyCreatures/Goblin/` contains the narrowed licensed source assets, Walk/Run clips, and learner-created Controller. Do not stage these mixed or licensed local files; do not describe the working tree as clean.
+
+## 2026-08-24 Lock-On Movement and Camera Handoff (Latest Current State)
+
+This is the latest checkpoint and supersedes the earlier `Known Issue and Next Step` section when choosing what to do next.
+
+### Implemented and Verified Gameplay
+
+- `PlayerTargeting` now owns the authoritative lock-on target. It searches the `HitTarget` Layer within `10m`, selects the nearest Collider, exposes `CurrentTarget` plus the derived `IsLockedOn`, toggles with the `V` key, clears inactive targets, and automatically breaks beyond `12m`.
+- `PlayerInputReader` stores the `LockOn` Button request across frames and exposes `ConsumeLockOn()`. The action is currently bound to `<Keyboard>/v`; this binding may be changed later in the Input Actions asset without redesigning the targeting system.
+- `PlayerMovement` keeps the existing camera-relative free movement. While locked and allowed to move, it faces `PlayerTargeting.CurrentTarget` every frame and retains CharacterController-driven displacement with Root Motion disabled. Locked W/S/A/D movement, stationary facing, unlock recovery, attack rotation ownership, and combo recovery were runtime-checked.
+- `PlayerCombat` gives the authoritative locked target priority over the ordinary nearest soft target. If that locked target is outside the current attack step's range, the attack deliberately has no target and does not fall back to a different nearby Collider. Locked priority, the no-fallback rule, unlocked nearest soft targeting, and multi-step attack use were runtime-checked.
+
+### First Usable Lock-On Camera
+
+- Cinemachine version is `3.1.7`. `FreeLook Camera` remains the unrestricted mouse-orbit camera. A separate `LockOn Camera` uses `Lock To Target With World Up` and tracks `PlayerCameraRoot`.
+- `PlayerCameraController` reads `PlayerTargeting.IsLockedOn` and switches the two Cinemachine cameras through priorities `10` and `0`, preserving Cinemachine Brain blending instead of directly enabling/disabling cameras.
+- `LockOnCameraTarget` is a player-Prefab child and is assigned as the lock camera's separate `Look At Target`; `Tracking Target` remains `PlayerCameraRoot`. Each locked frame, the controller calculates player chest position, enemy Collider center, and `Vector3.Lerp(..., enemyLookWeight)` with default weight `0.35` before moving this target.
+- The learner accepted the current camera direction and a provisional composition. Saved lock-camera tuning includes Center Orbit Radius `3.72`, Height `0.77`, Rotation Damping Y `0`, horizontal input Gain `0.3` with range `-25..25`, vertical input Gain `-0.1` with Center `-5` and range `-10..5`, and recenter Wait `0.4` / Time `0.6` on both axes. Lock-camera zoom input is disabled.
+- Locking no longer assigns the enemy Collider directly as Cinemachine LookAt. The camera remains player-relative while the weighted target lets the view respond to enemy position. Treat the current values as accepted prototype tuning, not final production camera polish.
+
+### Deferred Camera and Lock-On Work
+
+- Multi-target left/right switching, a lock indicator UI, camera collision/occlusion, extreme target-height/distance framing, and production camera polish are not implemented.
+- The lock camera's Input Axis Controller remains active while both virtual cameras are active. If a later test shows inconsistent initial offset when re-locking, add state-aware input gating or an explicit axis reset then; do not pre-emptively complicate it now.
+- The final weighted-target camera change was visually accepted provisionally, but no separate clean-Console or fast-moving-enemy regression was recorded after that last tuning step. Re-test only if later work exposes a problem.
+
+### Next Development Step
+
+- The camera phase is complete for the first usable lock-on version. Resume with locked directional locomotion presentation: inspect and selectively import only the needed in-place Katana directional movement clips under ignored `Assets/LocalLicensed/`, then map forward/back/left/right movement without enabling Root Motion.
+- Teach one concept at a time. Before asking the learner to declare a variable, explain the needed data, field versus local scope, lifetime, type, and the English name word by word.
+- Do not recreate `PlayerActionController`; it already owns `Free`, `BasicAttack`, `CanMove`, and `CanJump`. Do not split `PlayerMotor` merely for architecture. Reconsider the movement boundary when Dodge, knockback, or another concrete displacement source requires it.
+- Dodge, Block, and formal action interruption priority remain deferred until after the current lock-on movement presentation step.
+
+### Git and Asset Safety at This Handoff
+
+- This checkpoint is archived by the focused commit titled `Add four-step combo and lock-on foundation`; use `git log -1 --oneline` for its final hash.
+- After that focused commit, the working tree intentionally remains dirty only where local licensed presentation and scene wiring are mixed: `RelicGuardianPlayer.prefab` and `SampleScene.unity` stay unstaged. The tracked scripts, Input Actions, project-owned Animator/placeholder assets, and documents are included in the archive commit.
+- Preserve all existing uncommitted work. Do not reset, restore, or overwrite it. `Assets/LocalLicensed/` remains local-only and must never be committed or uploaded.

@@ -80,6 +80,7 @@
 - The active local presentation is now `Attack_4Combo_1_Inplace`, and looping `Idle_ver_B` is the local equipped-weapon Idle override. The learner approved the final attack-to-idle transition after matching Root Transform Rotation; Apply Root Motion remains off.
 - `PlayerAttackData` now provides per-step damage, target range, lunge speed, and lunge distance. The Prefab has two configured prototype entries, and `PlayerCombat` advances through them with reusable indexed initialization.
 - The complete reusable indexed Attack1-4 combo is runtime-verified. Attack1-3 have Combo and Restart windows, all Animation Events carry step identity, all four Hit Windows apply one damage result, invalid timing is rejected, and Attack4 restores movement/Jump with clean final state. General Dodge/Block/recovery cancellation remains deferred.
+- The first usable lock-on mode is implemented: `V` toggles nearest-target lock, inactive or `12m`-distant targets release automatically, locked movement faces the authoritative target, combat prioritizes it without fallback, and two Cinemachine cameras blend through priorities. The accepted prototype lock camera tracks `PlayerCameraRoot`, looks at a weighted `LockOnCameraTarget`, permits limited manual orbit, and recenters automatically.
 
 ---
 
@@ -158,7 +159,14 @@
 
 - [ ] Dodge
 - [ ] Perfect Dodge
-- [ ] Lock-on
+- [x] Lock-on (first usable version)
+  - [x] Add nearest-target acquisition, `V` toggle, authoritative current target, and automatic break conditions.
+  - [x] Add free/locked movement-facing modes while preserving CharacterController movement and Root Motion off.
+  - [x] Give the locked target combat priority without fallback to a different soft target.
+  - [x] Add separate free and lock Cinemachine cameras with priority blending and player-relative locked orientation.
+  - [x] Add limited manual lock-camera orbit, recentering, and a weighted camera LookAt target.
+  - [ ] Add locked directional locomotion animations using selectively imported in-place Katana clips.
+  - [ ] Add multi-target switching, lock UI, camera occlusion, and final composition polish when required.
 
 ---
 

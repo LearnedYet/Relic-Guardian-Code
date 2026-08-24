@@ -9,6 +9,7 @@ public class PlayerCombat : MonoBehaviour
     private PlayerInputReader playerInputReader;
     private PlayerActionController playerActionController;
     private PlayerMovement playerMovement;
+    private PlayerTargeting playerTargeting;
 
     private bool isHitWindowOpen;
     private bool isAttackFacingActive;
@@ -48,6 +49,7 @@ public class PlayerCombat : MonoBehaviour
         playerInputReader = GetComponent<PlayerInputReader>();
         playerActionController = GetComponent<PlayerActionController>();
         playerMovement = GetComponent<PlayerMovement>();
+        playerTargeting = GetComponent<PlayerTargeting>();
     }
 
     public void OpenHitWindow(int attackIndex)
@@ -213,7 +215,21 @@ public class PlayerCombat : MonoBehaviour
     {
         currentAttackIndex = attackIndex;
         isRestartWindowOpen = false;
-        currentAttackTarget = FindNearestBasicAttackTarget();
+
+        if (playerTargeting.IsLockedOn)
+        {
+            currentAttackTarget = playerTargeting.CurrentTarget;
+
+            if (!IsCurrentAttackTargetInRange())
+            {
+                currentAttackTarget = null;
+            }
+        }
+        else
+        {
+            currentAttackTarget = FindNearestBasicAttackTarget();
+        }
+
         isAttackFacingActive = currentAttackTarget != null;
         basicAttackLungeDistanceTraveled = 0f;
         isBasicAttackLungeActive = currentAttackTarget != null;

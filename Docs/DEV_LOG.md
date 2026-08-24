@@ -4,6 +4,30 @@ This file records daily progress, learned concepts, problems, and solutions.
 
 ---
 
+## 2026-08-24
+
+### Added First Usable Lock-On Movement and Dual-Camera Mode
+
+#### Completed and Runtime-Checked
+
+- Added a `LockOn` Button action bound to `V`, a cross-frame request in `PlayerInputReader`, and player-owned `PlayerTargeting` with nearest-target acquisition, authoritative `CurrentTarget`, derived `IsLockedOn`, manual toggle, inactive-target cleanup, and automatic `12m` break distance after a `10m` acquisition range.
+- Added locked movement-facing to `PlayerMovement` while preserving camera-relative free movement, CharacterController displacement, Root Motion off, `PlayerActionController.CanMove`, and attack-owned rotation while movement is blocked.
+- Updated `PlayerCombat` so an in-range locked target takes priority over ordinary soft targeting. An out-of-attack-range locked target produces no attack target and never falls back to a nearer different enemy; unlocked attacks retain nearest soft targeting.
+- Runtime checks covered lock/unlock, no-candidate input, inactive and distant target release, stationary and moving locked facing, W/S/A/D, attack rotation ownership, combo recovery, locked attack target priority, locked no-fallback, and restored unlocked soft targeting.
+
+#### Camera Implementation and Accepted Prototype Tuning
+
+- Added `PlayerCameraController` and a separate Cinemachine 3.1.7 `LockOn Camera`. Priority `10/0` selects between it and the existing `FreeLook Camera`, allowing Cinemachine Brain blending.
+- The lock camera tracks `PlayerCameraRoot`, uses `Lock To Target With World Up`, and no longer directly looks at the enemy Collider. A separate `LockOnCameraTarget` Transform is positioned each locked frame with `Vector3.Lerp` between player chest position and enemy bounds center using `enemyLookWeight = 0.35`.
+- Enabled limited manual lock-camera orbit and automatic recentering. The learner accepted the current provisional position/direction after live Play Mode tuning. Current saved values are Radius `3.72`, Height `0.77`, Rotation Damping Y `0`, horizontal Gain `0.3` and range `-25..25`, vertical Gain `-0.1`, Center `-5`, range `-10..5`, and recenter Wait `0.4` / Time `0.6`; zoom input is disabled.
+- The final weighted-target presentation was accepted provisionally. A separate fast-moving-target and clean-Console regression was not recorded after the last tuning change.
+
+#### Learning Evidence and Next Boundary
+
+- The learner wrote the gameplay and camera code after guided explanations. They practised authoritative versus derived state, component fields versus per-frame local variables, serialized Cinemachine references, priority selection, separate Tracking and LookAt responsibilities, and `Vector3.Lerp` with an Inspector-tunable weight.
+- Variable creation and English naming require explicit teaching support. Before future declarations, identify the data need, scope, lifetime, type, and split the proposed English identifier into translated words.
+- The first usable camera phase is complete. Next, implement locked directional locomotion presentation using only selectively imported in-place Katana movement clips under ignored `Assets/LocalLicensed/`. Keep Root Motion off. Multi-target switching, lock UI, occlusion, final camera polish, Dodge, Block, and formal interruption priority remain deferred.
+
 ## 2026-08-23
 
 ### Extended the Reusable Combo to Four Indexed Steps and Added Restart Windows

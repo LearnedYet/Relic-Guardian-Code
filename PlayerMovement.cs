@@ -12,6 +12,7 @@ public class PlayerMovement : MonoBehaviour
     private CharacterController characterController;
     private PlayerInputReader inputReader;
     private PlayerActionController playerActionController;
+    private PlayerTargeting playerTargeting;
     private float verticalVelocity;
     private float currentSpeed;
     private float currentMovementStrength;
@@ -47,6 +48,7 @@ public class PlayerMovement : MonoBehaviour
         characterController = GetComponent<CharacterController>();
         inputReader = GetComponent<PlayerInputReader>();
         playerActionController = GetComponent<PlayerActionController>();
+        playerTargeting = GetComponent<PlayerTargeting>();
     }
 
     private void Update()
@@ -75,7 +77,14 @@ public class PlayerMovement : MonoBehaviour
             isJumping = true;
         }
 
-        if (moveDirection != Vector3.zero)
+        if (playerActionController.CanMove && playerTargeting.IsLockedOn)
+        {
+            Vector3 directionToLockedTarget = playerTargeting.CurrentTarget.bounds.center - transform.position;
+
+            directionToLockedTarget.y = 0f;
+            FaceDirection(directionToLockedTarget);
+        }
+        else if (moveDirection != Vector3.zero)
         {
             Quaternion targetRotation = Quaternion.LookRotation(moveDirection);
             transform.rotation = Quaternion.Slerp(
