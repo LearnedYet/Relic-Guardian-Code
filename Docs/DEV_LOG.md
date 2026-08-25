@@ -6,6 +6,27 @@ This file records daily progress, learned concepts, problems, and solutions.
 
 ## 2026-08-24
 
+### Completed Locked Locomotion, Free Sprint, and Camera Handoff Polish
+
+#### Implemented and Accepted
+
+- Added the project-owned `MoveX` and `MoveZ` Animator parameters and a two-dimensional `Locked Locomotion` Blend Tree. Tracked empty placeholder Clips provide eight cardinal/diagonal slots, while the ignored local Override Controller maps them to the non-Root Katana `Jogging_8Way_verB` family. Root Motion remains disabled.
+- `PlayerMovement` converts the camera-relative world movement direction into player-local space with `transform.InverseTransformDirection()`. `PlayerAnimator` applies the resulting X/Z values with `0.1s` damping; the learner accepted the eight-direction switching and the final Idle handoff.
+- Preserved the existing free 1D locomotion tree, changed the normal travel presentation to the local forward Katana jog, and connected the local non-Root `Run_ver_B` clip to the existing Run slot. Free locomotion Float damping is also `0.1s`.
+- Added a held `Sprint` input bound to Left Shift. Its Input Action uses `Pass Through` so press and release both reach `PlayerInputReader`; releasing Shift now correctly returns to the normal travel speed.
+- Added `sprintSpeed = 6f`. Shift plus movement while locked cancels the current lock and enters free camera-relative Sprint; Shift alone does not cancel lock. The learner runtime-accepted normal travel, held Sprint, release, and the lock-to-free Sprint rule.
+- Fixed unlock camera feedback by combining FreeLook `Inherit Position`, LockOn `Freeze When Blending Out`, and state-aware enabling of the two `CinemachineInputAxisController` components. The learner accepted the unlock behavior, free-camera sensitivity, and blend timing. The saved Scene currently serializes Brain Default Blend Time `1s`, FreeLook horizontal/vertical gains `1.8/-1`, and the prior lock-camera gains `0.3/-0.1`.
+- Added `Locked Locomotion -> BasicAttack` using the existing `Attack` Trigger, no Exit Time, and duration `0.1`. This reuses the same four-step attack chain instead of creating locked attack states or a second combat flow.
+- The learner selected the first-version rule that locking disables Jump. With explicit takeover authorization, Codex added `!playerTargeting.IsLockedOn` to the existing Jump acceptance condition without introducing another field or action state.
+
+#### Verification and Remaining Boundary
+
+- Unity recompiled the final script with zero errors. `PlayerMovement.cs` validation reported only the existing generic `GetComponent` null-check suggestion, and the final Console error/warning query returned no entries.
+- Live Animator inspection confirmed both Free and Locked locomotion enter the shared `BasicAttack` state and that the eight-direction parameters remain present.
+- The locked-Jump rejection was structurally verified but was not manually input-tested after Codex applied the final condition. The next session should perform one quick opposite test: locked Space does nothing; unlocked grounded Space still jumps.
+- Lock-on remains a targeting/movement/camera context, not a parallel copy of every player action. If Basic Block exposes a second repeated dual-locomotion Animator entrance, evaluate a shared action route or Action Layer as its own architecture lesson rather than prematurely creating `LockedBlock`, `LockedDodge`, or duplicated combat code.
+- The ground-locomotion milestone is complete. Begin minimum Basic Block design next. Dodge stays after Block, and `PlayerMotor` remains deferred until Dodge displacement provides a concrete reason to reconsider the movement boundary.
+
 ### Added First Usable Lock-On Movement and Dual-Camera Mode
 
 #### Completed and Runtime-Checked

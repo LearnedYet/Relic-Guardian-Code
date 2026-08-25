@@ -17,7 +17,7 @@
 - [x] Camera system (FreeLook orbit, player tracking, and camera-relative movement tested)
 - [x] Character movement (horizontal movement, turning, gravity, and grounded reset tested)
 - [x] Jump
-- [ ] Sprint
+- [x] Sprint
 
 ### Current Checkpoint
 
@@ -81,6 +81,10 @@
 - `PlayerAttackData` now provides per-step damage, target range, lunge speed, and lunge distance. The Prefab has two configured prototype entries, and `PlayerCombat` advances through them with reusable indexed initialization.
 - The complete reusable indexed Attack1-4 combo is runtime-verified. Attack1-3 have Combo and Restart windows, all Animation Events carry step identity, all four Hit Windows apply one damage result, invalid timing is rejected, and Attack4 restores movement/Jump with clean final state. General Dodge/Block/recovery cancellation remains deferred.
 - The first usable lock-on mode is implemented: `V` toggles nearest-target lock, inactive or `12m`-distant targets release automatically, locked movement faces the authoritative target, combat prioritizes it without fallback, and two Cinemachine cameras blend through priorities. The accepted prototype lock camera tracks `PlayerCameraRoot`, looks at a weighted `LockOnCameraTarget`, permits limited manual orbit, and recenters automatically.
+- Locked locomotion now uses the complete non-Root Katana `Jogging_8Way_verB` family through a project-owned 2D Blend Tree and tracked placeholder Clips. Player-local X/Z direction values and `0.1s` Animator damping drive the accepted eight-direction presentation.
+- Free locomotion uses the forward Katana jog for normal travel and `Run_ver_B` for held Sprint. Shift plus movement while locked cancels lock and enters free Sprint; Shift alone preserves lock. Root Motion remains disabled.
+- Free/lock camera handoff now uses incoming-position inheritance, outgoing-lock-camera freezing, and state-aware input-axis ownership. The learner accepted the final unlock response, free sensitivity, and blend time.
+- Both locomotion modes enter the same four-step Basic Attack chain. The first locked combat rule rejects Jump while locked; the final code compiles cleanly, with one opposite runtime input check deferred to the next session.
 
 ---
 
@@ -157,6 +161,7 @@
 
 ## Phase 4 - Advanced Combat
 
+- [ ] Basic Block
 - [ ] Dodge
 - [ ] Perfect Dodge
 - [x] Lock-on (first usable version)
@@ -165,7 +170,7 @@
   - [x] Give the locked target combat priority without fallback to a different soft target.
   - [x] Add separate free and lock Cinemachine cameras with priority blending and player-relative locked orientation.
   - [x] Add limited manual lock-camera orbit, recentering, and a weighted camera LookAt target.
-  - [ ] Add locked directional locomotion animations using selectively imported in-place Katana clips.
+  - [x] Add locked directional locomotion animations using selectively imported in-place Katana clips.
   - [ ] Add multi-target switching, lock UI, camera occlusion, and final composition polish when required.
 
 ---

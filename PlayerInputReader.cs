@@ -8,6 +8,7 @@ public class PlayerInputReader : MonoBehaviour
     private bool jumpRequested;
     private bool attackRequested;
     private bool lockOnRequested;
+    private bool isSprintHeld;
 
     public Vector2 MoveInput
     {
@@ -22,6 +23,14 @@ public class PlayerInputReader : MonoBehaviour
         get
         {
             return lookInput;
+        }
+    }
+
+    public bool IsSprintHeld
+    {
+        get
+        {
+            return isSprintHeld;
         }
     }
 
@@ -69,5 +78,10 @@ public class PlayerInputReader : MonoBehaviour
         bool wasLockOnRequested = lockOnRequested;
         lockOnRequested = false;
         return wasLockOnRequested;
+    }
+
+    public void OnSprint(InputValue value)
+    {
+        isSprintHeld = value.isPressed;
     }
 }

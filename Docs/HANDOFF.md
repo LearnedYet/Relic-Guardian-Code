@@ -489,3 +489,86 @@ This is the latest checkpoint and supersedes the earlier `Known Issue and Next S
 - This checkpoint is archived by the focused commit titled `Add four-step combo and lock-on foundation`; use `git log -1 --oneline` for its final hash.
 - After that focused commit, the working tree intentionally remains dirty only where local licensed presentation and scene wiring are mixed: `RelicGuardianPlayer.prefab` and `SampleScene.unity` stay unstaged. The tracked scripts, Input Actions, project-owned Animator/placeholder assets, and documents are included in the archive commit.
 - Preserve all existing uncommitted work. Do not reset, restore, or overwrite it. `Assets/LocalLicensed/` remains local-only and must never be committed or uploaded.
+
+## 2026-08-24 Movement, Sprint, and Dodge Design (Latest Planned Work)
+
+This section records an agreed design direction, not implemented or runtime-verified gameplay. Continue from the locked directional locomotion step below; do not report Sprint or Dodge as complete.
+
+### Intended Player Experience
+
+- Free movement remains camera-relative and CharacterController-driven. The player faces the movement direction and uses a forward jogging presentation as the normal action-game travel pace.
+- Locked movement keeps the player facing `PlayerTargeting.CurrentTarget` while W/S/A/D move toward, away from, or around the target. Its final presentation should use an in-place eight-direction locomotion Blend Tree so forward, backward, strafing, and diagonal movement match the actual direction.
+- Sprint is initially a held locomotion mode inside `PlayerActionState.Free`, not a separate action state. Use a provisional `Left Shift` binding that can be changed later through the Input Actions asset.
+- The first Sprint version is free-movement-only. While locked, retain the controlled eight-direction jog instead of allowing unrestricted full-speed running.
+- Dodge will later become a real `PlayerActionState.Dodge`. It should snapshot the accepted input direction at Dodge start, block ordinary movement/turning during the action, and return explicitly to `Free` when its animation and displacement finish.
+- In the first locked Dodge version, forward/back/left/right input selects the matching direction and no input defaults to a backward Dodge. In free movement, directional input turns the character into the requested world direction and uses a forward Dodge; no input uses the character's current forward direction.
+- Keep Apply Root Motion disabled. Normal movement, Sprint, attack lunge, and future Dodge displacement remain code-driven through the CharacterController-owned movement boundary.
+
+### Verified Available Katana Animation Coverage
+
+- `Powerful Sword PackGreat Sword Katana 2.1.3.unitypackage` contains complete Katana `Walk_ver_A` and `Walk_ver_B` directional families, including forward, backward, left/right 90-degree, and diagonal variants, with both ordinary and `_Root` files.
+- It contains complete `Jogging_8Way_verA_*` and `Jogging_8Way_verB_*` families for F, B, L90, R90, FL45, FR45, BL45, and BR45, again with ordinary and Root variants. Prefer testing the non-Root `verB` family first because the current equipped locomotion presentation uses the B pose family.
+- Forward running options include `M_katana_Blade@Run_ver_B.FBX` and `M_katana_Blade@Run_Fast_ver_B.FBX`, with matching Root variants available but intentionally unused.
+- Dodge options include `M_katana_Blade@Dodge_Front.FBX`, `Dodge_Back`, `Dodge_Left`, and `Dodge_Right`. `Run_Fast_Dodge_Left` and `Run_Fast_Dodge_Right` are available for later Sprint-Dodge polish, not the minimum first version.
+- The Dodge files do not advertise Root/non-Root status in their filenames. Preview their imported motion and Humanoid retargeting on the P09 female before relying on them; continue to drive gameplay displacement in code regardless.
+- The package also contains idle-to-move, move-to-idle, and turn-in-place clips. Defer these polish transitions until the basic locomotion and Dodge behavior are stable.
+- `P09ModularHumanoidLite` supplies the current character presentation, `Sword slashes PRO` is relevant to later attack VFX rather than locomotion, and the Heroic Fantasy package remains enemy-focused.
+
+### Minimum Low-Risk Development Order
+
+1. Implement only locked directional locomotion presentation. Start with Idle plus non-Root Katana `verB` F, B, L90, and R90 clips in a two-dimensional Blend Tree; after the four cardinal directions are verified, add the four diagonals as one repetitive configuration batch.
+2. Verify free movement presentation separately: camera-relative displacement, facing the movement direction, and a forward jogging animation. Do not add slow walking unless a concrete keyboard toggle or analog-input requirement appears.
+3. Add held Sprint input and a separate Sprint speed for free movement, then connect the selected `Run_ver_B` or `Run_Fast_ver_B` animation. Keep locked Sprint disabled in the minimum version.
+4. Add the `Dodge` action state and accept Dodge only from `Free`. Snapshot its direction, choose a four-direction animation, apply bounded code-driven displacement, and explicitly finish back to `Free`.
+5. After movement and recovery are runtime-verified, add invulnerability timing as its own concept. Design attack-to-Dodge cancellation windows and action priority afterward; do not make every attack recovery cancellable implicitly.
+6. Do not extract `PlayerMotor` before the directional locomotion or Sprint work. Reconsider a small displacement-application boundary while integrating Dodge, when ordinary movement, attack lunge, Dodge, and future knockback provide concrete evidence for the split. Avoid a broad architecture-only refactor.
+
+### Learning and Verification Notes
+
+- The next lesson is only the relationship between world movement and player-local directional values used by a two-dimensional Blend Tree.
+- Before asking the learner to create parameters or variables such as horizontal/forward movement values, explain the data purpose, field versus local scope, lifetime, type, and every English word in the proposed name.
+- The learner writes the key gameplay code unless they explicitly request Codex to take over. A response such as “continue”, “嗯”, or “好了” is not implementation authorization.
+- Preview the chosen `verA`/`verB` clips on the actual P09 female before final selection. Check Humanoid Avatar compatibility, feet, weapon-hand pose, loop continuity, and unwanted source translation.
+- Test and document each stage independently. Do not combine locked locomotion, Sprint, Dodge, invulnerability, and attack cancellation into one implementation checkpoint.
+
+## 2026-08-24 Locked Locomotion, Sprint, and Camera Polish Archive (Latest Current State)
+
+This is the newest handoff. It supersedes the earlier locked-locomotion `Next Development Step` and the unimplemented Sprint statements in `Movement, Sprint, and Dodge Design`. Dodge design remains planned rather than implemented.
+
+### Completed Ground-Locomotion Milestone
+
+- `Locked Locomotion` is a 2D Simple Directional Blend Tree driven by project-owned Float parameters `MoveX` and `MoveZ`. The player converts its camera-relative world movement direction into player-local direction with `transform.InverseTransformDirection()` and exposes the result through `CurrentLocalMoveDirection`.
+- The tracked Controller uses eight project-owned empty `LockedMove*Placeholder` Clips. The ignored local Override maps them to non-Root Katana `Jogging_8Way_verB` forward, backward, left/right, and four diagonal clips. Root Motion remains disabled.
+- `PlayerAnimator` damps locked X/Z values and free `Speed` with separate serialized `0.1s` values. The learner accepted cardinal/diagonal switching, direction changes, the final Idle handoff, and free normal travel presentation.
+- Free locomotion retains the existing 1D Idle/Walk/Run tree with thresholds `0`, `3`, and `6`. The ignored local Override maps the Walk slot to the forward Katana jog and the Run slot to non-Root `Run_ver_B`.
+- `Sprint` is a held Left Shift Input Action using `Pass Through`. `PlayerInputReader.IsSprintHeld` reflects both press and release. `PlayerMovement` selects `moveSpeed = 3f` or `sprintSpeed = 6f` for both displacement and Animator speed reporting.
+- Shift plus nonzero movement while locked calls `PlayerTargeting.CancelLockOn()` and continues as free camera-relative Sprint. Shift alone preserves lock. Releasing Shift returns to normal speed but does not restore the prior lock automatically. The learner runtime-accepted these rules.
+
+### Stabilized Camera Handoff
+
+- `PlayerCameraController` caches both cameras' `CinemachineInputAxisController` components and enables input only on the camera belonging to the current targeting mode.
+- FreeLook Camera uses `Inherit Position`; LockOn Camera uses `Freeze When Blending Out`. Together they remove the unlock feedback loop that previously appeared after large character or lock-camera turns.
+- The learner accepted the final free-camera sensitivity and unlock blend response. The saved Scene currently serializes Cinemachine Brain Default Blend Time `1s`, FreeLook gains `1.8/-1`, and LockOn gains `0.3/-0.1`.
+- Multi-target switching, lock UI, camera collision/occlusion, extreme framing, and production camera polish remain deferred.
+
+### Shared Locked Attack and Jump Boundary
+
+- `Locked Locomotion -> BasicAttack` now mirrors the free attack entrance: `Attack` Trigger, no Exit Time, duration `0.1`. Locked and free modes reuse the same `PlayerActionController`, `PlayerCombat`, target-selection policy, four-step Animator chain, and Animation Events. Do not create `LockedBasicAttack` or a second combat flow.
+- The current flat Base Layer still returns every attack state to `Idle Walk Run Blend`, which then routes back to Locked locomotion when `IsLockedOn` remains true. A separate locked-combo/return runtime regression was not recorded after the new entrance. If Block exposes another repeated locomotion entrance or a visible double handoff appears, evaluate a shared action route or full-body Action Layer as a separate architecture lesson.
+- The first locked combat rule rejects Jump. The Jump acceptance condition now requires `!playerTargeting.IsLockedOn`, using existing authoritative targeting state without a duplicate field.
+- The final script compiled with zero errors, standard validation reported only the pre-existing generic `GetComponent` null-check suggestion, the Console error/warning query was empty, and live Animator inspection confirmed the shared locked Basic Attack entrance.
+- The locked-Jump rule has not received its final manual input regression after the Codex takeover edit. At the start of the next session, verify that locked Space does nothing and unlocked grounded Space still jumps. Do not report this single boundary as runtime-verified until that opposite test passes.
+
+### Next Development Step
+
+1. Run the locked attack/return regression plus the two-case Jump regression above and record the results.
+2. Design only the minimum Basic Block action: input meaning, accepted action states, movement/turning permission, animation lifetime, and explicit finish boundary.
+3. Keep attack-to-Block cancellation permission separate from general action priority. Do not make all attack recovery cancellable implicitly.
+4. Dodge remains after Block. Do not create `PlayerMotor` yet; reconsider the CharacterController displacement boundary when Dodge movement is actually connected.
+
+### Git and Asset Safety
+
+- Archive this checkpoint with the focused subject `Complete locked locomotion and free sprint`. Use `git log -1 --oneline` for the resulting hash.
+- Commit the project-owned Animator Controller, Input Actions, scripts, tracked placeholder Clips, and updated documentation.
+- Keep `Assets/RelicGuardian/Player/RelicGuardianPlayer.prefab` and `Assets/Scenes/SampleScene.unity` unstaged because they contain mixed local-only presentation and scene wiring. Do not reset, restore, overwrite, or describe them as clean.
+- `Assets/LocalLicensed/` remains ignored and must never be committed or uploaded. The real Katana movement/Run Clips, P09 visual, local Override mappings, and other licensed dependencies stay local-only.

@@ -4,6 +4,7 @@ using UnityEngine;
 public class PlayerMovement : MonoBehaviour
 {
     [SerializeField] private float moveSpeed = 3f;
+    [SerializeField] private float sprintSpeed = 6f;
     [SerializeField] private float rotationSpeed = 10f;
     [SerializeField] private float gravity = -15f;
     [SerializeField] private float jumpSpeed = 6f;
@@ -13,6 +14,7 @@ public class PlayerMovement : MonoBehaviour
     private PlayerInputReader inputReader;
     private PlayerActionController playerActionController;
     private PlayerTargeting playerTargeting;
+    private Vector3 currentLocalMoveDirection;
     private float verticalVelocity;
     private float currentSpeed;
     private float currentMovementStrength;
@@ -43,6 +45,11 @@ public class PlayerMovement : MonoBehaviour
         get { return !IsGrounded && verticalVelocity < 0f; }
     }
 
+    public Vector3 CurrentLocalMoveDirection
+    {
+        get { return currentLocalMoveDirection; }
+    }
+
     private void Awake()
     {
         characterController = GetComponent<CharacterController>();
@@ -60,6 +67,18 @@ public class PlayerMovement : MonoBehaviour
             input = Vector2.zero;
         }
 
+        if (playerActionController.CanMove && inputReader.IsSprintHeld && playerTargeting.IsLockedOn && input != Vector2.zero)
+        {
+            playerTargeting.CancelLockOn();
+        }
+
+        float selectedMoveSpeed = moveSpeed;
+
+        if (playerActionController.CanMove && inputReader.IsSprintHeld && !playerTargeting.IsLockedOn)
+        {
+            selectedMoveSpeed = sprintSpeed;
+        }
+
         Vector3 cameraForward = cameraTransform.forward;
         cameraForward.y = 0f;
         cameraForward.Normalize();
@@ -68,10 +87,14 @@ public class PlayerMovement : MonoBehaviour
         cameraRight.Normalize();
         bool jumpRequested = inputReader.ConsumeJump();
         Vector3 moveDirection = (cameraRight * input.x + cameraForward * input.y);
-        currentSpeed = moveDirection.magnitude * moveSpeed;
-        currentMovementStrength = moveDirection.magnitude;
+        currentLocalMoveDirection = transform.InverseTransformDirection(moveDirection);
+        currentSpeed = moveDirection.magnitude * selectedMoveSpeed;
+        currentMovementStrength = currentLocalMoveDirection.magnitude;
         verticalVelocity += gravity * Time.deltaTime;
-        if (jumpRequested && playerActionController.CanJump && characterController.isGrounded)
+        if (jumpRequested &&
+            playerActionController.CanJump &&
+            !playerTargeting.IsLockedOn &&
+            characterController.isGrounded)
         {
             verticalVelocity = jumpSpeed;
             isJumping = true;
@@ -94,7 +117,7 @@ public class PlayerMovement : MonoBehaviour
             );
         }
 
-        Vector3 velocity = moveDirection * moveSpeed;
+        Vector3 velocity = moveDirection * selectedMoveSpeed;
         velocity.y = verticalVelocity;
 
         characterController.Move(velocity * Time.deltaTime);

@@ -19,6 +19,11 @@ public class PlayerTargeting : MonoBehaviour
         get { return currentTarget != null; }
     }
 
+    public void CancelLockOn()
+    {
+        currentTarget = null;
+    }
+
     private void Awake()
     {
         inputReader = GetComponent<PlayerInputReader>();
