@@ -572,3 +572,138 @@ This is the newest handoff. It supersedes the earlier locked-locomotion `Next De
 - Commit the project-owned Animator Controller, Input Actions, scripts, tracked placeholder Clips, and updated documentation.
 - Keep `Assets/RelicGuardian/Player/RelicGuardianPlayer.prefab` and `Assets/Scenes/SampleScene.unity` unstaged because they contain mixed local-only presentation and scene wiring. Do not reset, restore, overwrite, or describe them as clean.
 - `Assets/LocalLicensed/` remains ignored and must never be committed or uploaded. The real Katana movement/Run Clips, P09 visual, local Override mappings, and other licensed dependencies stay local-only.
+
+## 2026-08-27 Attacking Migration and Basic Block Entry Boundary (Latest Current State)
+
+This section supersedes the earlier deferred-regression and `PlayerActionState.BasicAttack` current-state statements. Animator state names such as `BasicAttack` remain presentation names and were not migrated.
+
+### Completed and Runtime-Verified
+
+- The deferred opposite checks passed: locked Space does not Jump, unlocked grounded Space still completes Jump and landing, and locked Attack enters the shared four-step chain and returns correctly to locked locomotion.
+- The coarse enum is now `Free` / `Attacking`. `PlayerActionController` exposes `TryStartAttack(bool isGrounded)` and `FinishAttack()`. `PlayerCombat` still owns `currentAttackIndex`, all Attack1-4 windows, targeting, lunge, damage requests, and cleanup.
+- The migration changed names only. Existing Attack Trigger/Transitions, Animator states, Animation Events, attack data, Restart Windows, and combo behavior were not redesigned.
+- Post-migration runtime checks passed for the unlocked full combo, movement/Jump recovery, late Restart Window, and locked full-combo return. The three changed scripts produced zero validation diagnostics and the final Console query contained zero errors and zero warnings.
+
+### Minimum Basic Block Boundary
+
+- Block is held input. The first version may enter only from `Free` while grounded, and a rejected press is not buffered for later automatic entry.
+- `PlayerActionController` remains the sole coarse-state owner. A separate `PlayerBlock` will coordinate Block-specific request and lifetime behavior; `PlayerCombat` remains unchanged until a later explicit Attack-to-Block cancellation step.
+- Simultaneous Attack and Block requests must have one deterministic result and must not rely on `MonoBehaviour.Update()` execution order. Define the smallest concrete arbitration rule when Block gameplay is connected; do not build a general numeric Priority system.
+- The next single implementation concept is only the held Block input representation in `PlayerInputReader` and the Input Actions asset. Do not add `Blocking`, CrossFade, damage reduction, or cancellation in that same step.
+
+### Process Note
+
+- For a semantic C# rename, use IDE Rename Symbol and review the complete reference set as one mechanical change. Do not split one symbol rename into manual line-by-line edits that create avoidable intermediate compiler errors.
+
+## 2026-08-27 Guard / Block Lifecycle Design Handoff (Latest Planned Work)
+
+This is the latest Guard plan and supersedes the smaller `Minimum Basic Block Boundary` above. It records approved design only. No Block gameplay, main-project animation integration, or Block runtime verification was completed in this checkpoint; actual `PlayerActionState` still contains only `Free` and `Attacking`.
+
+### Architecture and Ownership
+
+- `PlayerActionController` remains the only owner of the coarse Gameplay FSM. The intended immediate coarse set is `Free`, `Attacking`, and `Blocking`; later additions may include `Dodging`, `Staggered`, and `Dead`.
+- `Blocking` remains one coarse state. Do not add global `GuardStartup`, `GuardHold`, or `GuardRelease` members to `PlayerActionState`.
+- A separate `PlayerBlock` will own Guard request coordination and the internal Startup, Hold, and Release lifecycle. Animator presents that lifecycle but never decides Gameplay FSM permission.
+- New discrete player actions continue toward code-driven `Animator.CrossFadeInFixedTime()` presentation. Do not migrate or redesign the runtime-verified four-step attack chain as part of Guard.
+- Lock-on stays an orthogonal targeting, movement, and camera mode. Guard uses the shared Block action and changes only the behavior that genuinely differs by targeting mode.
+
+### Approved Guard Lifecycle
+
+```text
+Free
+  -> Guard Press accepted from grounded Free
+Blocking
+  -> Guard Startup
+  -> Guard Hold, if Guard is still held at the Startup decision point
+  -> Guard Release, after an authored decision/exit point when released
+  -> Free
+```
+
+- Guard is held input, not toggle. A press rejected outside grounded `Free` is not buffered for later automatic entry.
+- Startup is short. Ordinary translation is disabled, but required target-facing correction is allowed.
+- The Perfect Guard Window belongs to Startup and should preferentially use authored Animation Events. This checkpoint defines only the future window placement, not a successful-Guard damage result.
+- Releasing Guard during Startup does not immediately hard-cut to `Free`. `PlayerBlock` records the held-state change and enters Release only at the appropriate Startup decision or exit point.
+- If Guard remains held when Startup reaches its decision point, the action enters Hold.
+- Releasing from Hold enters Release. Release is a short non-moving recovery that adds failed-input cost and prevents free high-frequency Perfect Guard attempts, then returns the coarse state to `Free`.
+
+### Movement, Facing, and Targeting
+
+- Startup and Release do not allow normal translation in the first version.
+- Hold allows movement but never Sprint.
+- Unlocked Hold preserves current camera-relative free movement and smoothly faces the real movement direction.
+- Locked Hold preserves current lock-on directional locomotion and keeps facing `PlayerTargeting.CurrentTarget`.
+- Guard never locks, unlocks, or otherwise switches the camera mode.
+- During unlocked Startup, Guard may perform one facing-assist search within the player's forward total `120` degrees (`+/-60` degrees). The selected Collider is temporary Guard context and must never be written into the authoritative `PlayerTargeting.CurrentTarget`.
+- During locked Startup, Guard uses the existing `PlayerTargeting.CurrentTarget` directly and performs no additional `120`-degree search.
+
+### Defense Boundary Deferred
+
+- Future ordinary Guard protects only the player's forward total `180` degrees (`+/-90` degrees), not all directions.
+- Actual Hit / Block / Perfect Guard resolution is deliberately not part of the first lifecycle implementation.
+- Current `EnemyAttack.ApplyDamage(PlayerHealth target)` and `PlayerHealth.TakeDamage(int damageAmount)` do not carry attack-source direction. Revisit the minimum source-information and Damage / Defense Resolution boundary only when forward-arc defense begins.
+- Do not create a general Hit Framework, Ability Framework, or abstract hierarchical FSM in anticipation of that later work.
+
+### Animation Direction
+
+- The learner accepted the isolated cross-package preview: the new `SwordAnimationPack` transitions smoothly enough with the current Katana presentation, and its Block movement is usable.
+- Approved first candidates are `Block_Start`, `Block_Loop`, `Block_End`, and the directional `Walk_Block_*` family. `Block_Hit`, `Block_Hit_Break`, and dedicated turn clips remain optional later content rather than first-lifecycle requirements.
+- These assets were inspected in `C:\Unity\Project\RelicGuardianAssetLab`; they have not been integrated into the main project or verified there in Play Mode.
+- The directional source names include `_RM`, but the project rule remains Apply Root Motion off. Gameplay displacement stays code-driven through `CharacterController`.
+
+### Actual-Code Compatibility Audit
+
+- The existing coarse-state ownership is compatible with adding `Blocking`; no duplicate action controller or parallel locked action flow is needed.
+- `PlayerMovement.FaceDirection(Vector3)` already provides a reusable movement-owned facing seam for Startup assistance.
+- `PlayerTargeting.CurrentTarget` already supplies the locked authoritative target, but its current nearest-target search is private and has no forward-angle policy. The unlocked one-shot Guard search requires a later narrow design and must not mutate `currentTarget`.
+- `PlayerActionController.CanMove` currently returns true only for `Free`. It cannot yet express “Hold can move while Startup/Release cannot,” so phase-aware movement permission must be added only when Guard movement is connected.
+- The current Sprint and Shift-to-unlock rules are gated by `CanMove`. Once Hold can move, they also need an explicit Guard/Sprint permission boundary so held Guard cannot Sprint or cancel lock through Shift.
+- `PlayerInputReader` and the Input Actions asset currently have no Block representation. The player uses `Send Messages`, and the existing Sprint work already established that `Pass Through` is required for reliable release-value delivery in this setup. Guard input needs both persistent held state and a one-use press edge; consuming a rejected edge prevents held input from becoming an unintended buffer.
+- `PlayerAnimator` currently owns parameter writes and Attack Trigger presentation only. Adding code-driven Guard CrossFades fits its responsibility without moving action permission into Animator.
+- `PlayerCombat` has no Attack-to-Block cancellation path. That matches the approved first version and must remain unchanged.
+- A future independently consuming `PlayerBlock.Update()` alongside existing Attack and Jump consumers would make Block/Attack, Block/Jump, and the accepted press frame's translation depend on script execution order. Choose and implement the smallest deterministic results when Block entry is connected; do not add a numeric Priority system.
+
+### Minimum Implementation Order
+
+1. Add only Block input representation in the Input Actions asset and `PlayerInputReader`: a `Pass Through` action, persistent held state, and a one-use press edge so a rejected press cannot start automatically later while the key remains held.
+2. Before connecting entry, choose deterministic same-frame results for Block versus Attack and Jump, including the accepted press frame's translation cutoff; then add only the minimum `Free -> Blocking -> Free` coarse transition.
+3. Add `PlayerBlock` ownership of Startup, Hold, Release, Startup decision/exit behavior, and final cleanup, without damage resolution.
+4. Connect `Block_Start`, `Block_Loop`, and `Block_End` through code-driven CrossFade and authored phase/exit Events, keeping Root Motion off.
+5. Add phase-specific translation and Sprint permission while preserving existing unlocked and locked Hold movement/facing behavior.
+6. Add the one-shot Startup facing assistance: current authoritative target when locked, temporary forward `120`-degree search when unlocked.
+7. Add the authored Perfect Guard Window lifetime as a separate concept, still without successful-Guard resolution.
+8. Run focused lifecycle, early-release, movement, targeting-mode, animation, and Console regressions.
+9. Later design the forward `180`-degree Damage / Defense Resolution boundary as a separate feature.
+
+### Explicitly Out of Scope
+
+- Attack-to-Block cancellation.
+- A general numeric Priority system.
+- Perfect Guard success consequences, Parry, or Counter.
+- A general Ability Framework or abstract hierarchical FSM framework.
+- Dodge or a pre-emptive `PlayerMotor` split.
+
+## 2026-08-27 Basic Attack Interruption Priority Revision (Latest Planned Work)
+
+This final section supersedes the earlier statements that the first Guard does not support Attack-to-Block cancellation. It changes approved design only; no cancellation or Block gameplay code has been implemented or runtime-verified.
+
+### Revised Priority Rule
+
+- At the gameplay-design level, Block has higher action priority than the current four-step Basic Attack, which is the project's current normal attack / basic attack chain.
+- Block wins an otherwise simultaneous Block/Attack request while `Free`, and an accepted Block request may pre-empt the active Basic Attack throughout Startup, Hit Window, and Recovery.
+- Future skills do not become Block-cancellable automatically. Each skill may deny interruption completely or allow it only in authored phases. Higher priority selects among legal transitions; it does not create permission that the current skill forbids.
+- The rare same-frame case remains an explicit deterministic arbitration rule so its result never depends on `MonoBehaviour.Update()` execution order. Do not build a general numeric Priority system for the current two-action case.
+
+### Cancellation Result
+
+- If Block cancels the Basic Attack before `OpenHitWindow()`, that attack step never applies damage.
+- If `OpenHitWindow()` already applied damage, later Block cancellation does not roll that damage back.
+- `PlayerCombat` must own one centralized cancellation-cleanup boundary that closes Hit, Combo, and Restart Windows; clears the queued request, transition state, current and confirmed targets, facing, lunge, travelled distance, and attack index; and only then releases `Attacking` for the `Blocking` transition.
+- Animator presentation must follow the accepted gameplay transition. Playing a Block CrossFade alone is never sufficient cancellation.
+
+### Updated Minimum Order
+
+1. Continue with Block input representation only: `Pass Through`, persistent held state, and a one-use press edge.
+2. Add and verify centralized Basic Attack cancellation cleanup without connecting Block.
+3. Connect the explicit Block-over-Basic-Attack same-frame and active-interruption rules, then enter coarse `Blocking`.
+4. Continue with the previously approved `PlayerBlock` Startup/Hold/Release lifecycle, CrossFade presentation, movement permissions, facing assistance, and authored Perfect Guard Window one concept at a time.
+5. Keep Damage / Defense Resolution, Parry/Counter, Dodge, future skill policies, a general numeric Priority system, and framework abstractions deferred.

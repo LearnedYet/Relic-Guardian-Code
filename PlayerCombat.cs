@@ -140,7 +140,7 @@ public class PlayerCombat : MonoBehaviour
         isBasicAttackLungeActive = false;
         basicAttackLungeDistanceTraveled = 0f;
         currentAttackIndex = 0;
-        playerActionController.FinishBasicAttack();
+        playerActionController.FinishAttack();
     }
 
     private void Update()
@@ -150,13 +150,13 @@ public class PlayerCombat : MonoBehaviour
         if (attackRequested)
         {
             if (playerActionController.CurrentActionState == PlayerActionState.Free
-                && playerActionController.TryStartBasicAttack(playerMovement.IsGrounded))
+                && playerActionController.TryStartAttack(playerMovement.IsGrounded))
             {
                 isAttackQueued = false;
                 hasReachedComboTransitionPoint = false;
                 StartAttackStep(0);
             }
-            else if (playerActionController.CurrentActionState == PlayerActionState.BasicAttack
+            else if (playerActionController.CurrentActionState == PlayerActionState.Attacking
                 && isComboWindowOpen)
             {
                 isAttackQueued = true;
@@ -166,7 +166,7 @@ public class PlayerCombat : MonoBehaviour
                     TryStartQueuedAttack();
                 }
             }
-            else if (playerActionController.CurrentActionState == PlayerActionState.BasicAttack
+            else if (playerActionController.CurrentActionState == PlayerActionState.Attacking
                 && isRestartWindowOpen)
             {
                 isAttackQueued = false;

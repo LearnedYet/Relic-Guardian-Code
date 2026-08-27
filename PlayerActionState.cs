@@ -1,5 +1,5 @@
 public enum PlayerActionState
 {
     Free,
-    BasicAttack
+    Attacking
 }

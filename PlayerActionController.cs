@@ -19,20 +19,20 @@ public class PlayerActionController : MonoBehaviour
         get { return currentActionState == PlayerActionState.Free; }
     }
 
-    public bool TryStartBasicAttack(bool isGrounded)
+    public bool TryStartAttack(bool isGrounded)
     {
         if (currentActionState == PlayerActionState.Free && isGrounded)
         {
-            currentActionState = PlayerActionState.BasicAttack;
+            currentActionState = PlayerActionState.Attacking;
             return true;
         }
 
         return false;
     }
 
-    public void FinishBasicAttack()
+    public void FinishAttack()
     {
-        if (currentActionState == PlayerActionState.BasicAttack)
+        if (currentActionState == PlayerActionState.Attacking)
         {
             currentActionState = PlayerActionState.Free;
         }

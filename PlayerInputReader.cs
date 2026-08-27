@@ -9,6 +9,8 @@ public class PlayerInputReader : MonoBehaviour
     private bool attackRequested;
     private bool lockOnRequested;
     private bool isSprintHeld;
+    private bool blockRequested;
+    private bool isBlockHeld;
 
     public Vector2 MoveInput
     {

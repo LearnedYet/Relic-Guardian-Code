@@ -4,6 +4,41 @@ This file records daily progress, learned concepts, problems, and solutions.
 
 ---
 
+## 2026-08-27
+
+### Verified Attacking Coarse-State Migration
+
+- Completed the deferred opposite regressions before migration: locked Space did not Jump, unlocked grounded Space still completed Jump and landing, and locked four-step Attack returned correctly to locked locomotion.
+- Renamed the coarse `PlayerActionState.BasicAttack` member to `Attacking` through semantic symbol migration. Renamed `PlayerActionController.TryStartBasicAttack()` to `TryStartAttack()` and `FinishBasicAttack()` to `FinishAttack()` while leaving `PlayerCombat.currentAttackIndex`, all Attack1-4 flow data, Animator Trigger/Transitions, and Animation Events unchanged.
+- Standard Unity validation reported zero diagnostics for `PlayerActionState.cs`, `PlayerActionController.cs`, and `PlayerCombat.cs`.
+- Post-migration Play Mode checks passed for the unlocked four-step combo, movement/Jump recovery, the late-recovery Restart Window, and the locked four-step return. The final Console error/warning query was empty.
+- The first Basic Block version is now defined as held input with entry only from `Free` while grounded. A rejected press is not buffered, `PlayerActionController` remains the coarse-state owner, and a separate `PlayerBlock` will coordinate Block-specific lifetime.
+- Future same-frame Attack/Block acceptance must not depend on unspecified `MonoBehaviour.Update()` order. Define one minimal deterministic simultaneous-input rule when Block gameplay is connected; do not add a general numeric Priority system or Attack cancellation in the input-only step.
+- Process correction: a semantic C# rename should use IDE Rename Symbol with a reviewed reference set as one mechanical change. Splitting one symbol rename into manual line edits created unnecessary intermediate compiler errors.
+
+### Fixed First Guard / Block Lifecycle Design
+
+- Approved `PlayerActionController` as the continuing sole owner of coarse `Free / Attacking / Blocking` gameplay state. Future `Dodging / Staggered / Dead` remain planned; Guard Startup, Hold, and Release stay internal to a separate `PlayerBlock` rather than becoming global states.
+- Fixed the held-Guard lifecycle: short non-moving Startup, Hold when still held, and short non-moving Release before returning to `Free`. Releasing during Startup waits for an authored decision/exit point instead of immediately hard-cutting to `Free`.
+- Placed the future authored Perfect Guard Window inside Startup, but deferred successful Block / Perfect Guard damage resolution, Parry, and Counter behavior.
+- Fixed Hold movement rules: no Sprint; unlocked Hold reuses camera-relative movement and movement-facing; locked Hold reuses directional lock-on movement and target-facing; Guard never changes camera mode.
+- Fixed Startup targeting: unlocked Guard may choose one temporary facing-assist target from the forward total `120` degrees without writing `PlayerTargeting.CurrentTarget`; locked Guard directly uses the authoritative current target.
+- Fixed future ordinary Guard coverage to the player's forward total `180` degrees. The current damage APIs carry no attack-source direction, so source data and Damage / Defense Resolution remain a later separate design problem rather than a prebuilt Hit Framework.
+- Confirmed through actual-code inspection that the design fits existing ownership, but `CanMove` currently combines translation, Sprint, Shift-to-unlock, and locked facing. Guard movement integration must separate those permissions so Hold can move without Sprint/unlock and Startup can still request facing.
+- The isolated `SwordAnimationPack` cross-package preview was accepted as visually compatible with the current Katana set. `Block_Start`, `Block_Loop`, `Block_End`, and directional `Walk_Block_*` are approved candidates, but they are not integrated or runtime-verified in the main project. Apply Root Motion remains off.
+- The first implementation step remains input representation only. No gameplay script, Animator, Prefab, Scene, Damage, or Block runtime behavior was changed in this design checkpoint.
+
+### Revised Basic Attack versus Block Priority
+
+- Revised the earlier no-cancellation boundary: Block now has higher gameplay action priority than the current four-step Basic Attack and may interrupt that normal-attack chain throughout Startup, Hit Window, and Recovery.
+- Block wins the rare same-frame Free-state Block/Attack conflict. This remains one explicit deterministic rule rather than a general numeric Priority system.
+- Future skills keep explicit interruption restrictions; Block priority does not make every skill cancellable.
+- Cancellation before `OpenHitWindow()` prevents that step's damage, while damage already applied is never rolled back.
+- Before Block can use this transition, `PlayerCombat` needs one centralized cancellation cleanup for all attack windows, queue/transition state, targets, facing, lunge, travelled distance, and attack index.
+- This revision is approved design only. The next implementation concept remains Block input representation; no gameplay code or Unity asset was changed here.
+
+---
+
 ## 2026-08-24
 
 ### Completed Locked Locomotion, Free Sprint, and Camera Handoff Polish

@@ -36,7 +36,7 @@
 - `PlayerInputReader` stores a one-use Attack request through `OnAttack()` and exposes it through `ConsumeAttack()`.
 - `SwordAndShieldSlash` is integrated into the project-owned `RelicGuardianPlayer.controller`; the official Starter Assets Controller remains unmodified.
 - The `BasicAttack` Animator state uses playback speed `1.5`, and its Animation Event explicitly returns the action state to `Free`.
-- `PlayerActionController` is attached to the reusable player Prefab and owns the minimal `Free`/`BasicAttack` action state.
+- `PlayerActionController` is attached to the reusable player Prefab and owns the current `Free`/`Attacking` coarse action state.
 - Grounded Basic Attack, repeated-request rejection, explicit attack-end recovery, movement/turn/Jump blocking and recovery, gravity continuity, airborne request rejection without buffering, and Attack/Jump mutual exclusion were verified in Play Mode.
 - Same-frame Attack/Jump has no fixed winner because `PlayerCombat` and `PlayerMovement` both use script execution order `0`; the current checkpoint guarantees mutual exclusion only.
 - `PlayerCombat` owns the Basic Attack Hit Window through `isHitWindowOpen`, exposes it read-only through `IsHitWindowOpen`, and receives explicit open/close signals from the animation.
@@ -79,12 +79,12 @@
 - Basic Attack now uses a code-driven limited-distance startup lunge toward the same target saved at attack start. It does not retarget; if the target escapes the lunge and Hit Window range, the attack misses. `PlayerMovement` remains responsible for `CharacterController` displacement, and opposite in-range/no-target Play Mode tests passed.
 - The active local presentation is now `Attack_4Combo_1_Inplace`, and looping `Idle_ver_B` is the local equipped-weapon Idle override. The learner approved the final attack-to-idle transition after matching Root Transform Rotation; Apply Root Motion remains off.
 - `PlayerAttackData` now provides per-step damage, target range, lunge speed, and lunge distance. The Prefab has two configured prototype entries, and `PlayerCombat` advances through them with reusable indexed initialization.
-- The complete reusable indexed Attack1-4 combo is runtime-verified. Attack1-3 have Combo and Restart windows, all Animation Events carry step identity, all four Hit Windows apply one damage result, invalid timing is rejected, and Attack4 restores movement/Jump with clean final state. General Dodge/Block/recovery cancellation remains deferred.
+- The complete reusable indexed Attack1-4 combo is runtime-verified. Attack1-3 have Combo and Restart windows, all Animation Events carry step identity, all four Hit Windows apply one damage result, invalid timing is rejected, and Attack4 restores movement/Jump with clean final state. The first Guard design is fixed, but Block gameplay, Dodge, and general recovery cancellation remain unimplemented.
 - The first usable lock-on mode is implemented: `V` toggles nearest-target lock, inactive or `12m`-distant targets release automatically, locked movement faces the authoritative target, combat prioritizes it without fallback, and two Cinemachine cameras blend through priorities. The accepted prototype lock camera tracks `PlayerCameraRoot`, looks at a weighted `LockOnCameraTarget`, permits limited manual orbit, and recenters automatically.
 - Locked locomotion now uses the complete non-Root Katana `Jogging_8Way_verB` family through a project-owned 2D Blend Tree and tracked placeholder Clips. Player-local X/Z direction values and `0.1s` Animator damping drive the accepted eight-direction presentation.
 - Free locomotion uses the forward Katana jog for normal travel and `Run_ver_B` for held Sprint. Shift plus movement while locked cancels lock and enters free Sprint; Shift alone preserves lock. Root Motion remains disabled.
 - Free/lock camera handoff now uses incoming-position inheritance, outgoing-lock-camera freezing, and state-aware input-axis ownership. The learner accepted the final unlock response, free sensitivity, and blend time.
-- Both locomotion modes enter the same four-step Basic Attack chain. The first locked combat rule rejects Jump while locked; the final code compiles cleanly, with one opposite runtime input check deferred to the next session.
+- Both locomotion modes enter the same four-step Basic Attack chain. The first locked combat rule rejects Jump while locked; locked rejection, unlocked grounded acceptance, and the locked combo return have all passed the deferred runtime regressions.
 
 ---
 
@@ -92,9 +92,9 @@
 
 - [ ] Basic attack
   - [x] Integrate one grounded Basic Attack input and animation without modifying Starter Assets.
-  - [x] Add minimal player-action coordination with only `Free` and `BasicAttack`.
+  - [x] Add minimal player-action coordination, then migrate the coarse attack state from `BasicAttack` to `Attacking` without changing the four-step attack flow.
   - [x] Define `PlayerActionController` as the authoritative owner for the current player action.
-  - [x] While `BasicAttack` is active, block horizontal movement, turning, and Jump while gravity and grounded handling continue.
+  - [x] While `Attacking` is active, block horizontal movement, turning, and Jump while gravity and grounded handling continue.
   - [x] Define and verify an explicit attack-end Animation Event before returning to `Free`.
   - [x] Reject repeated and airborne grounded-Basic-Attack requests without buffering.
   - [x] Define and verify the Basic Attack Hit Window.
@@ -126,7 +126,7 @@
   - [x] Build and verify the reusable indexed attack flow and Combo Window with Attack1 and Attack2 before extending it to all four selected clips.
   - [x] Configure Attack3/4 data, tracked placeholders, local overrides, Animator states/transitions, and indexed Animation Events without adding copied combat-flow methods.
   - [x] Run and record the complete four-hit acceptance pass, including no-follow-up endings, four damage windows, Restart from Attack1-3, invalid timing, final recovery, and a clean Console/state snapshot.
-  - [ ] Design recovery cancellation together with the first real Dodge or Block action; separate action priority from authored cancel permission.
+  - [ ] Add one centralized cancellation-cleanup boundary for the current four-step Basic Attack, then let the first Guard implementation use it across Startup, Hit Window, and Recovery. Future skills retain their own explicit interruption restrictions.
 - [x] Enemy health
   - [x] Store prototype current health and receive a supplied damage amount.
   - [x] Define and runtime-verify the zero-health boundary and minimal inactive-object death response.
@@ -162,6 +162,29 @@
 ## Phase 4 - Advanced Combat
 
 - [ ] Basic Block
+  - [x] Choose held input, grounded `Free` entry, rejected-request non-buffering, and separate `PlayerBlock` coordination.
+  - [x] Define Block as higher action priority than the current four-step Basic Attack: Block wins their same-frame Free-state conflict and may interrupt an active Basic Attack throughout Startup, Hit Window, and Recovery.
+  - [x] Keep future skill interruption restrictions explicit. Higher Block priority does not override a skill that has no legal Block-cancel transition.
+  - [x] Define cancellation damage behavior: cancellation before `OpenHitWindow()` prevents damage; damage already applied is never rolled back.
+  - [x] Keep `Blocking` as one coarse `PlayerActionState` while `PlayerBlock` owns internal Startup, Hold, and Release phases; Animator remains presentation-only.
+  - [x] Define Startup as short and non-moving with required facing correction, Hold as movable but unable to Sprint, and Release as short non-moving recovery.
+  - [x] Define early Startup release as a request to enter Release only at an authored decision/exit point, not an immediate hard cut to `Free`.
+  - [x] Place the future Perfect Guard Window inside Startup and prefer authored Animation Events, without implementing damage resolution yet.
+  - [x] Preserve existing free and lock-on movement/facing behavior during Hold; Guard never changes camera mode.
+  - [x] Define unlocked Startup facing assistance as one temporary target search in the forward `120` degrees (`+/-60` degrees) without changing `PlayerTargeting.CurrentTarget`; locked Startup reuses the current authoritative target.
+  - [x] Define future ordinary Guard coverage as the forward `180` degrees (`+/-90` degrees), while deferring attack-source data and Damage / Defense Resolution until that feature begins.
+  - [x] Accept the isolated `SwordAnimationPack` Block and Block-walk presentation as visually compatible with the current Katana set; main-project integration and runtime verification remain pending, with Root Motion off.
+  - [x] Establish that simultaneous Attack/Block acceptance must not depend on `MonoBehaviour.Update()` order; their fixed first-version result is Block winning over Basic Attack.
+  - [ ] Add only Block input representation: a `Pass Through` action, persistent held state, and a one-use press edge so rejection is not buffered; do this before adding the `Blocking` state or animation.
+  - [ ] Add and verify centralized Basic Attack cancellation cleanup for windows, queue, targets, facing, lunge, travelled distance, and attack index.
+  - [ ] Connect Block-over-Basic-Attack priority and the minimum `Free / Attacking -> Blocking -> Free` coarse transitions; separately fix Block-versus-Jump and accepted-press translation timing without a numeric Priority system.
+  - [ ] Add `PlayerBlock` Startup/Hold/Release lifetime and authored decision/exit points without damage behavior.
+  - [ ] Present the lifecycle through code-driven `CrossFadeInFixedTime()` using `Block_Start`, `Block_Loop`, and `Block_End`; do not migrate the existing four-step combo.
+  - [ ] Add phase-specific translation and Sprint permission while preserving existing unlocked and locked Hold movement/facing behavior.
+  - [ ] Add the one-shot Startup facing assistance without mutating the authoritative lock target.
+  - [ ] Add the authored Perfect Guard Window lifetime without successful-Guard resolution.
+  - [ ] Run focused lifecycle, movement, camera-mode, early-release, and Console regressions.
+  - [ ] Later design and implement the forward-arc Damage / Defense Resolution boundary without prebuilding a general Hit Framework.
 - [ ] Dodge
 - [ ] Perfect Dodge
 - [x] Lock-on (first usable version)
