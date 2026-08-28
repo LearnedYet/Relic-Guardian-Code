@@ -6,7 +6,6 @@ public class PlayerCombat : MonoBehaviour
     [SerializeField] private LayerMask hitTargetLayers;
 
     private PlayerAnimator playerAnimator;
-    private PlayerInputReader playerInputReader;
     private PlayerActionController playerActionController;
     private PlayerMovement playerMovement;
     private PlayerTargeting playerTargeting;
@@ -40,13 +39,13 @@ public class PlayerCombat : MonoBehaviour
 
     private bool IsCurrentAttackStep(int attackIndex)
     {
-        return attackIndex == currentAttackIndex;
+        return playerActionController.CurrentActionState == PlayerActionState.Attacking
+            && attackIndex == currentAttackIndex;
     }
 
     private void Awake()
     {
         playerAnimator = GetComponent<PlayerAnimator>();
-        playerInputReader = GetComponent<PlayerInputReader>();
         playerActionController = GetComponent<PlayerActionController>();
         playerMovement = GetComponent<PlayerMovement>();
         playerTargeting = GetComponent<PlayerTargeting>();
@@ -129,6 +128,22 @@ public class PlayerCombat : MonoBehaviour
             return;
         }
 
+        EndAttack();
+    }
+
+    public bool TryCancelAttack()
+    {
+        if (playerActionController.CurrentActionState != PlayerActionState.Attacking)
+        {
+            return false;
+        }
+
+        EndAttack();
+        return true;
+    }
+
+    private void EndAttack()
+    {
         isHitWindowOpen = false;
         isComboWindowOpen = false;
         isRestartWindowOpen = false;
@@ -141,39 +156,46 @@ public class PlayerCombat : MonoBehaviour
         basicAttackLungeDistanceTraveled = 0f;
         currentAttackIndex = 0;
         playerActionController.FinishAttack();
+        playerAnimator.BeginSoftRecovery();
+    }
+
+    public bool TryHandleAttackRequest()
+    {
+        if (playerActionController.CurrentActionState == PlayerActionState.Free
+            && playerActionController.TryStartAttack(playerMovement.IsGrounded))
+        {
+            isAttackQueued = false;
+            hasReachedComboTransitionPoint = false;
+            StartAttackStep(0);
+            return true;
+        }
+        else if (playerActionController.CurrentActionState == PlayerActionState.Attacking
+            && isComboWindowOpen)
+        {
+            isAttackQueued = true;
+
+            if (hasReachedComboTransitionPoint)
+            {
+                TryStartQueuedAttack();
+            }
+
+            return true;
+        }
+        else if (playerActionController.CurrentActionState == PlayerActionState.Attacking
+            && isRestartWindowOpen)
+        {
+            isAttackQueued = false;
+            hasReachedComboTransitionPoint = false;
+            StartAttackStep(0);
+            return true;
+        }
+
+        return false;
     }
 
     private void Update()
     {
-        bool attackRequested = playerInputReader.ConsumeAttack();
-
-        if (attackRequested)
-        {
-            if (playerActionController.CurrentActionState == PlayerActionState.Free
-                && playerActionController.TryStartAttack(playerMovement.IsGrounded))
-            {
-                isAttackQueued = false;
-                hasReachedComboTransitionPoint = false;
-                StartAttackStep(0);
-            }
-            else if (playerActionController.CurrentActionState == PlayerActionState.Attacking
-                && isComboWindowOpen)
-            {
-                isAttackQueued = true;
-
-                if (hasReachedComboTransitionPoint)
-                {
-                    TryStartQueuedAttack();
-                }
-            }
-            else if (playerActionController.CurrentActionState == PlayerActionState.Attacking
-                && isRestartWindowOpen)
-            {
-                isAttackQueued = false;
-                hasReachedComboTransitionPoint = false;
-                StartAttackStep(0);
-            }
-        }
+        playerActionController.ResolveActionRequests();
 
         if (isAttackFacingActive && currentAttackTarget != null)
         {

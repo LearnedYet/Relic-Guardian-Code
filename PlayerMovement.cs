@@ -50,6 +50,14 @@ public class PlayerMovement : MonoBehaviour
         get { return currentLocalMoveDirection; }
     }
 
+    public bool CanStartJump
+    {
+        get
+        {
+            return playerActionController.CanJump && !playerTargeting.IsLockedOn && characterController.isGrounded;
+        }
+    }
+
     private void Awake()
     {
         characterController = GetComponent<CharacterController>();
@@ -60,6 +68,8 @@ public class PlayerMovement : MonoBehaviour
 
     private void Update()
     {
+        playerActionController.ResolveActionRequests();
+
         Vector2 input = inputReader.MoveInput;
 
         if (!playerActionController.CanMove)
@@ -85,16 +95,12 @@ public class PlayerMovement : MonoBehaviour
         Vector3 cameraRight = cameraTransform.right;
         cameraRight.y = 0f;
         cameraRight.Normalize();
-        bool jumpRequested = inputReader.ConsumeJump();
         Vector3 moveDirection = (cameraRight * input.x + cameraForward * input.y);
         currentLocalMoveDirection = transform.InverseTransformDirection(moveDirection);
         currentSpeed = moveDirection.magnitude * selectedMoveSpeed;
         currentMovementStrength = currentLocalMoveDirection.magnitude;
         verticalVelocity += gravity * Time.deltaTime;
-        if (jumpRequested &&
-            playerActionController.CanJump &&
-            !playerTargeting.IsLockedOn &&
-            characterController.isGrounded)
+        if (playerActionController.WasJumpAcceptedThisFrame)
         {
             verticalVelocity = jumpSpeed;
             isJumping = true;

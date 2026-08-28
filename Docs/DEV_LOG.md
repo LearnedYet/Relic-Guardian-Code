@@ -4,6 +4,33 @@ This file records daily progress, learned concepts, problems, and solutions.
 
 ---
 
+## 2026-08-28
+
+### Completed Centralized Action Arbitration and First Guard Lifecycle
+
+- Moved Block, Attack, and Jump one-use request consumption into `PlayerActionController.ResolveActionRequests()`. A `Time.frameCount` gate makes repeated calls idempotent and removes `MonoBehaviour.Update()` ordering from the accepted result.
+- Implemented the fixed first-version Block -> Attack -> Jump decision order. Grounded Block wins same-frame Free conflicts, cancels an active Basic Attack through `TryCancelAttack()`, defeats same-frame combo/restart input, and suppresses accepted-frame horizontal translation. Rejected requests are consumed without buffering.
+- Added the coarse `Blocking` state and a separate `PlayerBlock` component. `PlayerBlock` owns internal Startup, Hold, and Release phases plus the `StartupDecisionPoint()` and `FinishRelease()` Animation Event boundaries.
+- Added code-driven `Block_Start`, `Block_Loop`, and `Block_End` presentation. Root Motion remains off, and gameplay permission stays outside Animator.
+- Runtime checks accepted grounded entry, early Startup release, held Hold, Release return, Attack cancellation before/after the Hit Window, stale-event rejection, same-frame results, locked/unlocked return, and a clean Console.
+
+### Stabilized Guard Rotation, Exit Blending, and Soft Recovery
+
+- Copied the local Guard Clips into the ignored `Assets/LocalLicensed/SwordAnimationPack/Guard/` boundary and retained the Animator state names in the project-owned Controller. The local presentation uses `Block_Start.anim`, `Block_Loop.anim`, and `Block_End_NoRootTurn.anim`.
+- Corrected the Guard Clip facing mismatch by matching the tested root-rotation offsets to `-66`. The learner verified that Guard no longer turns away at Start and turns back at End.
+- Kept normal Block End -> Locomotion presentation at the accepted `0.45s` blend while allowing movement or an accepted action to interrupt the visual tail with the separate short interruption blend.
+- Defined soft recovery as the authored interval after a gameplay `Finish...` Event and before the visual Clip ends. It is presentation state only; old damage, target, lunge, and action ownership are already closed.
+- Added the soft-recovery lifecycle to `PlayerAnimator`, including a transition-start observation flag so the state is not cleared before Unity reports the Animator transition. Direct soft-recovery Attack entry removed the visible Guard-exit turn-before-attack delay.
+- Moved the temporary body-yaw audit to `OnAnimatorIK()` after Unity 6 warned that `Animator.bodyRotation` must not be read every frame in `Update()`. The audit code remains for later animation testing without normal Console spam.
+- Extended soft recovery to Attack through the existing `FinishAttack()` -> Clip-end interval. No Attack-specific exit duration, numeric priority, request queue, or general recovery manager was added.
+- Moved the ignored local Attack4 `FinishAttack(3)` Event from normalized `0.9698795` to `0.59016937`, leaving its Hit Window Events unchanged. The learner verified no-input completion, movement/Attack/Block interruption, full-combo recovery, and a clean Console.
+
+### Current Boundary
+
+- The stationary Guard lifecycle and soft-recovery presentation are complete for this checkpoint.
+- Phase-aware Guard Hold movement, Startup facing assistance, Perfect Guard, forward-arc defense, Damage / Defense Resolution, Block Hit, Guard Break, Parry/Counter, directional Guard movement presentation, and Dodge remain separate future work.
+- Prefab and Scene remain protected mixed local assets. Licensed Guard and Katana Clip/Event changes remain ignored local-only content and are documented rather than uploaded.
+
 ## 2026-08-27
 
 ### Verified Attacking Coarse-State Migration
@@ -36,6 +63,27 @@ This file records daily progress, learned concepts, problems, and solutions.
 - Cancellation before `OpenHitWindow()` prevents that step's damage, while damage already applied is never rolled back.
 - Before Block can use this transition, `PlayerCombat` needs one centralized cancellation cleanup for all attack windows, queue/transition state, targets, facing, lunge, travelled distance, and attack index.
 - This revision is approved design only. The next implementation concept remains Block input representation; no gameplay code or Unity asset was changed here.
+
+### Completed Block Input Representation and Basic Attack Cancellation Boundary
+
+- Added the held Block input representation in `PlayerInputReader`: persistent `isBlockHeld`, one-use `blockRequested`, read-only `IsBlockHeld`, press/release `OnBlock(InputValue)`, and `ConsumeBlock()`.
+- Added one `Pass Through` `Block` action with Control Type `Button` and the single `<Mouse>/rightButton` binding. Removed an accidental empty binding. Play Mode press/release produced no Console errors or warnings; no Block gameplay response is connected yet.
+- Refactored `PlayerCombat.FinishAttack(int)` to keep its step-identity guard and delegate all termination state clearing to `EndAttack()`.
+- Added `TryCancelAttack()` as the current Basic Attack's explicit cancellation seam. It rejects outside `Attacking`, otherwise runs the same cleanup before returning success.
+- Natural unlocked and locked four-step endings still restored movement and Jump. A temporary context-menu test produced `False -> True -> False` across Free, active cancellation, and the immediately repeated call; movement recovered. The temporary test hook was deleted.
+
+### Approved One-Point Block / Attack / Jump Arbitration
+
+- Fixed all current simultaneous-input results: Block wins over Attack and Jump from grounded `Free`, stops horizontal translation on the accepted press frame, and beats a same-frame combo/restart Attack while cancelling an active Basic Attack. Rejected Block requests are consumed without buffering.
+- Chose existing `PlayerActionController` as the unique cross-action decision point. It will consume Block, Attack, and Jump once per frame and dispatch accepted commands; `PlayerCombat`, `PlayerMovement`, and future `PlayerBlock` will not inspect one another's raw requests or implement local priority rules.
+- Approved a minimal idempotent per-frame resolution gate so every relevant behavior can ensure arbitration has happened before movement/lunge/phase work without relying on `MonoBehaviour.Update()` or Script Execution Order.
+- Rejected `HasBlockRequest`, a numeric Priority system, a general Request Queue, a new large Coordinator, and distributed request peeking.
+
+### Clarified Local and GitHub Git Histories
+
+- Confirmed the local full-project repository remains at `4719b71 Record Guard design and attacking migration` on `main`.
+- Recorded `5db2fed Sync Guard planning and ChatGPT project context` as the latest confirmed synchronization commit in the separate `LearnedYet/Relic-Guardian-Code` GitHub code/document mirror.
+- These hashes belong to different histories and must not be treated as one ancestry. No local Git state, staging, commit, push, or remote history was changed.
 
 ---
 

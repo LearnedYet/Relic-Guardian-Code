@@ -36,6 +36,14 @@ public class PlayerInputReader : MonoBehaviour
         }
     }
 
+    public bool IsBlockHeld
+    {
+        get
+        {
+            return isBlockHeld;
+        }
+    }
+
     public void OnMove(InputValue value)
     {
         moveInput = value.Get<Vector2>();
@@ -85,5 +93,22 @@ public class PlayerInputReader : MonoBehaviour
     public void OnSprint(InputValue value)
     {
         isSprintHeld = value.isPressed;
+    }
+
+    public void OnBlock(InputValue value)
+    {
+        isBlockHeld = value.isPressed;
+
+        if (isBlockHeld)
+        {
+            blockRequested = true;
+        }
+    }
+
+    public bool ConsumeBlock()
+    {
+        bool wasBlockRequested = blockRequested;
+        blockRequested = false;
+        return wasBlockRequested;
     }
 }

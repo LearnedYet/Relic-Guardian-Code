@@ -85,6 +85,11 @@
 - Free locomotion uses the forward Katana jog for normal travel and `Run_ver_B` for held Sprint. Shift plus movement while locked cancels lock and enters free Sprint; Shift alone preserves lock. Root Motion remains disabled.
 - Free/lock camera handoff now uses incoming-position inheritance, outgoing-lock-camera freezing, and state-aware input-axis ownership. The learner accepted the final unlock response, free sensitivity, and blend time.
 - Both locomotion modes enter the same four-step Basic Attack chain. The first locked combat rule rejects Jump while locked; locked rejection, unlocked grounded acceptance, and the locked combo return have all passed the deferred runtime regressions.
+- Block input, centralized Block/Attack/Jump arbitration, the coarse `Blocking` state, and the stationary `PlayerBlock` Startup/Hold/Release lifecycle are implemented and runtime-verified.
+- `PlayerCombat` routes natural finish and Block cancellation through one `EndAttack()` cleanup boundary. Stale Events are rejected after cancellation.
+- `PlayerAnimator` presents Guard through code-driven `Block_Start`, `Block_Loop`, and `Block_End` states and implements interruptible soft recovery for Guard and Attack visual tails.
+- Guard rotation and normal `0.45s` exit blending are accepted. Attack4's ignored local `FinishAttack(3)` Event was moved earlier to create a tested soft tail.
+- Phase-aware Guard Hold movement, facing assistance, Perfect Guard, and Damage / Defense Resolution remain pending.
 
 ---
 
@@ -126,7 +131,7 @@
   - [x] Build and verify the reusable indexed attack flow and Combo Window with Attack1 and Attack2 before extending it to all four selected clips.
   - [x] Configure Attack3/4 data, tracked placeholders, local overrides, Animator states/transitions, and indexed Animation Events without adding copied combat-flow methods.
   - [x] Run and record the complete four-hit acceptance pass, including no-follow-up endings, four damage windows, Restart from Attack1-3, invalid timing, final recovery, and a clean Console/state snapshot.
-  - [ ] Add one centralized cancellation-cleanup boundary for the current four-step Basic Attack, then let the first Guard implementation use it across Startup, Hit Window, and Recovery. Future skills retain their own explicit interruption restrictions.
+  - [x] Add and independently verify one centralized cancellation-cleanup boundary for the current four-step Basic Attack. Natural finish and `TryCancelAttack()` share `EndAttack()`; future skills retain explicit interruption restrictions.
 - [x] Enemy health
   - [x] Store prototype current health and receive a supplied damage amount.
   - [x] Define and runtime-verify the zero-health boundary and minimal inactive-object death response.
@@ -175,11 +180,14 @@
   - [x] Define future ordinary Guard coverage as the forward `180` degrees (`+/-90` degrees), while deferring attack-source data and Damage / Defense Resolution until that feature begins.
   - [x] Accept the isolated `SwordAnimationPack` Block and Block-walk presentation as visually compatible with the current Katana set; main-project integration and runtime verification remain pending, with Root Motion off.
   - [x] Establish that simultaneous Attack/Block acceptance must not depend on `MonoBehaviour.Update()` order; their fixed first-version result is Block winning over Basic Attack.
-  - [ ] Add only Block input representation: a `Pass Through` action, persistent held state, and a one-use press edge so rejection is not buffered; do this before adding the `Blocking` state or animation.
-  - [ ] Add and verify centralized Basic Attack cancellation cleanup for windows, queue, targets, facing, lunge, travelled distance, and attack index.
-  - [ ] Connect Block-over-Basic-Attack priority and the minimum `Free / Attacking -> Blocking -> Free` coarse transitions; separately fix Block-versus-Jump and accepted-press translation timing without a numeric Priority system.
-  - [ ] Add `PlayerBlock` Startup/Hold/Release lifetime and authored decision/exit points without damage behavior.
-  - [ ] Present the lifecycle through code-driven `CrossFadeInFixedTime()` using `Block_Start`, `Block_Loop`, and `Block_End`; do not migrate the existing four-step combo.
+  - [x] Add only Block input representation: a `Pass Through` action, persistent held state, a one-use press edge, and one mouse-right-button binding so rejection is not buffered.
+  - [x] Add and verify centralized Basic Attack cancellation cleanup for windows, queue, targets, facing, lunge, travelled distance, and attack index.
+  - [x] Approve `PlayerActionController` as the unique Block/Attack/Jump decision point, with one idempotent resolution per frame and no `HasBlockRequest`, distributed request peeking, Script Execution Order dependency, numeric Priority system, or general Request Queue.
+  - [x] Migrate Attack and Jump raw-request consumption into the central one-per-frame decision point and regress the existing attack, combo, restart, Jump, movement, lunge, and Console behavior.
+  - [x] Connect the six approved deterministic Block results and the minimum `Free / Attacking -> Blocking -> Free` coarse transitions through the central arbiter.
+  - [x] Add `PlayerBlock` Startup/Hold/Release lifetime and authored decision/exit points without damage behavior.
+  - [x] Present the lifecycle through code-driven `CrossFadeInFixedTime()` using `Block_Start`, `Block_Loop`, and `Block_End`; preserve Root Motion off and the existing four-step combo.
+  - [x] Add interruptible Guard/Attack soft recovery after gameplay Finish Events while preserving natural visual tails when no follow-up is accepted.
   - [ ] Add phase-specific translation and Sprint permission while preserving existing unlocked and locked Hold movement/facing behavior.
   - [ ] Add the one-shot Startup facing assistance without mutating the authoritative lock target.
   - [ ] Add the authored Perfect Guard Window lifetime without successful-Guard resolution.
