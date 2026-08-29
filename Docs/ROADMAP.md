@@ -85,11 +85,11 @@
 - Free locomotion uses the forward Katana jog for normal travel and `Run_ver_B` for held Sprint. Shift plus movement while locked cancels lock and enters free Sprint; Shift alone preserves lock. Root Motion remains disabled.
 - Free/lock camera handoff now uses incoming-position inheritance, outgoing-lock-camera freezing, and state-aware input-axis ownership. The learner accepted the final unlock response, free sensitivity, and blend time.
 - Both locomotion modes enter the same four-step Basic Attack chain. The first locked combat rule rejects Jump while locked; locked rejection, unlocked grounded acceptance, and the locked combo return have all passed the deferred runtime regressions.
-- Block input, centralized Block/Attack/Jump arbitration, the coarse `Blocking` state, and the stationary `PlayerBlock` Startup/Hold/Release lifecycle are implemented and runtime-verified.
+- Block input, centralized Block/Attack/Jump arbitration, the coarse `Blocking` state, and the phase-aware `PlayerBlock` Startup/Hold/Release lifecycle are implemented and runtime-verified.
 - `PlayerCombat` routes natural finish and Block cancellation through one `EndAttack()` cleanup boundary. Stale Events are rejected after cancellation.
 - `PlayerAnimator` presents Guard through code-driven `Block_Start`, `Block_Loop`, and `Block_End` states and implements interruptible soft recovery for Guard and Attack visual tails.
 - Guard rotation and normal `0.45s` exit blending are accepted. Attack4's ignored local `FinishAttack(3)` Event was moved earlier to create a tested soft tail.
-- Phase-aware Guard Hold movement, facing assistance, Perfect Guard, and Damage / Defense Resolution remain pending.
+- Guard Hold unlocked Idle/Forward, locked 8-Way, and active-Hold Lock-On presentation refresh are runtime-verified. Startup facing assistance, Perfect Guard, and Damage / Defense Resolution remain pending.
 
 ---
 
@@ -188,10 +188,17 @@
   - [x] Add `PlayerBlock` Startup/Hold/Release lifetime and authored decision/exit points without damage behavior.
   - [x] Present the lifecycle through code-driven `CrossFadeInFixedTime()` using `Block_Start`, `Block_Loop`, and `Block_End`; preserve Root Motion off and the existing four-step combo.
   - [x] Add interruptible Guard/Attack soft recovery after gameplay Finish Events while preserving natural visual tails when no follow-up is accepted.
-  - [ ] Add phase-specific translation and Sprint permission while preserving existing unlocked and locked Hold movement/facing behavior.
+  - [x] Add phase-specific translation and Sprint permission while preserving existing unlocked and locked Hold movement/facing behavior.
+  - [x] Add unlocked Guard Hold Idle/Forward presentation without creating an eight-way unlocked strafe mode.
+  - [x] Add locked Guard Hold 8-Way presentation using the existing `MoveX` / `MoveZ` parameters.
+  - [x] Regress unlocked/locked Hold movement, Release, Sprint rejection, Lock-On retention, and the Console after locomotion presentation integration.
+  - [x] Audit `Turn_Block_90_L/R` and `Turn_Block_180_L/R` Loop, Root Transform Rotation, direction, and P09 presentation.
+  - [x] Run and then cleanly remove a minimum unlocked-Hold Turn presentation experiment after runtime exposed its mismatch with interruptible smooth movement-facing.
+  - [ ] Reconsider fixed-angle Turn Clips only if a later turn-in-place design defines committed facing, input interruption, and Transform/animation synchronization.
+  - [x] Refresh Hold presentation once when Lock-On mode changes during an already-active Hold.
   - [ ] Add the one-shot Startup facing assistance without mutating the authoritative lock target.
   - [ ] Add the authored Perfect Guard Window lifetime without successful-Guard resolution.
-  - [ ] Run focused lifecycle, movement, camera-mode, early-release, and Console regressions.
+  - [x] Run focused lifecycle, movement, camera-mode, early-release, and Console regressions.
   - [ ] Later design and implement the forward-arc Damage / Defense Resolution boundary without prebuilding a general Hit Framework.
 - [ ] Dodge
 - [ ] Perfect Dodge

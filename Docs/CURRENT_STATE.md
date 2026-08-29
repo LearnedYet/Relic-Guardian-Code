@@ -1,6 +1,6 @@
 # Relic Guardian Current State
 
-Last reviewed against the local workspace: 2026-08-28
+Last reviewed against the local workspace: 2026-08-29
 
 This is the short current-state entry point. Actual code, Unity assets, current Editor state, and Git status remain authoritative when they conflict with this file.
 
@@ -47,11 +47,13 @@ Their local wiring includes licensed presentation and the current Scene-level `P
 - `PlayerBlock` owns the internal `Startup`, `Hold`, and `Release` phases while `PlayerActionController` owns the single coarse `Blocking` state.
 - Grounded Block enters from `Free`. It can also cancel the current four-step Basic Attack before entering `Blocking`.
 - `BeginBlock()` starts Startup. `StartupDecisionPoint()` enters Hold if Block is still held or Release if it was released. Releasing during Hold enters Release. `FinishRelease()` returns to `Free`.
-- `PlayerAnimator` presents `Block_Start`, `Block_Loop`, and `Block_End` using code-driven `CrossFadeInFixedTime()`; there are no Animator-authored gameplay permission decisions.
+- `PlayerAnimator` presents `Block_Start`, Hold, and `Block_End` using code-driven `CrossFadeInFixedTime()`; `PlayBlockHold()` selects unlocked `Guard_Free_Locomotion` or locked `Guard_Locked_Locomotion` from `PlayerTargeting.IsLockedOn`. During an active Hold, two presentation-only bools detect a Lock-On mode change and refresh exactly once. There are no Animator-authored gameplay permission decisions.
 - The local copied Clips are `Block_Start.anim`, `Block_Loop.anim`, and `Block_End_NoRootTurn.anim`; the Animator state remains named `Block_End`. Their facing correction was runtime-accepted after matching the Guard root-rotation offsets at `-66`.
 - Local Animation Events are `StartupDecisionPoint` at `0.4s` in `Block_Start` and `FinishRelease` at `0.75s` in `Block_End_NoRootTurn`.
 - The current Scene tuning is Guard crossfade `0.03s`, normal Block End -> Locomotion exit `0.45s`, and soft-recovery interruption crossfade `0.05s`.
-- Apply Root Motion remains disabled. The current Guard lifecycle is stationary because `CanMove` still allows ordinary translation only in `Free`.
+- Apply Root Motion remains disabled. Guard Startup and Release remain stationary, while held Hold now reuses ordinary movement and facing through a phase-aware permission.
+- `PlayerBlock.AllowsMovement` exposes only the internal Hold permission and also requires the Block input to remain held, so release closes movement without depending on `MonoBehaviour.Update()` order.
+- `PlayerActionController` keeps `CanMove` and `CanSprint` separate. Guard Hold can move at normal speed, while Sprint and its locked-mode `CancelLockOn()` path remain available only in `Free`.
 
 ## Implemented Soft Recovery
 
@@ -75,20 +77,28 @@ The learner reported the final combined behavior as normal on 2026-08-28:
 - Movement and new Attack interrupt soft recovery; the earlier Guard-exit turn-before-attack symptom is gone.
 - Single attacks, the full four-step combo, Attack4 ending, movement/restart, Block cancellation, locked/unlocked return, and Console checks passed.
 - Attack4's earlier `FinishAttack(3)` creates a usable soft tail without observed damage or input regressions.
+- Phase-aware Guard movement passed the learner's focused Play Mode checks: Startup/Release stay stationary, unlocked Hold keeps camera-relative movement and movement-facing, locked Hold keeps directional movement and target-facing, and Block-held Sprint neither accelerates nor cancels Lock-On.
+- Free Sprint, locked Sprint cancellation, Attack movement blocking, and the Unity Console also passed the focused regression.
+- Unlocked Guard Hold Idle/Forward presentation passed the learner's Play Mode check: stationary Hold uses Guard Idle, movement uses the forward Guard Walk while code-owned Transform turning remains active, Release returns normally, held Sprint stays rejected, and the Console remains clean.
+- Locked Guard Hold 8-Way and the combined presentation regression passed the learner's Play Mode check: all eight directions, target-facing, Release, Sprint rejection, Lock-On retention, unlocked fallback behavior, and the Console were reported normal. The Forward Guard Walk angle was tuned locally to `-36` and accepted as basically correct on P09.
+- A scoped unlocked-Hold Turn presentation experiment was removed after P09 runtime showed fixed-angle one-shot Clips conflict with the current interruptible smooth Transform turning. The learner's post-cleanup regression passed unlocked smooth turning, locked eight-way movement, Release, Sprint rejection, and a clean Console.
+- Hold mode-change refresh passed the learner's Play Mode checks: unlocked -> locked -> unlocked switched the correct Blend Tree during one continuous Hold, stable modes did not repeatedly CrossFade, Startup and Release were not skipped, Sprint remained rejected, and the Console stayed clean.
 
-The current workspace source also previously compiled with zero errors and zero warnings after the soft-recovery lifecycle correction. No gameplay file changed during this documentation checkpoint.
+The current workspace source compiled through `Assembly-CSharp.csproj` with zero errors and zero warnings after the phase-aware permission changes. Runtime results above are learner-reported Play Mode verification.
 
 ## Deferred Guard Work
 
-- Phase-aware Hold movement is not implemented. The intended later rule remains: unlocked Hold reuses camera-relative movement and movement-facing; locked Hold reuses lock-on directional movement and target-facing; Sprint stays disabled while Blocking.
 - Startup facing assistance is not implemented. The approved later rule remains locked authoritative target or one temporary unlocked target within forward `120` degrees without mutating `PlayerTargeting.CurrentTarget`.
 - Perfect Guard Window data, ordinary forward `180`-degree Guard coverage, attack-source direction, Damage / Defense Resolution, Block Hit, Guard Break, Parry, and Counter remain unimplemented.
-- Directional `Walk_Block_*` presentation remains deferred until phase-aware Hold movement exists.
+- Unlocked Guard Hold presentation uses a `Speed`-driven 1D `Guard_Free_Locomotion` Blend Tree with Guard Idle at `0` and Guard Forward at `3`. Locked Hold uses `Guard_Locked_Locomotion`, a 2D Simple Directional Blend Tree with Guard Idle plus eight directions driven by the existing `MoveX` / `MoveZ`.
+- `PlayerAnimator` now tracks whether Hold presentation is active and which Lock-On variant it last selected. It calls `PlayBlockHold()` again only when the authoritative Lock-On mode changes during that active presentation.
+- The locally accepted Forward Guard Walk uses `Orientation Offset Y = -36`; the other seven directional Walk Clips retain their current local settings pending individual Turn/direction audits.
+- `Turn_Block_90_L/R` and `Turn_Block_180_L/R` remain copied under ignored `Assets/LocalLicensed/` with Loop Time disabled. Audit confirmed authored RootQ rotation of approximately `+/-87` and `+/-180` degrees. A minimum presentation lifecycle was tested, then fully removed from the scripts and Animator Controller because short or changing movement input does not commit the code-owned Transform to completing a fixed-angle turn. Reconsider these Clips only with a deliberately different turn-in-place/input contract.
 - Dodge remains after the next Guard gameplay concept. Do not add a numeric Priority system, general Request Queue, large Coordinator, Ability Framework, hierarchical FSM, or pre-emptive `PlayerMotor`.
 
 ## Exact Next Development Step
 
-Add only phase-aware Guard movement permission: Startup and Release remain stationary; Hold allows ordinary movement but never Sprint. Preserve camera-relative movement and movement-facing while unlocked, and preserve directional movement plus target-facing while locked. Keep this permission change separate from directional Guard Clips, Startup facing assistance, Perfect Guard, Damage / Defense Resolution, Parry/Counter, Guard Break, and Dodge.
+Add only one-shot Startup facing assistance. Locked Startup reuses the authoritative `PlayerTargeting.CurrentTarget`; unlocked Startup selects one temporary target inside the forward total `120` degrees (`+/-60`) without mutating `CurrentTarget`. Keep Perfect Guard, Damage / Defense Resolution, Parry/Counter, Guard Break, Dodge, and any future turn-in-place redesign separate.
 
 ## Files to Read Next
 

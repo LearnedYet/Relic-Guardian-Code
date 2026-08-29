@@ -77,14 +77,14 @@ public class PlayerMovement : MonoBehaviour
             input = Vector2.zero;
         }
 
-        if (playerActionController.CanMove && inputReader.IsSprintHeld && playerTargeting.IsLockedOn && input != Vector2.zero)
+        if (playerActionController.CanSprint && inputReader.IsSprintHeld && playerTargeting.IsLockedOn && input != Vector2.zero)
         {
             playerTargeting.CancelLockOn();
         }
 
         float selectedMoveSpeed = moveSpeed;
 
-        if (playerActionController.CanMove && inputReader.IsSprintHeld && !playerTargeting.IsLockedOn)
+        if (playerActionController.CanSprint && inputReader.IsSprintHeld && !playerTargeting.IsLockedOn)
         {
             selectedMoveSpeed = sprintSpeed;
         }

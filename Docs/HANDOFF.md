@@ -788,3 +788,181 @@ This section supersedes the earlier Guard implementation order and all statement
 - Local full-project and GitHub mirror histories remain separate. Their current tips must be read within their own histories; do not merge or pull mirror `main` into the full Unity project.
 - Commit only the explicit project-owned code, Input Actions, Animator Controller, and Docs allowlist. Keep the protected Prefab and Scene unstaged.
 - `Assets/LocalLicensed/` and all licensed Clip/Event tuning remain ignored and must never be uploaded.
+
+## 2026-08-28 Phase-Aware Guard Hold Movement Handoff (Latest Current State)
+
+This section supersedes the previous final section's statement that Guard remains stationary through all three phases. Earlier Handoff sections remain chronological history.
+
+### Implemented Permission Boundary
+
+- `PlayerBlock.AllowsMovement` exposes a read-only internal permission without exposing `BlockPhase`. It is true only while the phase is Hold and Block remains held.
+- The held-input condition makes movement close immediately on release even if `PlayerMovement.Update()` runs before `PlayerBlock.Update()` on that frame.
+- `PlayerActionController.CanMove` now accepts `Free` or `Blocking` with `playerBlock.AllowsMovement`. `CanSprint` remains true only in `Free`.
+- `PlayerMovement` still uses `CanMove` for input filtering and locked target-facing. Only its Sprint speed selection and Sprint-driven `CancelLockOn()` branches use `CanSprint`.
+- No `PlayerMotor`, directional Guard Clip integration, Startup facing, Perfect Guard, defense resolution, request queue, numeric priority, or additional action state was added.
+
+### Verification
+
+- `Assembly-CSharp.csproj` compiled with zero errors and zero warnings.
+- The learner reported the focused Play Mode checklist passed: Startup and Release remain stationary; unlocked Hold preserves camera-relative movement and movement-facing; locked Hold preserves directional movement and target-facing.
+- Holding Sprint during Block neither increases speed nor cancels Lock-On. Free Sprint and its locked-mode cancellation behavior remain unchanged, Attack still blocks ordinary movement, and the Unity Console remained clean.
+- The current stationary `Block_Loop` presentation can visibly slide during Hold; directional `Walk_Block_*` presentation remains a separate later concept.
+
+### Exact Next Concept
+
+- Add only one-shot Startup facing assistance. Locked Startup reuses `PlayerTargeting.CurrentTarget`; unlocked Startup may select one temporary candidate inside the forward `120` degrees without mutating `CurrentTarget`.
+- Keep Hold movement, directional Guard Clips, Perfect Guard, forward-arc defense, Damage / Defense Resolution, Block Hit, Guard Break, Parry/Counter, Dodge, and framework abstractions separate.
+
+### Git Boundary
+
+- The project-owned code changes are limited to `PlayerBlock.cs`, `PlayerActionController.cs`, and `PlayerMovement.cs`, plus focused documentation updates.
+- The protected Prefab and Scene remain modified local mixed assets and must stay unstaged unless separately reviewed.
+- `Assets/LocalLicensed/` and licensed Clip/Event tuning remain ignored and must never be committed or uploaded.
+- No commit, push, staging, history rewrite, or remote mutation has been performed.
+
+## 2026-08-28 Formal Guard Hold Presentation Direction Handoff (Latest Current State)
+
+This section supersedes the previous final section's next-concept order. It does not change the runtime-verified gameplay permission checkpoint.
+
+### Architecture Boundary
+
+- There is still one Gameplay FSM: `PlayerActionController` owns `Free / Attacking / Blocking`.
+- There is still one Guard lifecycle owner: `PlayerBlock` owns `Startup -> Hold -> Release` inside the single coarse `Blocking` state.
+- The unlocked/locked distinction is Hold presentation only. It does not create another `PlayerBlock`, `PlayerActionState.GuardTurning`, parallel action route, Root Motion facing owner, or Guard-specific movement parameter pair.
+
+### Formal Hold Presentation
+
+- Unlocked Hold uses camera-relative movement, code-owned smooth Transform turning, and a simple `Guard_Free_Locomotion` Idle/Forward presentation. It is not true eight-way strafe locomotion.
+- Locked Hold remains target-facing and uses `Guard_Locked_Locomotion`, a true Guard 8-Way Blend Tree driven by the existing `MoveX` / `MoveZ`.
+- `PlayerAnimator` selects the appropriate Hold state with `CrossFadeInFixedTime()`. Continuous Blend Trees remain Animator presentation; gameplay permission remains outside Animator.
+- `MotionSpeed` is not suitable for the unlocked Idle/Forward blend because current code substitutes `1` when movement strength is zero. Reuse the existing `Speed` parameter for the first-version Idle/Forward blend.
+- Because `PlayerTargeting` currently allows Lock-On toggling during Hold, presentation selection must notice a mode change after Hold entry and CrossFade only when the desired mode changes.
+
+### One-Shot Turn Presentation
+
+- `Turn_Block_90_L`, `Turn_Block_90_R`, `Turn_Block_180_L`, and `Turn_Block_180_R` are one-shot unlocked-Hold presentation, not children of a continuous locomotion Blend Tree.
+- The future minimum lifecycle is Not Turning -> one significant direction-change decision -> Turning -> completion or legal interruption -> unlocked Hold locomotion -> Not Turning.
+- Transform facing remains owned by `PlayerMovement`; Apply Root Motion stays off. Block Release and other legal presentation changes can interrupt the Turn Clip.
+- Prototype angle bands are below `60` degrees: no Turn; `60` through `135` degrees: 90-degree Turn; above `135` degrees: 180-degree Turn. Clip direction and thresholds require P09 runtime evidence.
+
+### Minimum Implementation Order
+
+1. Integrate only unlocked Guard Hold Idle/Forward presentation.
+2. Integrate locked Guard Hold 8-Way presentation with existing `MoveX` / `MoveZ`.
+3. Regress both Hold modes, Release, Sprint rejection, Lock-On retention, and the Console.
+4. Audit the four Turn Clips for Loop, Root Transform Rotation, left/right direction, and P09 presentation.
+5. Add only the unlocked Hold one-shot Turn presentation lifecycle.
+6. Tune Guard presentation turn speed and angle thresholds.
+7. Continue to Startup `120`-degree facing assistance afterward.
+
+### Current Asset and Git Boundary
+
+- The main project currently has only the static `Block_Loop` state and no imported `Walk_Block_*` or `Turn_Block_*` files. The accepted candidates remain in `C:\Unity\Project\RelicGuardianAssetLab` until deliberately copied into ignored `Assets/LocalLicensed/`.
+- The protected Prefab and Scene remain unstaged. Licensed animation assets and local Override mappings must never be committed or uploaded.
+- No gameplay, Animator, Prefab, Scene, staging, commit, push, or remote state changed during this design confirmation.
+
+## 2026-08-28 Unlocked Guard Hold Presentation Handoff (Latest Current State)
+
+This section supersedes the preceding final section's statement that the main project has no integrated Guard Hold locomotion presentation. The formal architecture and implementation order otherwise remain unchanged.
+
+### Runtime-Verified Unlocked Presentation
+
+- The ignored local licensed Guard folder now contains the deliberately copied `Walk_Block_Loop_F_0_RM.anim` plus its preserved `.meta`. No other walk or Turn Clip was imported in this step.
+- The project-owned Animator Controller contains `Guard_Free_Locomotion`, a 1D Blend Tree driven by existing `Speed`: `Block_Loop` at threshold `0` and the forward Guard Walk at threshold `3`. Automatic thresholds are off, and the state has no authored transitions.
+- `PlayerAnimator.PlayBlockLoop()` was renamed to `PlayBlockHold()`. At Hold entry, unlocked presentation CrossFades to `Base Layer.Guard_Free_Locomotion`; locked presentation temporarily continues to CrossFade to `Base Layer.Block_Loop`.
+- This remains presentation-only. `PlayerActionController` still owns the single coarse `Blocking` state, `PlayerBlock` still owns Startup/Hold/Release, `PlayerMovement` still owns displacement and Transform facing, and Apply Root Motion remains off.
+- `Assembly-CSharp.csproj` compiled with zero errors and zero warnings. Unity finished its domain reload and its Console error/warning query was empty.
+- The learner reported all focused Play Mode checks normal: stationary unlocked Hold uses Guard Idle, movement uses Guard Forward while existing code-owned turning remains active, Release returns normally, held Sprint stays rejected, and the Console remains clean.
+
+### Exact Next Concept
+
+- Add only `Guard_Locked_Locomotion` as the true Guard 8-Way Hold Blend Tree using the existing `MoveX` / `MoveZ` parameters.
+- Keep the current unlocked Blend Tree unchanged. Do not add `GuardMoveX`, `GuardMoveZ`, another gameplay state, Root Motion facing, Turn lifecycle code, or Startup facing assistance in the same concept.
+- After locked 8-Way is connected, run the combined unlocked/locked Hold, Release, Sprint rejection, Lock-On retention, and Console regression. Then audit the four Turn Clips separately before adding their one-shot presentation lifecycle.
+
+### Git Boundary
+
+- The Animator Controller and `PlayerAnimator.cs` are modified project-owned files. The protected Prefab and Scene remain dirty and unstaged.
+- `Assets/LocalLicensed/` remains ignored and must never be committed or uploaded.
+- No staging, commit, push, history rewrite, or remote mutation was performed.
+
+## 2026-08-28 Locked Guard Hold 8-Way Handoff (Latest Current State)
+
+This section supersedes the preceding final section's temporary locked `Block_Loop` fallback and exact-next-concept text. The single Gameplay FSM and single `PlayerBlock` lifecycle remain unchanged.
+
+### Runtime-Verified Hold Presentation
+
+- `Guard_Free_Locomotion` remains the unlocked `Speed` 1D Idle/Forward presentation with code-owned Transform turning.
+- `Guard_Locked_Locomotion` is now one 2D Simple Directional Blend Tree driven by existing `MoveX` / `MoveZ`. It has exactly nine non-empty children: center Guard Idle plus eight normalized movement directions, with no authored transitions.
+- The eight standard directional Loop Clips are the numbered `01–08` set copied into ignored `Assets/LocalLicensed/`; alternative `09/10` lateral Clips, Start/Stop Clips, and all Turn Clips remain outside the main project.
+- `PlayerAnimator.PlayBlockHold()` CrossFades to the locked or unlocked state from `PlayerTargeting.IsLockedOn` at Hold entry. No Guard-specific movement parameters, new gameplay state, Root Motion facing, or duplicate action path was added.
+- `Assembly-CSharp.csproj` compiled with zero errors and zero warnings. The learner reported locked eight directions, target-facing, Release, Sprint rejection, Lock-On retention, unlocked Guard regression, and Console all normal.
+- The learner adjusted only `Walk_Block_Loop_F_0_RM` to `Orientation Offset Y = -36` and accepted the Forward visual angle as basically correct on P09. Other seven directional Clip settings remain unchanged.
+- A later MCP Console confirmation attempt did not run: the reconnected Unity MCP endpoint continued returning HTTP `502`, and the current Codex session exposed no Unity tools. The Console result above is therefore learner-reported, not independently MCP-retrieved on the final pass.
+
+### Known Presentation Gap
+
+- Hold presentation is selected at `EnterHold()`. If Lock-On changes during an already-active Hold, the current code does not yet CrossFade to the other Hold Blend Tree. That refresh remains a separate presentation-lifecycle concept.
+
+### Exact Next Concept
+
+- Import and audit only `Turn_Block_90_L`, `Turn_Block_90_R`, `Turn_Block_180_L`, and `Turn_Block_180_R` for Loop, Root Transform Rotation, actual direction, and P09 visual compatibility.
+- Do not add Turn detection, thresholds, lifecycle fields, gameplay states, Root Motion facing, or Startup facing assistance during the audit.
+- After the isolated audit, add the minimum interruptible unlocked-Hold one-shot Turn presentation lifecycle, then tune turn speed and the prototype `60 / 135` degree thresholds.
+
+### Git Boundary
+
+- The project-owned Animator Controller and `PlayerAnimator.cs` are modified. The protected Prefab and Scene remain dirty and unstaged.
+- All copied licensed Walk/Turn assets and local Clip settings remain under ignored `Assets/LocalLicensed/` and must never be committed or uploaded.
+- No staging, commit, push, history rewrite, or remote mutation was performed.
+
+## 2026-08-29 Guard Turn Deferral and Cleanup Handoff (Latest Current State)
+
+This section supersedes the previous final section's Turn-lifecycle next step. The runtime-verified unlocked and locked Hold locomotion remains unchanged.
+
+### Current Runtime Direction
+
+- Unlocked Guard Hold uses `Guard_Free_Locomotion` for Guard Idle/Forward while `PlayerMovement` keeps camera-relative displacement and smooth code-owned Transform turning.
+- Locked Guard Hold uses the existing `Guard_Locked_Locomotion` 8-Way Blend Tree and remains target-facing.
+- The learner's post-cleanup Play Mode regression passed unlocked smooth turning, locked eight-way movement, Release, Sprint rejection, and the Console.
+
+### Turn Audit and Deferral
+
+- The ignored local `Turn_Block_90_L/R` and `Turn_Block_180_L/R` Clips have Loop Time disabled. Their authored RootQ trajectories were measured at approximately `-87`, `+87`, `-180`, and `+180` degrees.
+- A minimum presentation-only lifecycle was implemented and tested without adding a gameplay `GuardTurning` state or enabling Root Motion. P09 runtime exposed over-rotation and, more importantly, a contract mismatch: short or changing movement input does not guarantee that the smooth code-owned Transform will complete a fixed 90/180-degree turn.
+- The experiment was fully removed. `PlayerAnimator` has no Turn thresholds, lifecycle fields, angle detection, or Turn CrossFades; `PlayerBlock` no longer exposes the temporary Hold-phase reader; `PlayerMovement` again uses its local `moveDirection`; and the Animator Controller has no `Turn_Block_*` states.
+- The licensed Turn Clips remain only in ignored `Assets/LocalLicensed/` for possible future use by a deliberately designed turn-in-place system. They are not part of the current Guard runtime.
+
+### Exact Next Concept
+
+- Add only Hold presentation mode-change refresh. During an already-active Hold, detect a change in `PlayerTargeting.IsLockedOn` and CrossFade once between `Guard_Free_Locomotion` and `Guard_Locked_Locomotion`.
+- Do not CrossFade every frame. Keep gameplay permissions, movement/facing ownership, Startup `120`-degree assistance, Perfect Guard, defense resolution, and future turn-in-place design separate.
+
+### Git Boundary
+
+- The protected Prefab and Scene remain dirty and unstaged. Their existing mixed local changes were not modified by the cleanup.
+- Licensed animation assets remain ignored and must never be committed or uploaded.
+- No staging, commit, push, history rewrite, or remote mutation was performed.
+
+## 2026-08-29 Guard Hold Mode Refresh Handoff (Latest Current State)
+
+This section supersedes the previous final section's exact-next-concept text. The Turn deferral and all previously verified Guard movement/presentation boundaries remain unchanged.
+
+### Runtime-Verified Presentation Refresh
+
+- `PlayerAnimator` now owns two presentation-only bools: `isBlockHoldPresentationActive` gates the Hold presentation lifetime, and `isBlockHoldPresentationLocked` records which Hold variant was last selected.
+- `PlayBlockStart()` and `PlayBlockEnd()` set the active flag false. `PlayBlockHold()` sets it true, records the current authoritative `PlayerTargeting.IsLockedOn` value, and CrossFades to the corresponding free or locked Hold Blend Tree.
+- During `Update()`, only an active Hold whose recorded presentation differs from current Lock-On calls `PlayBlockHold()` again. Recording the new value before CrossFade prevents repeated per-frame re-entry.
+- This is presentation state only. `PlayerTargeting` remains Lock-On authority, `PlayerBlock` remains Startup/Hold/Release owner, and `PlayerMovement` remains displacement/facing owner.
+- The learner's Play Mode pass verified unlocked -> locked -> unlocked switching inside one continuous Hold, stable playback after each switch, correct Startup and Release behavior, continued Sprint rejection, and a clean Console.
+
+### Exact Next Concept
+
+- Add only one-shot Startup facing assistance. Locked Startup reuses `PlayerTargeting.CurrentTarget`; unlocked Startup selects one temporary candidate inside the forward total `120` degrees (`+/-60`) without mutating `CurrentTarget`.
+- Keep the temporary target lifetime inside Guard Startup. Do not add Perfect Guard, defense coverage, Damage / Defense Resolution, Parry/Counter, Guard Break, Dodge, another gameplay FSM, or a general targeting framework in the same concept.
+
+### Git Boundary
+
+- The protected Prefab and Scene remain dirty and unstaged. No cleanup or mode-refresh work modified those mixed local assets.
+- Licensed animation assets remain ignored and must never be committed or uploaded.
+- No staging, commit, push, history rewrite, or remote mutation was performed.

@@ -18,7 +18,12 @@ public class PlayerActionController : MonoBehaviour
 
     public bool CanMove
     {
-        get { return currentActionState == PlayerActionState.Free; }
+        get
+        {
+            return currentActionState == PlayerActionState.Free
+                || (currentActionState == PlayerActionState.Blocking
+                    && playerBlock.AllowsMovement);
+        }
     }
 
     public bool CanJump
@@ -29,6 +34,11 @@ public class PlayerActionController : MonoBehaviour
     public bool WasJumpAcceptedThisFrame
     {
         get { return wasJumpAcceptedThisFrame; }
+    }
+
+    public bool CanSprint
+    {
+        get { return currentActionState == PlayerActionState.Free; }
     }
 
     private void Awake()

@@ -15,6 +15,8 @@ public class PlayerAnimator : MonoBehaviour
     private PlayerTargeting playerTargeting;
     private bool isSoftRecoveryActive;
     private bool hasSoftRecoveryTransitionStarted;
+    private bool isBlockHoldPresentationActive;
+    private bool isBlockHoldPresentationLocked;
 
     private void Awake()
     {
@@ -25,24 +27,41 @@ public class PlayerAnimator : MonoBehaviour
 
     public void PlayBlockStart()
     {
+        isBlockHoldPresentationActive = false;
         isSoftRecoveryActive = false;
         hasSoftRecoveryTransitionStarted = false;
+
         animator.CrossFadeInFixedTime(
             "Base Layer.Block_Start",
             blockCrossFadeDuration
         );
     }
 
-    public void PlayBlockLoop()
+    public void PlayBlockHold()
     {
-        animator.CrossFadeInFixedTime(
-            "Base Layer.Block_Loop",
-            blockCrossFadeDuration
-        );
+        isBlockHoldPresentationActive = true;
+        isBlockHoldPresentationLocked = playerTargeting.IsLockedOn;
+
+        if (playerTargeting.IsLockedOn)
+        {
+            animator.CrossFadeInFixedTime(
+                "Base Layer.Guard_Locked_Locomotion",
+                blockCrossFadeDuration
+            );
+        }
+        else
+        {
+            animator.CrossFadeInFixedTime(
+                "Base Layer.Guard_Free_Locomotion",
+                blockCrossFadeDuration
+            );
+        }
     }
 
     public void PlayBlockEnd()
     {
+        isBlockHoldPresentationActive = false;
+
         animator.CrossFadeInFixedTime(
             "Base Layer.Block_End",
             blockCrossFadeDuration
@@ -81,6 +100,12 @@ public class PlayerAnimator : MonoBehaviour
 
     private void Update()
     {
+        if (isBlockHoldPresentationActive
+            && isBlockHoldPresentationLocked != playerTargeting.IsLockedOn)
+        {
+            PlayBlockHold();
+        }
+
         if (isSoftRecoveryActive && animator.IsInTransition(0))
         {
             hasSoftRecoveryTransitionStarted = true;

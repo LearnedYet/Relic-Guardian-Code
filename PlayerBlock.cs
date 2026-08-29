@@ -15,6 +15,15 @@ public class PlayerBlock : MonoBehaviour
 
     private BlockPhase currentBlockPhase;
 
+    public bool AllowsMovement
+    {
+        get
+        {
+            return currentBlockPhase == BlockPhase.Hold
+                && playerInputReader.IsBlockHeld;
+        }
+    }
+
     private void Awake()
     {
         playerInputReader = GetComponent<PlayerInputReader>();
@@ -73,7 +82,7 @@ public class PlayerBlock : MonoBehaviour
     private void EnterHold()
     {
         currentBlockPhase = BlockPhase.Hold;
-        playerAnimator.PlayBlockLoop();
+        playerAnimator.PlayBlockHold();
     }
 
     private void EnterRelease()
