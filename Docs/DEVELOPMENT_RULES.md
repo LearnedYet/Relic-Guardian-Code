@@ -137,7 +137,7 @@ Before implementing a feature:
 This repository is primarily a code-focused game-client portfolio. A Unity project still needs some authored scenes, Prefabs, settings, and `.meta` files to reproduce code behaviour, so "code-focused" does not mean that every non-`.cs` file is forbidden. Apply the following boundary instead:
 
 1. Treat paid, licensed, or externally supplied art, models, textures, audio, animation packs, effects, and nested installer packages as **local-only by default**. Do not stage or commit them unless the learner explicitly approves that exact asset scope and its licence permits repository distribution.
-2. Record every required local-only dependency in `HANDOFF.md` with its exact package name, version, expected import path, and restoration instructions. Never imply that another checkout is visually reproducible when the required licensed dependency is absent.
+2. Record every currently required local-only dependency in `Docs/CURRENT_STATE.md` and the current `Docs/HANDOFF.md` with its exact package name, version, expected import path, and restoration instructions. Preserve superseded dependency history under `Docs/Archive/`. Never imply that another checkout is visually reproducible when the required licensed dependency is absent.
 3. Keep local-only asset folders and their root `.meta` files in `.gitignore`. Before adding a new ignore rule, confirm that the target is not already tracked.
 4. Remember that `.gitignore` does not protect a file that Git already tracks. A tracked scene or Prefab containing local-only asset references must remain unstaged, or the integration must be moved to a deliberately ignored local-only scene/Prefab boundary before it can be considered repository-clean.
 5. Do not commit a tracked Prefab or scene that references an excluded third-party asset, because another checkout would receive unresolved GUID references. Keep the previous reproducible tracked configuration unless an approved replacement strategy is available.
@@ -148,6 +148,21 @@ This repository is primarily a code-focused game-client portfolio. A Unity proje
 10. Report the working-tree state honestly. If a tracked Prefab remains modified only to support a local licensed model, describe that intentional local modification instead of claiming that the workspace is clean.
 
 Current project decision: `Assets/LocalLicensed/` and `Assets/LocalLicensed.meta` are the generic ignored boundary for local licensed dependencies. It currently contains P09 and the narrowed Powerful Sword animation subset, including the local Animator Override Controller. The P09, weapon, and override-controller references in `Assets/RelicGuardian/Player/RelicGuardianPlayer.prefab` are also local-only and must not be staged with code changes.
+
+### GitHub Code/Document Mirror Submission Workflow
+
+The local full Unity repository and `LearnedYet/Relic-Guardian-Code` are separate histories with different layouts. Use this workflow for every approved GitHub mirror submission:
+
+1. Confirm explicit authorization for the exact commit and push scope. A request to continue development is not authorization to alter Git history or remote state.
+2. In the full Unity repository, compile or run the appropriate checks, then stage an explicit allowlist. Keep protected mixed Prefabs, Scenes, `Assets/LocalLicensed/`, and licensed presentation assets unstaged.
+3. Inspect `git status --short`, `git diff --cached --name-only`, `git diff --cached --stat`, and staged file sizes before creating the local full-project checkpoint.
+4. Treat browser and command-line connectivity separately. Read the current Windows proxy configuration before GitHub operations. If the browser currently uses a local proxy, set `HTTP_PROXY` and `HTTPS_PROXY` only for the current Git command; do not permanently modify Git proxy configuration or hard-code the current port without explicit approval.
+5. Run `git fetch origin --prune` before preparing the mirror. Base a separate clean mirror worktree or branch on the latest `origin/main`, not on the unrelated full-project `main` history.
+6. Synchronize only the approved mirror allowlist: flattened project-owned C# files, maintained `Docs/`, and deliberately reproducible files under `UnityConfig/`. Preserve remote-only files that are outside the current sync scope.
+7. Stage the mirror allowlist explicitly and repeat the cached-name, cached-stat, and file-size checks. Never use `git add .` or `git add -A`.
+8. If the remote advanced, fetch it and integrate the approved mirror commit onto the new `origin/main`. Never use force push. Resolve overlapping mirror files from the actual current Unity workspace, while retaining unrelated remote additions.
+9. Push normally to GitHub `main`, then run `git ls-remote origin refs/heads/main` and confirm that the returned hash matches the intended pushed commit.
+10. Record the resulting local full-project checkpoint and confirmed GitHub mirror checkpoint in `CURRENT_STATE.md`. Keep chronological connection failures and conflict-resolution details in `DEV_LOG.md`, not in the durable short rules.
 
 ### Player Action Lifecycle and Conflict Check
 
@@ -335,8 +350,8 @@ The following systems are optional and should only be added near the end:
 
 - Important requirements, design decisions, verified checkpoints, recurring pitfalls, and corrections must not exist only in chat history. Record them in the appropriate project document as soon as they become consequential.
 - After automatic context compaction, a new Codex task, or a handoff, do not treat the generated conversation summary as the sole source of truth.
-- Before continuing implementation after such a boundary, check the current Git status and inspect the actual relevant code or Unity state. Re-read `HANDOFF.md` and the targeted sections of `DEVELOPMENT_RULES.md`, `DEV_LOG.md`, `LEARNING_PROGRESS.md`, or `ROADMAP.md` needed for the next step.
-- Prefer targeted re-reading after the initial handoff instead of repeatedly loading every large document, unless the learner explicitly requests a complete read or the current state cannot be reconstructed safely.
+- Before continuing implementation after such a boundary, read `Docs/CURRENT_STATE.md`, `Docs/ARCHITECTURE.md`, the current `Docs/HANDOFF.md`, and `Docs/CONTEXT_INDEX.md`; check current Git status; then inspect only the actual files in the selected task route.
+- Search `Docs/DEV_LOG.md`, `Docs/Archive/`, `Docs/LEARNING_PROGRESS.md`, or `Docs/ROADMAP.md` and read targeted sections only when the current route, a conflict, or a historical question requires them. Do not repeatedly load complete archive documents.
 - When a summary conflicts with the workspace, Git, Unity, or the maintained project documents, verify the discrepancy and treat the actual current project state as authoritative.
 - Do not record unfinished work as verified or complete merely to preserve continuity. Keep work-in-progress decisions separate from tested checkpoints.
 

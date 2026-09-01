@@ -12,9 +12,13 @@ When information conflicts, use this priority:
 
 1. Actual code, Unity assets, current Editor state, and current Git status.
 2. `Docs/CURRENT_STATE.md`.
-3. The final, explicitly latest section at the end of `Docs/HANDOFF.md`.
-4. The newest relevant sections of `Docs/ROADMAP.md`, `Docs/DEV_LOG.md`, and `Docs/LEARNING_PROGRESS.md`.
-5. Older checkpoints and plans.
+3. `Docs/ARCHITECTURE.md` for currently implemented ownership and data flow.
+4. The active feature-design document selected through `Docs/CONTEXT_INDEX.md` for approved but unimplemented direction.
+5. The current `Docs/HANDOFF.md`.
+6. The newest relevant sections of `Docs/ROADMAP.md`, `Docs/DEV_LOG.md`, and `Docs/LEARNING_PROGRESS.md`.
+7. Archived Handoffs, older checkpoints, and older plans.
+
+`Docs/CONTEXT_INDEX.md` is a read router, not a source of implementation truth. A feature-design document may constrain future work but never proves that its proposed behavior is implemented or runtime-verified.
 
 Historical documentation may describe work that was later superseded. Never treat an earlier checkpoint as current merely because it appears first in a file.
 
@@ -22,9 +26,12 @@ At the start of a new task or after context compaction:
 
 1. Read this file completely.
 2. Read `Docs/CURRENT_STATE.md` completely.
-3. Run `git status --short --branch`.
-4. Inspect the actual files listed for the current task.
-5. Report the understood state, verification gaps, next single concept, and protected dirty files before changing gameplay behavior.
+3. Read `Docs/ARCHITECTURE.md` and the current `Docs/HANDOFF.md` completely.
+4. Run `git status --short --branch`.
+5. Read `Docs/CONTEXT_INDEX.md`, select only the route matching the current task, and inspect those actual files.
+6. Report the understood state, verification gaps, next single concept, and protected dirty files before changing gameplay behavior.
+
+Do not read `Docs/DEV_LOG.md` or `Docs/Archive/` in full during ordinary startup. Search history first with `rg`, then read only the matching section when a real conflict or historical question requires it.
 
 ## Learner-First Development Rules
 
@@ -76,12 +83,19 @@ Do not assume that understanding gameplay logic means the learner can independen
 - A tracked Prefab or Scene that references excluded licensed assets must remain unstaged unless an explicit reproducible replacement strategy is approved.
 - Report the working tree honestly; intentional local-only modifications do not make it clean.
 - The GitHub repository is code/document focused and does not have the same shape as the local full Unity-project history. Do not directly pull or merge its `main` into this full Unity workspace without first designing and verifying a safe synchronization path.
+- Browser access to GitHub does not prove that command-line Git can reach GitHub. Before a remote operation, inspect the current Windows proxy and Git connectivity. When the browser uses a local proxy, pass that proxy only to the current `fetch` or `push` process unless the learner explicitly approves a persistent Git configuration change; do not hard-code a volatile proxy port as a durable project value.
+- Before every GitHub mirror push, run `git fetch origin --prune`, base a separate clean mirror worktree or branch on the latest `origin/main`, and inspect remote-only commits. Never force-push over an advanced remote.
+- Resolve mirror conflicts using the actual current project-owned source and documents as authoritative while preserving unrelated remote-only files. Keep the full Unity history and the flattened GitHub mirror history separate.
+- After a reported successful push, verify `refs/heads/main` with `git ls-remote origin refs/heads/main`; absence of a command error alone is not proof that the remote moved.
 - Never commit, push, rewrite history, or alter remote state without explicit authorization for the exact staged scope or commit.
 
 ## Documentation Maintenance
 
 - Keep this file limited to durable rules. Do not add volatile next-step details here.
 - Keep `Docs/CURRENT_STATE.md` short and replace outdated current-state text instead of appending an endless history.
-- Use `Docs/HANDOFF.md` and `Docs/DEV_LOG.md` for chronological archive material.
+- Keep `Docs/ARCHITECTURE.md` limited to implemented architecture. Keep approved but unimplemented direction in focused feature-design documents.
+- Keep `Docs/CONTEXT_INDEX.md` limited to task-to-file routing. Do not duplicate architecture or feature design there.
+- Keep `Docs/HANDOFF.md` limited to the latest cross-conversation Handoff and replace it at the next Handoff boundary.
+- Preserve prior Handoffs under `Docs/Archive/`. Keep `Docs/DEV_LOG.md` as the chronological development archive; neither is default startup context.
 - After a runtime-verified milestone, update the relevant current-state, roadmap, development-log, and learning-progress records before a focused commit.
 - Never record an untested behavior as runtime-verified.

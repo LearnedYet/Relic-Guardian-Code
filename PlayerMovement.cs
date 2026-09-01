@@ -13,6 +13,7 @@ public class PlayerMovement : MonoBehaviour
     private CharacterController characterController;
     private PlayerInputReader inputReader;
     private PlayerActionController playerActionController;
+    private PlayerBlock playerBlock;
     private PlayerTargeting playerTargeting;
     private Vector3 currentLocalMoveDirection;
     private float verticalVelocity;
@@ -63,6 +64,7 @@ public class PlayerMovement : MonoBehaviour
         characterController = GetComponent<CharacterController>();
         inputReader = GetComponent<PlayerInputReader>();
         playerActionController = GetComponent<PlayerActionController>();
+        playerBlock = GetComponent<PlayerBlock>();
         playerTargeting = GetComponent<PlayerTargeting>();
     }
 
@@ -100,13 +102,18 @@ public class PlayerMovement : MonoBehaviour
         currentSpeed = moveDirection.magnitude * selectedMoveSpeed;
         currentMovementStrength = currentLocalMoveDirection.magnitude;
         verticalVelocity += gravity * Time.deltaTime;
+
         if (playerActionController.WasJumpAcceptedThisFrame)
         {
             verticalVelocity = jumpSpeed;
             isJumping = true;
         }
 
-        if (playerActionController.CanMove && playerTargeting.IsLockedOn)
+        if (playerBlock.IsGuardFacingAssistActive)
+        {
+            FaceDirection(playerBlock.GuardFacingAssistDirection);
+        }
+        else if (playerActionController.CanMove && playerTargeting.IsLockedOn)
         {
             Vector3 directionToLockedTarget = playerTargeting.CurrentTarget.bounds.center - transform.position;
 

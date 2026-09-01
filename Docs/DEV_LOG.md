@@ -4,7 +4,82 @@ This file records daily progress, learned concepts, problems, and solutions.
 
 ---
 
+## 2026-08-31
+
+### Completed Minimal Perfect Guard Window and Classification
+
+- Added one private `isPerfectGuardWindowOpen` lifetime inside `PlayerBlock` without adding a new coarse state or general hit-result hierarchy.
+- `BeginBlock()` opens the window during Startup. `Block_Start.anim` closes it through `ClosePerfectGuardWindow` at `0.16666667s`; Hold and Release entry also close it defensively.
+- `TryHandleHit()` performs phase and Guard Coverage checks first, then logs `Perfect Guard` while the window is open or `Ordinary Guard` otherwise. Both remain handled Guard results and prevent health damage.
+- The learner reported focused runtime verification passed for ordinary and Perfect Guard classification with a clean Console. Presentation consequences remain deliberately separate.
+
+### Completed First-Pass Combat VFX Resource Validation and Local Restore
+
+- Validated `Procedural Weapon Trails 1.1`, `VFX - Impact and Hit - Vol 2`, `Stylized Hit Slash 1.3`, and `Cartoon FX 4 Remaster 1.5.1` in the separate `RelicGuardianAssetLab` project.
+- Selected real weapon-motion Trail candidates, two ice-themed Attack Hit candidates, ordinary/Perfect Guard impact foundations, independent HDR sparks, a Cartoon FX star layer, and `CFXR4 Laser Impact (Orange)` as a compact HDR center-impact candidate.
+- Preserved the original vendor assets and created independent test Prefabs/materials for tuning. Final main-project color, brightness, orientation, and scale remain pending.
+- Rejected an initial over-broad whole-package copy (`1825` files, approximately `424.37 MB`) and rebuilt the main-project local set from the final selected roots plus recursive dependencies and required complete support-script/importer groups.
+- The pruned `Assets/LocalLicensed/CombatVFX/` set is based on `79` Unity assets and contains `199` files after Unity generated folder metadata, using approximately `62.90 MB`. Serialized GUID cross-checking found no omitted referenced asset from the former broad tree; Unity reimported with zero Console errors/warnings, and the final Guard scene reported no missing scripts or broken Prefabs.
+- Added `Docs/COMBAT_VFX_RESOURCE_TRACKING.md` with exact installers, versions, local paths, selections, deferred packages, and restoration steps.
+
+### Next Task
+
+- Define the smallest Ordinary/Perfect Guard result-to-presentation boundary before connecting one VFX feedback layer. Explicitly establish code authorship first.
+
+---
+
+## 2026-08-30
+
+### Completed Core Pre-Hit Attack Threat Facing Assist
+
+- Replaced the superseded post-hit assist direction with a separate immutable `AttackThreatContext` carrying source, normalized fixed incoming direction, and absolute `ExpectedImpactTime`.
+- `EnemyAttack` now emits one preview at Startup through the existing player receiver and removes it at Hit Window before delivering the unchanged real `HitContext` damage attempt.
+- `PlayerHitReceiver` stores previews by source, ignores expired candidates, and selects the valid threat with the earliest expected impact. Both preview-before-Block and Block-before-preview execution orders enter the same `PlayerBlock.TryStartFacingAssist()` boundary.
+- `PlayerBlock` validates Blocking phase, future time, Guard Coverage angle, and Facing Assist angle before storing one fixed direction, source, expected-impact lifetime, and pre-assist horizontal facing. Hold preserves assist; Release and matching hit clear it.
+- Matching hit coverage uses the saved pre-assist facing, so visual rotation cannot enlarge defense. `PlayerMovement` remains the sole Transform-facing owner through Assist -> Locked -> Free Movement branch order.
+- Removed the obsolete fixed `guardFacingAssistDuration`; current assist reuses ordinary `rotationSpeed` and does not yet guarantee exact arrival at the expected impact timestamp.
+- Corrected learner mistakes during review: `IncomingDirection` initially lacked normalization, earliest-threat selection returned inside the loop, absolute future time was initially confused with the smallest raw timestamp, and preview eligibility briefly used `-transform.forward`.
+- `Assembly-CSharp.csproj` compiled with zero errors and zero warnings. The learner reported the focused current-enemy test passed: at approximately `40-50` degrees, Block_Start and turning began together after Startup preview, turning continued into Hold, impact did not replay Block_Start, the hit was guarded without health loss, and the Console was clean.
+- Follow-up runtime checks passed: Block without a real preview did not auto-turn, and entering Release before impact stopped assist. The Release check temporarily used `startupDuration = 2` only during Play Mode for visibility; the value reverted on exit and is not Boss timing verification.
+
+### Next Task
+
+- Add only the authored Perfect Guard Window lifetime inside Startup; ordinary legal Startup/Hold hits remain ordinary Guard.
+
+### Completed Directional Guard Coverage
+
+- Added adjustable `PlayerBlock.guardCoverageHalfAngle = 90f` and explicitly persisted `90` on the Scene-level `PlayerBlock`, preserving the protected player Prefab unchanged by this step.
+- Added `PlayerBlock.TryHandleHit(HitContext)`. Only Startup and Hold are defendable; Release rejects before angle evaluation.
+- Coverage projects the fixed `IncomingDirection` snapshot horizontally, rejects zero horizontal data, inverts it toward the attack, snapshots the player's current horizontal forward direction before any assist, and compares the unsigned angle with the inclusive half-angle.
+- Connected `PlayerHitReceiver` to delegate only `Blocking` hits to `PlayerBlock`. A handled hit returns before health; Free, Release, invalid-direction, and coverage-failed hits continue to `PlayerHealth`.
+- Kept `Source.position`, Transform rotation, Facing Assist, Perfect Guard, presentation consequences, Dodge, Projectile, physical hitbox confirmation, and framework abstractions outside this concept.
+- `Assembly-CSharp.csproj` compiled with zero errors and zero warnings. The learner reported the focused Play Mode matrix passed: Free frontal damage, frontal Startup and Hold defense, rear Hold damage, frontal Release damage, and a clean Console.
+
+### Next Task
+
+- Add only Successful Guard Facing Assist state on `PlayerBlock`: adjustable `facingAssistHalfAngle`, one fixed successful-hit direction, a short explicit lifetime, and read-only state. Do not apply Transform rotation or add Perfect Guard in the same concept.
+
+---
+
 ## 2026-08-29
+
+### Completed Minimum Guard Hit Data Seam
+
+- Added an immutable `HitContext` with `DamageAmount`, `Source`, and normalized world-space `IncomingDirection`. The direction is captured once and is not recomputed later from a moving source.
+- Added `PlayerHitReceiver` as the single defendable incoming-hit entry. `ReceiveHit()` first resolves idempotent same-frame action requests and, in this first seam, forwards every hit to `PlayerHealth` without Guard prevention.
+- Migrated `EnemyAI.attackTarget`, `EnemyAttack.currentAttackTarget`, `TryStartAttack()`, and `ApplyDamage()` to `PlayerHitReceiver`. At the scheduled Hit Window, `EnemyAttack` constructs one context from its damage, enemy Transform, and enemy-to-player direction, then delivers it once.
+- Added `PlayerHitReceiver` only to the `SampleScene` player instance and rewired `EnemyAI.attackTarget`; it was deliberately not applied to the protected player Prefab.
+- Corrected two learner migration mistakes during review: `PlayerHealth.cs` had accidentally declared a duplicate `PlayerHitReceiver`, and `EnemyAttack.currentAttackTarget` had retained the old `PlayerHealth` type. Cosmetic indentation was corrected separately.
+- `Assembly-CSharp.csproj` compiled with zero errors and zero warnings. The learner's Play Mode verification passed ordinary `3 -> 2` one-hit damage, Blocking `3 -> 2` one-hit damage with no Guard prevention yet, and a clean Console.
+- The next single concept is Startup/Hold Guard Coverage with Release rejection through `PlayerHitReceiver`. Facing Assist, Perfect Guard, Dodge, Projectile, physical hitbox confirmation, and framework abstractions remain deferred.
+
+### Reorganized Project Context Loading
+
+- Added `Docs/ARCHITECTURE.md` as a compact implemented-only component and data-flow map, verified against the actual project-owned C# source.
+- Added `Docs/CONTEXT_INDEX.md` as a task-to-file read router so new tasks load one bounded working set instead of the complete project history.
+- Replaced the oversized current `Docs/HANDOFF.md` with a short latest-only Handoff and preserved its complete prior contents at `Docs/Archive/HANDOFF_HISTORY_THROUGH_2026-08-29.md`.
+- Added the repo-scoped `.agents/skills/relic-guardian-context/SKILL.md` context-bootstrap workflow for new tasks, post-compaction recovery, and Handoff resumption.
+- Updated durable startup/documentation rules and the Relic Guardian learning-track next action. No gameplay code, Unity asset, Prefab, Scene, staging, commit, push, or remote state was changed by this documentation reorganization.
 
 ### Audited and Deferred Fixed-Angle Guard Turn Presentation
 
@@ -22,9 +97,31 @@ This file records daily progress, learned concepts, problems, and solutions.
 - `Update()` compares the recorded variant with current Lock-On only while Hold presentation is active. A mismatch calls `PlayBlockHold()` once; the updated record prevents repeated per-frame CrossFades.
 - The learner's Play Mode pass verified unlocked -> locked -> unlocked switching in one continuous Hold, stable animation after each switch, correct Startup/Release boundaries, continued Sprint rejection, and a clean Console.
 
+### GitHub Mirror Submission Failure and Recovery
+
+- Created the focused local full-project checkpoint `a0ca504 Complete phase-aware Guard Hold presentation`. Its allowlist contained the project-owned Guard scripts, Animator Controller, and maintained documents; the protected player Prefab, Scene, and ignored licensed assets remained outside the commit.
+- Initial GitHub `fetch` and `push` attempts failed with `Could not connect to github.com:443`, even though GitHub was open in the browser. Inspection showed that Windows browser traffic used the local WinINet proxy `127.0.0.1:7897`, while command-line Git had no proxy and attempted a direct connection.
+- Passed the current proxy only to the individual Git commands through process-scoped `HTTP_PROXY` and `HTTPS_PROXY`. No persistent Git proxy setting was created, and the proxy port was not adopted as a durable project constant.
+- The first connected push was correctly rejected as non-fast-forward because remote `main` had advanced from `5db2fed` to `ae84f4d Sync Guard lifecycle and soft recovery` while the terminal could not fetch.
+- Fetched the current remote, created a separate mirror worktree from `ae84f4d`, and integrated the Hold presentation checkpoint without force-pushing. Overlapping code, Animator, and documentation conflicts were resolved from the actual current Unity workspace; remote-only README and Input Actions changes were preserved.
+- Successfully pushed `6c8f432 Sync Guard lifecycle and Hold presentation` to GitHub `main`. A final `git ls-remote origin refs/heads/main` returned the full `6c8f432364bfd79f47b4f949233934687c80cfdf` hash.
+- Recorded a durable prevention rule: check Windows proxy versus Git connectivity, fetch before every mirror push, use a separate mirror worktree based on latest `origin/main`, never force-push, and verify the remote ref after pushing.
+
+### Revised Guard Hit Resolution and Facing Assist Design
+
+- Superseded the earlier rule that Guard Startup searches for a temporary target or reuses the Lock-On target. Empty Guard now performs no search and starts no assist; `PlayerTargeting` is outside this feature.
+- Renamed the concept from Startup Facing Assistance to `Successful Guard Facing Assist`. Only a real incoming hit that first succeeds within Guard Coverage may start the short assist.
+- Fixed defendable phases: Startup and Hold can defend; Release cannot. Perfect Guard Window is a short authored subset of Startup, while a legal Startup hit outside the window remains an ordinary Guard.
+- Fixed independent adjustable defaults: `facingAssistHalfAngle = 60` degrees (total `120`) and `guardCoverageHalfAngle = 90` degrees (total `180`). Both use the same player-facing snapshot taken before any automatic rotation. Coverage resolves first, so assist can never expand it.
+- Facing Assist stores only the fixed horizontal direction captured from this hit. It never follows the source Transform. `PlayerBlock` owns eligibility and the short lifetime; `PlayerMovement` remains the only Transform-facing owner.
+- Fixed the concrete facing branch order inside `PlayerMovement`: active Guard Facing Assist, otherwise Locked Facing, otherwise Free Movement Facing. This is not a numeric Priority system or general Facing Framework, and `PlayerBlock.LateUpdate()` will not compete for rotation.
+- Approved the smallest reusable hit boundary: an immutable three-field `HitContext` (`DamageAmount`, `Source`, `IncomingDirection`) created by `EnemyAttack` or future Projectile, received by a small `PlayerHitReceiver`, delegated by coarse state to `PlayerBlock` or future `PlayerDodge`, and forwarded to `PlayerHealth` only when unhandled.
+- Confirmed the current prototype's limitation: `EnemyAttack.OpenHitWindow()` schedules direct damage to the saved target and is not physical collision confirmation. The first concept adds data flow only; hitbox/range revalidation remains separate.
+- Recorded the full approved responsibilities, resolution order, non-goals, and verification matrix in `Docs/GUARD_HIT_RESOLUTION_DESIGN.md`. No gameplay code, Animator, Prefab, or Scene was changed during this design checkpoint.
+
 ### Next Task
 
-- Add only one-shot Startup `120`-degree facing assistance: reuse the authoritative target while locked or choose one temporary unlocked candidate inside the forward `+/-60` degrees without mutating `PlayerTargeting.CurrentTarget`.
+- Add only Startup/Hold Guard Coverage and Release rejection through the existing `PlayerHitReceiver`, using the adjustable `guardCoverageHalfAngle`. Keep Facing Assist, Perfect Guard, Dodge, Projectile, hitbox confirmation, and framework abstractions out of this concept.
 
 ---
 

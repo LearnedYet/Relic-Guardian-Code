@@ -18,7 +18,7 @@ Detailed content and teaching order belong in each track's own plan. This tracke
 
 | Track | Status | Workspace | Detailed records | Unlock condition | Next action |
 | --- | --- | --- | --- | --- | --- |
-| Relic Guardian | Active | `C:\Unity\Project\My project` | `Docs/PROJECT_PLAN.md`, `Docs/ROADMAP.md`, `Docs/LEARNING_PROGRESS.md`, `Docs/COMBO_ATTACK_ARCHITECTURE.md` | Already started | Add only held Block input representation after the Guard lifecycle design checkpoint |
+| Relic Guardian | Active | `C:\Unity\Project\My project` | `Docs/CURRENT_STATE.md`, `Docs/ARCHITECTURE.md`, `Docs/CONTEXT_INDEX.md`, `Docs/ROADMAP.md`, `Docs/LEARNING_PROGRESS.md` | Already started | Add only immutable `HitContext`, small `PlayerHitReceiver`, and current `EnemyAttack` delivery migration while preserving damage behavior |
 | C# foundations | Active | `C:\Unity\Learning\CSharpPractice` | `AGENTS.md`, `Docs/LEARNING_PLAN.md`, `Docs/LEARNING_PROGRESS.md` in that workspace | Already started | Continue with integer assignment and arithmetic; variable output and Console text input are verified |
 | Data structures and algorithms | Prepared, locked by Gate DS-1 | `C:\Unity\Learning\CSharpPractice\DataStructures` | `AGENTS.md`, `PREREQUISITES.md`, `LEARNING_PLAN.md`, and `LEARNING_PROGRESS.md` in that folder | Pass the observable C# readiness check in `PREREQUISITES.md`; no IQ threshold applies | Continue C# foundations, then run the four-part Gate DS-1 check and start immediately if passed |
 | Game mathematics | Embedded | Relic Guardian, C# practice, and later Graphics Lab | Record evidence in the active track's progress file | A gameplay or graphics problem needs the concept | Revisit vectors and rotations through current gameplay examples |
@@ -77,7 +77,7 @@ Do not duplicate detailed lesson notes here. Keep them in the corresponding trac
 
 Only two tracks are independently active now:
 
-1. Relic Guardian: ground locomotion, camera handoff, shared locked four-step Attack, Jump regressions, and the `Attacking` migration are runtime-verified. The first Guard Startup/Hold/Release design and compatible animation direction are fixed but not implemented. Next add only the held Block input representation; Root Motion stays off and Dodge remains after Block.
+1. Relic Guardian: ground locomotion, camera handoff, shared locked four-step Attack, Block Startup/Hold/Release, phase-aware Hold movement, unlocked/locked Guard presentation, soft recovery, and active-Hold Lock-On refresh are runtime-verified. Next add only immutable `HitContext`, small `PlayerHitReceiver`, and current `EnemyAttack` delivery migration while preserving damage behavior; Root Motion stays off and Dodge remains later.
 2. C# Practice: continue with integer assignment and arithmetic after verified variable-output and Console-input lessons.
 
 All other subjects are either embedded into those sessions or preserved behind explicit gates.

@@ -5,7 +5,7 @@ public class EnemyAI : MonoBehaviour
 {
     [SerializeField] private EnemyAttack enemyAttack;
     [SerializeField] private EnemyMovement enemyMovement;
-    [SerializeField] private PlayerHealth attackTarget;
+    [SerializeField] private PlayerHitReceiver attackTarget;
     [SerializeField] private float attackRange = 2f;
 
     private void Update()

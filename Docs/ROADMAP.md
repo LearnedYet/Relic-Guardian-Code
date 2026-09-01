@@ -5,6 +5,7 @@
 - [x] Unity project created
 - [x] Development environment configured
 - [x] Project documentation initialized
+- [x] Bounded project-context routing, implemented architecture map, current-only Handoff, historical Handoff archive, and repo-scoped resume Skill established
 - [x] Git repository configured
 
 ---
@@ -89,7 +90,7 @@
 - `PlayerCombat` routes natural finish and Block cancellation through one `EndAttack()` cleanup boundary. Stale Events are rejected after cancellation.
 - `PlayerAnimator` presents Guard through code-driven `Block_Start`, `Block_Loop`, and `Block_End` states and implements interruptible soft recovery for Guard and Attack visual tails.
 - Guard rotation and normal `0.45s` exit blending are accepted. Attack4's ignored local `FinishAttack(3)` Event was moved earlier to create a tested soft tail.
-- Guard Hold unlocked Idle/Forward, locked 8-Way, and active-Hold Lock-On presentation refresh are runtime-verified. Startup facing assistance, Perfect Guard, and Damage / Defense Resolution remain pending.
+- Guard Hold unlocked Idle/Forward, locked 8-Way, active-Hold Lock-On presentation refresh, the `HitContext` / `PlayerHitReceiver` seam, and directional Startup/Hold Guard Coverage with Release rejection are runtime-verified. The old target-driven and post-hit facing plans are superseded. The current enemy's pre-hit Attack Threat Facing Assist, empty-Guard no-turn, and Release cancellation checks are runtime-accepted; Perfect Guard and later Damage / Defense consequences remain pending.
 
 ---
 
@@ -172,12 +173,16 @@
   - [x] Keep future skill interruption restrictions explicit. Higher Block priority does not override a skill that has no legal Block-cancel transition.
   - [x] Define cancellation damage behavior: cancellation before `OpenHitWindow()` prevents damage; damage already applied is never rolled back.
   - [x] Keep `Blocking` as one coarse `PlayerActionState` while `PlayerBlock` owns internal Startup, Hold, and Release phases; Animator remains presentation-only.
-  - [x] Define Startup as short and non-moving with required facing correction, Hold as movable but unable to Sprint, and Release as short non-moving recovery.
+  - [x] Define Startup as short and non-moving, Hold as movable but unable to Sprint, and Release as short non-moving recovery.
   - [x] Define early Startup release as a request to enter Release only at an authored decision/exit point, not an immediate hard cut to `Free`.
   - [x] Place the future Perfect Guard Window inside Startup and prefer authored Animation Events, without implementing damage resolution yet.
   - [x] Preserve existing free and lock-on movement/facing behavior during Hold; Guard never changes camera mode.
-  - [x] Define unlocked Startup facing assistance as one temporary target search in the forward `120` degrees (`+/-60` degrees) without changing `PlayerTargeting.CurrentTarget`; locked Startup reuses the current authoritative target.
-  - [x] Define future ordinary Guard coverage as the forward `180` degrees (`+/-90` degrees), while deferring attack-source data and Damage / Defense Resolution until that feature begins.
+  - [x] Supersede the earlier Startup target-search plan: empty Guard never searches or assists, and `PlayerTargeting` does not participate in incoming Guard resolution.
+  - [x] Supersede post-hit assist with pre-hit `AttackThreatContext`: a real enemy Startup announces fixed direction and expected impact time; Block may start one fixed-direction assist while the matching hit still resolves coverage from saved pre-assist facing.
+  - [x] Define Startup and Hold as defendable and Release as not defendable; Perfect Guard Window is a short Startup subset, while other legal Startup hits remain ordinary Guard.
+  - [x] Define default independent half-angles of `60` degrees for Facing Assist and `90` degrees for Guard Coverage, with coverage decided before assist so automatic turning cannot enlarge defense.
+  - [x] Keep `PlayerMovement` as the sole facing owner with the fixed branch Guard Facing Assist -> Locked Facing -> Free Movement Facing; do not add `LateUpdate` rotation competition, a numeric Priority system, or a general Facing Framework.
+  - [x] Approve the minimum reusable boundary: immutable `HitContext` -> small `PlayerHitReceiver` -> `PlayerBlock` / future `PlayerDodge` -> `PlayerHealth`, without a general Damage Framework.
   - [x] Accept the isolated `SwordAnimationPack` Block and Block-walk presentation as visually compatible with the current Katana set; main-project integration and runtime verification remain pending, with Root Motion off.
   - [x] Establish that simultaneous Attack/Block acceptance must not depend on `MonoBehaviour.Update()` order; their fixed first-version result is Block winning over Basic Attack.
   - [x] Add only Block input representation: a `Pass Through` action, persistent held state, a one-use press edge, and one mouse-right-button binding so rejection is not buffered.
@@ -196,10 +201,15 @@
   - [x] Run and then cleanly remove a minimum unlocked-Hold Turn presentation experiment after runtime exposed its mismatch with interruptible smooth movement-facing.
   - [ ] Reconsider fixed-angle Turn Clips only if a later turn-in-place design defines committed facing, input interruption, and Transform/animation synchronization.
   - [x] Refresh Hold presentation once when Lock-On mode changes during an already-active Hold.
-  - [ ] Add the one-shot Startup facing assistance without mutating the authoritative lock target.
-  - [ ] Add the authored Perfect Guard Window lifetime without successful-Guard resolution.
+  - [x] Add only `HitContext` and `PlayerHitReceiver`, migrate current `EnemyAttack` delivery, and preserve existing one-damage-per-attack behavior for ordinary and Blocking hits with a clean Console.
+  - [x] Add and runtime-verify Startup/Hold Guard Coverage and Release rejection using the Scene-persisted `guardCoverageHalfAngle = 90`.
+  - [x] Add pre-hit Attack Threat Facing Assist with adjustable `facingAssistHalfAngle`, one fixed preview direction, expected-impact lifetime, pre-assist coverage snapshot, and the explicit `PlayerMovement` facing branch. The current enemy's angled Startup/Hold turn and guarded impact passed the focused core test.
+  - [x] Verify empty Guard does not rotate without a real preview and entering Release before impact cancels assist; the Release check used temporary Play Mode-only `startupDuration = 2` for visibility.
+  - [x] Add and runtime-verify the authored Perfect Guard Window lifetime inside Startup; legal Startup/Hold hits outside the window remain ordinary Guard.
+  - [x] Classify handled hits internally as Ordinary or Perfect Guard without adding presentation consequences or a general result hierarchy.
+  - [x] Validate the first-pass Weapon Trail, Attack Hit, ordinary Guard, and Perfect Guard VFX candidates in an isolated AssetLab, then restore the selected local-only assets under `Assets/LocalLicensed/CombatVFX/` with a clean main-project import.
   - [x] Run focused lifecycle, movement, camera-mode, early-release, and Console regressions.
-  - [ ] Later design and implement the forward-arc Damage / Defense Resolution boundary without prebuilding a general Hit Framework.
+  - [ ] Add Guard/Perfect Guard presentation one feedback layer at a time after defining the smallest explicit result-to-presentation boundary.
 - [ ] Dodge
 - [ ] Perfect Dodge
 - [x] Lock-on (first usable version)
