@@ -19,6 +19,12 @@ This file records daily progress, learned concepts, problems, and solutions.
 
 - Define and implement only Guard Hitstop, beginning with ownership, time restoration, duration selection, and overlap behavior. Keep Camera Impulse and later feedback separate.
 
+### Git Checkpoints
+
+- Created local full-project feature checkpoint `f7a1d53 Complete Guard VFX and layered SFX presentation` from an explicit 25-file allowlist.
+- Created and pushed GitHub code/document feature-mirror checkpoint `873df7d Sync Guard VFX and layered SFX presentation`; `git ls-remote origin refs/heads/main` verified the full remote hash `873df7d03905b62f49582319a59708bb52431299`.
+- Excluded all ignored `Assets/LocalLicensed/` content plus the protected dirty `SampleScene`, player Prefab, and Animator Controller. Those local configuration changes remain intentionally outside GitHub.
+
 ---
 
 ## 2026-09-01

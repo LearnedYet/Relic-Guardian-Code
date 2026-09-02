@@ -19,8 +19,8 @@ This is the short current-state entry point. Actual code, Unity assets, current 
 
 - Local full-project repository: `C:\Unity\Project\My project`; current line: local `main`.
 - GitHub code/document mirror: `LearnedYet/Relic-Guardian-Code`; current line: remote `main`.
-- Latest local full-project checkpoint: `f72aae8 Complete Guard hit resolution and Combat VFX resource setup`.
-- Latest confirmed GitHub code/document mirror checkpoint: `4cca972 Sync Guard hit resolution and Combat VFX setup`.
+- Latest local full-project feature checkpoint: `f7a1d53 Complete Guard VFX and layered SFX presentation`.
+- Latest confirmed GitHub code/document feature-mirror checkpoint: `873df7d Sync Guard VFX and layered SFX presentation`.
 - The local full-project repository and GitHub mirror have different history shapes. Resolve each current tip in its own repository; never compare their hashes as one ancestry or directly pull/merge mirror `main` into the full Unity workspace.
 - The mirror stores flattened project-owned C# files at its root and selected reproducible Unity configuration under `UnityConfig/`; it is not a complete Unity-project clone.
 
