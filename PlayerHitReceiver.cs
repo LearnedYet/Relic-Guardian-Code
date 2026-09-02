@@ -6,6 +6,7 @@ public class PlayerHitReceiver : MonoBehaviour
     private PlayerActionController playerActionController;
     private PlayerHealth playerHealth;
     private PlayerBlock playerBlock;
+    private PlayerGuardPresentation playerGuardPresentation;
     private readonly Dictionary<Transform, AttackThreatContext> activeAttackThreats = new Dictionary<Transform, AttackThreatContext>();
 
     private void Awake()
@@ -13,6 +14,7 @@ public class PlayerHitReceiver : MonoBehaviour
         playerBlock = GetComponent<PlayerBlock>();
         playerActionController = GetComponent<PlayerActionController>();
         playerHealth = GetComponent<PlayerHealth>();
+        playerGuardPresentation = GetComponent<PlayerGuardPresentation>();
     }
 
     public void ReceiveAttackThreat(AttackThreatContext attackThreatContext)
@@ -69,10 +71,15 @@ public class PlayerHitReceiver : MonoBehaviour
     {
         playerActionController.ResolveActionRequests();
 
-        if (playerActionController.CurrentActionState == PlayerActionState.Blocking
-            && playerBlock.TryHandleHit(hitContext))
+        if (playerActionController.CurrentActionState == PlayerActionState.Blocking)
         {
-            return;
+            GuardResult guardResult = playerBlock.ResolveGuardHit(hitContext);
+
+            if (guardResult != GuardResult.Unhandled)
+            {
+                playerGuardPresentation.PresentGuardResult(guardResult, hitContext.IncomingDirection);
+                return;
+            }
         }
 
         playerHealth.TakeDamage(hitContext.DamageAmount);

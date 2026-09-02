@@ -1,6 +1,6 @@
 # Relic Guardian Current State
 
-Last reviewed against the local workspace: 2026-08-31
+Last reviewed against the local workspace: 2026-09-02
 
 This is the short current-state entry point. Actual code, Unity assets, current Editor state, and Git status remain authoritative when they conflict with this file.
 
@@ -19,8 +19,8 @@ This is the short current-state entry point. Actual code, Unity assets, current 
 
 - Local full-project repository: `C:\Unity\Project\My project`; current line: local `main`.
 - GitHub code/document mirror: `LearnedYet/Relic-Guardian-Code`; current line: remote `main`.
-- Latest phase-aware Guard Hold local full-project checkpoint: `a0ca504 Complete phase-aware Guard Hold presentation`.
-- Latest confirmed GitHub code/document mirror checkpoint: `6c8f432 Sync Guard lifecycle and Hold presentation`.
+- Latest local full-project checkpoint: `f72aae8 Complete Guard hit resolution and Combat VFX resource setup`.
+- Latest confirmed GitHub code/document mirror checkpoint: `4cca972 Sync Guard hit resolution and Combat VFX setup`.
 - The local full-project repository and GitHub mirror have different history shapes. Resolve each current tip in its own repository; never compare their hashes as one ancestry or directly pull/merge mirror `main` into the full Unity workspace.
 - The mirror stores flattened project-owned C# files at its root and selected reproducible Unity configuration under `UnityConfig/`; it is not a complete Unity-project clone.
 
@@ -33,7 +33,9 @@ Their local wiring includes licensed presentation and the current Scene-level `P
 
 `Assets/LocalLicensed/` is ignored and must never be committed or uploaded. It contains the P09 presentation, Katana/Sword animation assets, Animator Override mappings, and local Animation Event/import tuning. The locally verified Attack4 `FinishAttack(3)` time is therefore documented but not mirrored as an asset change.
 
-The selected dependency closure from four locally licensed Combat VFX packages validated in `RelicGuardianAssetLab` is now restored under `Assets/LocalLicensed/CombatVFX/`. The pruned main-project copy is based on `79` Unity assets and contains `199` files including generated metadata, using approximately `62.90 MB`, down from the rejected `424.37 MB` whole-package copy. Selected Prefabs, package versions, local paths, validation evidence, and restoration steps are recorded in `Docs/COMBAT_VFX_RESOURCE_TRACKING.md`. They import in the main project with a clean Console but are not connected to gameplay yet.
+The selected dependency closure from four locally licensed Combat VFX packages validated in `RelicGuardianAssetLab` is restored under `Assets/LocalLicensed/CombatVFX/`. After final in-project Guard Prefab composition, the local tree contains `208` files including generated metadata and uses approximately `64.28 MiB`, still far below the rejected `424.37 MB` whole-package copy. Selected Prefabs, package versions, local paths, validation evidence, and restoration steps are recorded in `Docs/COMBAT_VFX_RESOURCE_TRACKING.md`. The final local `Normal Guard Impact.prefab` and `Perfect Guard Impact.prefab` are both connected to their distinct result branches and runtime verified.
+
+Seven learner-selected Guard WAV files from local licensed `Melee Weapons Pack 1` are imported under the ignored `Assets/LocalLicensed/CombatSFX/Selected/Guard/` boundary with original GUIDs preserved. Their accepted 3-layer Ordinary and 4-layer Perfect volume/pitch/delay settings are stored in the local `Guard_SFX_Layer_Configuration.json` and tracked in `Docs/COMBAT_SFX_RESOURCE_TRACKING.md`. They import with a clean Console but are not connected to formal presentation code yet.
 
 ## Context and Documentation Boundary
 
@@ -83,16 +85,42 @@ The selected dependency closure from four locally licensed Combat VFX packages v
 
 ## Implemented Guard Coverage
 
-- `PlayerBlock.TryHandleHit(HitContext)` treats only Startup and Hold as defendable; Release rejects the hit before angle evaluation.
+- `PlayerBlock.ResolveGuardHit(HitContext)` treats only Startup and Hold as defendable; Release returns `GuardResult.Unhandled` before angle evaluation.
 - The method projects the fixed `IncomingDirection` snapshot onto the horizontal plane, rejects a zero horizontal direction, inverts it to obtain the direction toward the attack, snapshots the player's current horizontal forward direction, and compares the unsigned pre-turn angle with `guardCoverageHalfAngle`.
 - `guardCoverageHalfAngle` is an adjustable serialized `float` on `PlayerBlock`; `SampleScene` explicitly stores the accepted default `90`, giving a total `180`-degree coverage cone. Coverage includes the boundary through `<=`.
 - Coverage success returns handled before health damage. Non-Blocking hits, Release, invalid horizontal direction, and coverage failure continue through `PlayerHealth`.
 
-## Implemented Perfect Guard Classification
+## Implemented Perfect Guard Classification and Presentation Boundary
 
 - `BeginBlock()` opens one minimal Perfect Guard Window inside Startup. The local `Block_Start.anim` closes it through `ClosePerfectGuardWindow` at `0.16666667s`; entering Hold or Release also closes it defensively.
-- After phase, direction, and Guard Coverage succeed, `PlayerBlock.TryHandleHit()` classifies the hit from the current window state. An open window logs `Perfect Guard`; any other legal Startup/Hold hit logs `Ordinary Guard`.
-- The learner runtime-verified both ordinary and Perfect Guard classification with correct damage prevention and a clean Console. Classification currently remains internal to `PlayerBlock`; there is no result data contract, VFX spawn, SFX, camera shake, enemy reaction, Parry, or Counter yet.
+- After phase, direction, and Guard Coverage succeed, `PlayerBlock.ResolveGuardHit()` returns the explicit `GuardResult.Perfect` or `GuardResult.Ordinary`; phase, invalid-direction, and coverage failures return `GuardResult.Unhandled`.
+- `PlayerHitReceiver` keeps damage routing authoritative: `Unhandled` continues to `PlayerHealth`, while handled results are sent once to the same-GameObject `PlayerGuardPresentation` before damage returns.
+- `PlayerGuardPresentation.PresentGuardResult()` is the minimum presentation consumer. It distinguishes Ordinary and Perfect, owns their independent VFX lifecycles and audio-data selection, and never decides damage or Guard legality.
+- The learner runtime-verified unblocked damage, Ordinary Guard, and Perfect Guard after the route moved out of `PlayerBlock`; handled hits still prevented damage, each result logged once from Presentation, and the Console remained clean.
+
+## Implemented Ordinary Guard VFX
+
+- `SampleScene` has one local `GuardImpactAnchor` child on the player root at local position `(0, 1.2, 0.45)`, referenced by the Scene-level `PlayerGuardPresentation`. It is a configurable visual fallback, not a physical contact point, and remains inside the protected Scene override.
+- `ordinaryGuardImpactPrefab` references the ignored local final `Assets/LocalLicensed/CombatVFX/Selected/GuardImpacts/Normal Guard Impact.prefab`; its learner-accepted root scale is `0.5`.
+- Ordinary Guard calls one private `PlayOrdinaryGuardImpact()`, spawns the Prefab at the anchor's world position/rotation, and destroys the runtime instance after the serialized `1.2s` lifetime. Perfect Guard and unhandled hits do not spawn the Ordinary effect.
+- The selected Normal and Perfect Prefabs use View-aligned Particle Renderers, so the current visible planes face the camera. `IncomingDirection` is carried to Presentation but is not used for rotation in this first layer.
+- The learner runtime-verified the new Normal Guard Impact in the real combat camera on 2026-09-01: Ordinary spawned once with accepted placement/size/brightness, cleanup completed, Perfect and unhandled hits did not spawn it, existing damage prevention/damage remained correct, and the Console was clean.
+- Hitstop, Camera Impulse, pooling, Attack feedback, enemy reaction, Parry, Counter, and Guard Break remain unimplemented.
+
+## Implemented Perfect Guard VFX
+
+- `perfectGuardImpactPrefab` references the ignored local final `Assets/LocalLicensed/CombatVFX/Selected/GuardImpacts/Perfect Guard Impact.prefab`; its main named root uses the learner-accepted scale `0.68`.
+- Perfect Guard calls the independently reconstructed `PlayPerfectGuardImpact()`, reuses the configured Guard impact anchor, and explicitly cleans the spawned instance with the code default `1.8s` lifetime. Ordinary and unhandled hits do not call the Perfect route.
+- The learner runtime-verified distinct Ordinary and Perfect effects, branch isolation, cleanup, preserved damage behavior, and a clean Console on 2026-09-01. The persisted `ClosePerfectGuardWindow` Event remains `0.16666667s`; Codex did not change it.
+- Both current Guard Prefabs are View-aligned. `IncomingDirection` remains carried to Presentation but unused by these camera-facing Particle Renderers.
+
+## Implemented Guard SFX
+
+- `CombatAudioLayer` is serializable per-layer data for one `AudioClip`, Volume, Pitch, and Delay Seconds. `CombatAudioData` groups a Master Volume with a variable-length layer array; neither type plays audio or decides combat results.
+- `CombatAudioPlayer` owns four Scene-wired `AudioSource` channels. `Play(CombatAudioData)` stops prior scheduled playback, maps each valid layer onto the corresponding channel, and calls `AudioSource.PlayScheduled()` from one `AudioSettings.dspTime + 0.02s` base. `OnDisable()` invokes the same cleanup boundary.
+- `PlayerGuardPresentation` owns independent Ordinary and Perfect `CombatAudioData` fields and passes only the already-selected result's data to the reusable player. Ordinary stores three layers; Perfect stores four, including the accepted fourth-layer `0.030s` accent.
+- `SampleScene` keeps one local `CombatAudio` child under the player with four 2D, non-looping, Play-On-Awake-disabled channels. Licensed clips remain under ignored `Assets/LocalLicensed/CombatSFX/Selected/Guard/` and are not assigned directly to the channels.
+- On 2026-09-02 the learner runtime-verified distinct Ordinary and Perfect Guard SFX, correct VFX/SFX branch isolation, no duplicate group per hit, preserved no-damage Guard handling, preserved one-hit unblocked damage with no Guard feedback, and a clean Console. The disable cleanup exists in code but was not recorded as a separate focused runtime test.
 
 ## Implemented Pre-Hit Attack Threat and Guard Facing Assist
 
@@ -125,14 +153,18 @@ The learner reported the final combined behavior as normal on 2026-08-28:
 - Guard Coverage passed the learner's focused Play Mode checks on 2026-08-30: Free frontal hits damaged, frontal Startup and Hold hits were handled without damage, rear Hold hits damaged, frontal Release hits damaged, and the Console remained clean.
 - Pre-hit Attack Threat Facing Assist passed the learner's focused Play Mode checks on 2026-08-30: with the attacker approximately `40-50` degrees off the player's forward direction, `Block_Start` and turning began together after a real Startup preview, turning continued into Hold before impact, impact did not restart `Block_Start`, the hit was guarded without health loss, and the Console remained clean. A follow-up confirmed that Block without a real preview does not auto-turn and that entering Release before impact stops assist; Release visibility used a temporary Play Mode-only `startupDuration = 2` that reverted on exit. Exact mathematical arrival at impact was not claimed.
 - The minimal Startup Perfect Guard Window and ordinary-versus-perfect classification passed the learner's focused runtime checks on 2026-08-31. The authored close Event is persisted at `0.16666667s`; ordinary Guard and Perfect Guard were both observed, handled hits caused no health loss, and the Console remained clean.
+- The minimum `GuardResult -> PlayerGuardPresentation` boundary passed the learner's focused runtime checks on 2026-08-31. Unblocked hits still damaged, Ordinary and Perfect results each reached only their presentation log once without health loss, and the Console remained clean. `Assembly-CSharp.csproj` compiled with zero errors and zero warnings before the Play Mode pass.
+- The first Ordinary Guard VFX layer passed the learner's focused Play Mode checks on 2026-09-01 using the final `Normal Guard Impact.prefab`: one Ordinary spawn, accepted in-camera presentation, explicit cleanup, no Ordinary effect for Perfect or unhandled hits, preserved damage behavior, and a clean Console.
+- The Perfect Guard VFX layer passed the learner's focused Play Mode checks on 2026-09-01 using the final `Perfect Guard Impact.prefab`: one Perfect spawn, distinct presentation, explicit cleanup, no branch crossover, preserved damage behavior, and a clean Console.
+- The Guard SFX layer passed the learner's focused Play Mode checks on 2026-09-02: the accepted 3-layer Ordinary and 4-layer Perfect combinations stayed distinct, each hit produced one matching VFX/SFX group without crossover or duplicate playback, handled hits still prevented damage, an unblocked hit damaged once without Guard feedback, and the Console remained clean.
 - The selected dependency closure from four Combat VFX packages and the final Guard validation scene were restored into the main project's ignored `Assets/LocalLicensed/CombatVFX/` boundary on 2026-08-31. Main-project import completed with zero Console errors and zero warnings; scene validation found no missing scripts or broken Prefabs. Final in-combat visual tuning and Gameplay connection remain unverified.
 
-The current workspace source compiled through `Assembly-CSharp.csproj` with zero errors and zero warnings after the pre-hit threat/assist connection. Runtime results above are learner-reported Play Mode verification.
+The current workspace source compiled through `Assembly-CSharp.csproj` with zero errors and zero warnings after the Guard SFX connection. Runtime results above are learner-reported Play Mode verification.
 
 ## Deferred Guard Work
 
 - The earlier target-search and post-hit assist plans are superseded. Empty Guard performs no Physics or Lock-On target search. A real `AttackThreatContext` emitted by enemy Startup may start one fixed-direction pre-hit assist while Blocking.
-- `HitContext`, `PlayerHitReceiver`, directional Startup/Hold Guard Coverage, the core pre-hit threat/assist route, and the minimal Startup Perfect Guard classification are implemented. Block/Perfect Guard presentation consequences, Guard Break, Parry, and Counter remain unimplemented. The current design is recorded in `Docs/GUARD_HIT_RESOLUTION_DESIGN.md`.
+- `HitContext`, `PlayerHitReceiver`, directional Startup/Hold Guard Coverage, the core pre-hit threat/assist route, the minimal Startup Perfect Guard classification, the explicit `GuardResult -> PlayerGuardPresentation` route, and distinct Ordinary/Perfect Guard VFX and SFX are implemented. Hitstop and later presentation layers, Guard Break, Parry, and Counter remain unimplemented. The current design is recorded in `Docs/GUARD_HIT_RESOLUTION_DESIGN.md` and `Docs/COMBAT_PRESENTATION_FEEDBACK_DESIGN.md`.
 - Startup and Hold are defendable; Release is not. The Perfect Guard Window is a short authored subset of Startup, while other legal Startup/Hold hits resolve as ordinary Guard.
 - Default adjustable half-angles are `60` degrees for Facing Assist (total `120`) and `90` degrees for Guard Coverage (total `180`). Assist eligibility uses pre-turn facing, and the matching real hit reuses that saved facing for coverage.
 - `PlayerMovement` remains the only facing owner. Its implemented branch is active Guard Facing Assist, otherwise Locked Facing, otherwise Free Movement Facing. Assist stores a fixed preview direction until expected impact and never follows `Source`.
@@ -144,7 +176,7 @@ The current workspace source compiled through `Assembly-CSharp.csproj` with zero
 
 ## Exact Next Development Step
 
-Define the smallest result-to-presentation boundary for ordinary Guard versus Perfect Guard, then connect one feedback layer at a time using the locally validated VFX. Explicitly establish whether the learner or Codex writes any new gameplay/presentation code before editing it. Keep enemy reaction, Parry/Counter, Guard Break, Dodge, and a general result framework separate.
+Design and implement only Guard Hitstop as the next learner-led presentation concept. First define its presentation owner, start/end and guaranteed restoration boundaries, Ordinary/Perfect durations, and overlap rule. It must consume the already-resolved `GuardResult`, must not change `PlayerBlock`, the Perfect Guard Window, damage routing, or DSP audio scheduling, and must not add Camera Impulse, Attack feedback, Weapon Trail, Hit Reaction, pooling, enemy reaction, Parry/Counter, Guard Break, Dodge, or a general time/effect framework in the same concept.
 
 ## Files to Read Next
 
@@ -153,16 +185,23 @@ Define the smallest result-to-presentation boundary for ordinary Guard versus Pe
 - `Docs/ARCHITECTURE.md`
 - `Docs/HANDOFF.md`
 - `Docs/CONTEXT_INDEX.md`
+- `Docs/COMBAT_PRESENTATION_FEEDBACK_DESIGN.md`
+- `Docs/COMBAT_SFX_RESOURCE_TRACKING.md`
 - `Docs/GUARD_HIT_RESOLUTION_DESIGN.md`
 - `Docs/COMBAT_VFX_RESOURCE_TRACKING.md`
 - `Assets/RelicGuardian/Enemy/Scripts/EnemyAI.cs`
 - `Assets/RelicGuardian/Enemy/Scripts/EnemyAttack.cs`
 - `Assets/RelicGuardian/Player/Scripts/AttackThreatContext.cs`
 - `Assets/RelicGuardian/Player/Scripts/HitContext.cs`
+- `Assets/RelicGuardian/Player/Scripts/GuardResult.cs`
 - `Assets/RelicGuardian/Player/Scripts/PlayerHitReceiver.cs`
 - `Assets/RelicGuardian/Player/Scripts/PlayerHealth.cs`
 - `Assets/RelicGuardian/Player/Scripts/PlayerActionController.cs`
 - `Assets/RelicGuardian/Player/Scripts/PlayerBlock.cs`
+- `Assets/RelicGuardian/Player/Scripts/PlayerGuardPresentation.cs`
+- `Assets/RelicGuardian/Player/Scripts/CombatAudioLayer.cs`
+- `Assets/RelicGuardian/Player/Scripts/CombatAudioData.cs`
+- `Assets/RelicGuardian/Player/Scripts/CombatAudioPlayer.cs`
 - `Assets/RelicGuardian/Player/Scripts/PlayerMovement.cs`
 
 Inspect the protected Prefab and Scene only when current local wiring or runtime values are necessary. Never overwrite them from a tracked baseline.

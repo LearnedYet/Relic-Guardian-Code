@@ -1,6 +1,6 @@
 # Combat VFX Resource Tracking
 
-Last verified: 2026-08-31.
+Last verified: 2026-09-01.
 
 This document records local licensed Combat VFX dependencies, AssetLab validation results, and the current selected candidates. It does not prove that any VFX is connected to gameplay in the main project.
 
@@ -10,7 +10,7 @@ This document records local licensed Combat VFX dependencies, AssetLab validatio
 - Only the final selected assets, their recursive dependencies, and the final Guard validation scene are present in the main project under the ignored local-only boundary `Assets/LocalLicensed/CombatVFX/`, with Unity GUIDs preserved.
 - The main project imported the copied assets with zero Console errors and zero warnings. The selected Prefabs and custom HDR materials resolve successfully.
 - Final color, HDR intensity, size, orientation, Bloom response, spawn point, and combined readability must be tuned in the main project's real camera and combat scale.
-- No Combat VFX is connected to Attack, ordinary Guard, or Perfect Guard gameplay yet.
+- `Normal Guard Impact.prefab` and `Perfect Guard Impact.prefab` are connected only to their matching Guard results through `PlayerGuardPresentation` and passed the learner's focused in-combat runtime checks. Attack VFX remains unconnected.
 - Everything under `Assets/LocalLicensed/CombatVFX/` and its parent local licensed boundary must remain unstaged and must never be committed or uploaded.
 
 ## Required Packages
@@ -39,7 +39,7 @@ Assets/LocalLicensed/CombatVFX/
 └─ Validation/     final Guard composition scene
 ```
 
-The initial whole-package copy contained `1825` files and used approximately `424.37 MB`. It was replaced by a dependency list of `79` Unity assets; after Unity generated the required folder metadata, the local tree contains `199` files total and uses approximately `62.90 MB`. A serialized GUID cross-check found zero references to omitted assets from the former broad CombatVFX tree. The final Unity refresh compiled cleanly, every selected Prefab/material resolved, and the Guard validation scene reported zero missing scripts and zero broken Prefabs.
+The initial whole-package copy contained `1825` files and used approximately `424.37 MB`. It was replaced by a dependency list of `79` Unity assets. After Unity generated folder metadata and the learner created the final in-project Guard Prefabs, the current local tree contains `208` files total and uses approximately `64.28 MiB`. The earlier serialized GUID cross-check found zero references to omitted assets from the former broad CombatVFX tree. The dependency-pruned Unity refresh compiled cleanly, and the later Ordinary in-combat integration also left the Console clean.
 
 ## Selected Attack Layers
 
@@ -64,19 +64,20 @@ Final candidates:
 
 ## Selected Guard Layers
 
-### Ordinary Guard Foundation
+### Ordinary Guard
 
-- `Selected/GuardImpacts/GuardImpact_Normal_Test.prefab` derives from `VFX_SimpleImpact (7)`.
-- AssetLab tuning used root scale `0.7` and Particle System simulation speed `1.5`.
-- The current Guard comparison scene also contains a `CFXR4 Laser Impact (Orange)` instance for evaluating a compact HDR center burst. Its ray/smaller-impact material uses `_HdrMultiply = 6`; its `Center` material uses `_HdrMultiply = 8`; it also contains a short Point Light layer.
+- Current final: `Selected/GuardImpacts/Normal Guard Impact.prefab`.
+- It supersedes `GuardImpact_Normal_Test.prefab` as the main-project choice, uses learner-accepted root scale `0.5`, and retains non-looping Play On Awake Particle Systems at simulation speed `1.5` with Stop Action None.
+- `SampleScene` references this Prefab from `PlayerGuardPresentation`. The learner accepted its real-camera position, scale, brightness, one-spawn branch behavior, and explicit cleanup on 2026-09-01.
 
-### Perfect Guard Foundation
+### Perfect Guard
 
-- `Selected/GuardImpacts/GuardImpact_Perfect_WithSparks.prefab` combines the selected stronger Wallcoeur impact with the earlier independent spark layer.
+- Current final: `Selected/GuardImpacts/Perfect Guard Impact.prefab`.
+- It supersedes `GuardImpact_Perfect_WithSparks.prefab` as the main-project choice and preserves the learner-selected stronger impact, cross, spark, and star composition. Its main named root currently uses scale `0.68`.
 - `M_GuardSparks_HDR.mat` is an independent URP Particles/Unlit additive material, so its HDR changes do not modify the source package material.
-- The current Guard comparison scene also preserves the learner-selected `Stars` particle layer using the Cartoon FX 4 HDR star material.
+- The Prefab is connected only to the Perfect branch in `PlayerGuardPresentation` with an independent `1.8s` cleanup default and passed the learner's focused in-combat branch, presentation, cleanup, damage, and Console checks on 2026-09-01.
 
-The exact Ordinary-versus-Perfect layer assignment in `GuardImpactComparison.unity` is a visual composition checkpoint. Build reusable final Prefabs only after the main-project camera, Bloom, character scale, and hit point are visible together.
+`GuardImpactComparison.unity` remains the visual composition checkpoint. The reusable final Guard Prefabs were subsequently created, tuned, connected, and focused-runtime-verified in the main project.
 
 ## Validation Artifacts
 

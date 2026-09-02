@@ -208,8 +208,12 @@
   - [x] Add and runtime-verify the authored Perfect Guard Window lifetime inside Startup; legal Startup/Hold hits outside the window remain ordinary Guard.
   - [x] Classify handled hits internally as Ordinary or Perfect Guard without adding presentation consequences or a general result hierarchy.
   - [x] Validate the first-pass Weapon Trail, Attack Hit, ordinary Guard, and Perfect Guard VFX candidates in an isolated AssetLab, then restore the selected local-only assets under `Assets/LocalLicensed/CombatVFX/` with a clean main-project import.
+  - [x] Add and runtime-verify the explicit `GuardResult -> PlayerGuardPresentation` boundary while preserving unhandled damage and handled Guard prevention.
   - [x] Run focused lifecycle, movement, camera-mode, early-release, and Console regressions.
-  - [ ] Add Guard/Perfect Guard presentation one feedback layer at a time after defining the smallest explicit result-to-presentation boundary.
+  - [x] Connect and runtime-verify one `Normal Guard Impact` only for Ordinary Guard, using the Scene-level configurable anchor and explicit timed cleanup while Perfect and unhandled hits remain excluded.
+  - [x] Connect and runtime-verify the separately selected `Perfect Guard Impact` with independent Prefab/lifetime fields, one Perfect-only spawn route, explicit cleanup, and no branch crossover.
+  - [x] Select and import seven local-only Guard AudioClips with preserved GUIDs and record the accepted 3-layer Ordinary / 4-layer Perfect volume, pitch, and delay settings.
+  - [x] Connect and runtime-verify the imported Guard SFX through the existing result-to-presentation boundary using reusable layer/group data, four Scene-owned playback channels, DSP scheduling, independent 3-layer Ordinary and 4-layer Perfect configurations, and preserved unhandled damage.
 - [ ] Dodge
 - [ ] Perfect Dodge
 - [x] Lock-on (first usable version)

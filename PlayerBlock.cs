@@ -93,12 +93,12 @@ public class PlayerBlock : MonoBehaviour
         return true;
     }
 
-    public bool TryHandleHit(HitContext hitContext)
+    public GuardResult ResolveGuardHit(HitContext hitContext)
     {
         if (currentBlockPhase != BlockPhase.Startup
             && currentBlockPhase != BlockPhase.Hold)
         {
-            return false;
+            return GuardResult.Unhandled;
         }
 
         bool matchesFacingAssistSource = hitContext.Source == guardFacingAssistSource
@@ -109,7 +109,7 @@ public class PlayerBlock : MonoBehaviour
 
         if (horizontalIncomingDirection == Vector3.zero)
         {
-            return false;
+            return GuardResult.Unhandled;
         }
 
         Vector3 directionTowardAttack = -horizontalIncomingDirection.normalized;
@@ -133,19 +133,17 @@ public class PlayerBlock : MonoBehaviour
 
         if (hitAngle > guardCoverageHalfAngle)
         {
-            return false;
+            return GuardResult.Unhandled;
         }
 
         if (isPerfectGuardWindowOpen)
         {
-            Debug.Log("Perfect Guard");
+            return GuardResult.Perfect;
         }
         else
         {
-            Debug.Log("Ordinary Guard");
+            return GuardResult.Ordinary;
         }
-
-        return true;
     }
 
     private void ClearGuardFacingAssist()

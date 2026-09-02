@@ -1,6 +1,6 @@
 # Guard Hit Resolution, Pre-Hit Facing Assist, and Perfect Guard Design
 
-Status: revised on 2026-08-31. `HitContext`, `PlayerHitReceiver`, Startup/Hold Guard Coverage, `AttackThreatContext`, pre-hit Facing Assist, and the minimal Perfect Guard Window/classification are implemented and runtime-verified for the current enemy. Presentation consequences remain pending.
+Status: revised on 2026-09-01. `HitContext`, `PlayerHitReceiver`, Startup/Hold Guard Coverage, `AttackThreatContext`, pre-hit Facing Assist, the minimal Perfect Guard Window/classification, the `GuardResult -> PlayerGuardPresentation` boundary, and distinct Ordinary/Perfect Guard VFX layers are implemented and runtime-verified for the current enemy. Guard SFX and later feedback layers remain pending.
 
 This document supersedes every earlier plan that made Guard search for a target, reuse Lock-On for defense, or wait until the hit landed before beginning Facing Assist.
 
@@ -144,10 +144,11 @@ The minimal classification is implemented:
 1. `BeginBlock()` opens the window after entering Startup;
 2. the authored `Block_Start.anim` Event closes it at `0.16666667s`;
 3. entering Hold or Release also closes it defensively;
-4. after Guard Coverage succeeds, `TryHandleHit()` classifies an open-window hit as Perfect Guard and any other legal Startup/Hold hit as Ordinary Guard;
-5. the current observable consequence is only the corresponding diagnostic log.
+4. after Guard Coverage succeeds, `ResolveGuardHit()` returns `GuardResult.Perfect` for an open-window hit and `GuardResult.Ordinary` for any other legal Startup/Hold hit; failed Guard resolution returns `GuardResult.Unhandled`;
+5. `PlayerHitReceiver` keeps `Unhandled` on the damage path and sends handled results once to `PlayerGuardPresentation`;
+6. the current observable consequence is only the corresponding diagnostic log owned by Presentation.
 
-The next work is to define and verify one small result-to-presentation boundary, then add ordinary and Perfect Guard feedback layers separately. Do not prebuild a general `HitResult` hierarchy or combine enemy reaction, Parry, Counter, Guard Break, Dodge, and VFX spawning into one step.
+Ordinary and Perfect Guard now each spawn and explicitly clean one distinct final impact Prefab through the verified presentation boundary. The next work selects and connects only distinct Guard SFX, without changing classification or adding Hitstop. Do not prebuild a general `HitResult` hierarchy or combine enemy reaction, Parry, Counter, Guard Break, Dodge, pooling, and multiple feedback layers into one step.
 
 ## Verification State
 
@@ -171,6 +172,27 @@ Perfect Guard classification regressions passed on 2026-08-31:
 - a legal handled hit after the authored window closed logged `Ordinary Guard`;
 - a legal handled hit while the Startup window was open logged `Perfect Guard`;
 - both results prevented health damage and left the Console otherwise clean.
+
+Guard result-to-presentation regressions passed on 2026-08-31:
+
+- unblocked hits still reached health damage without a Guard presentation log;
+- Ordinary and Perfect Guard each reached only their matching `PlayerGuardPresentation` log once and prevented health damage;
+- `Assembly-CSharp.csproj` compiled with zero errors and zero warnings before the Play Mode pass, and the Console remained clean.
+
+Ordinary Guard VFX regressions passed on 2026-09-01:
+
+- Ordinary Guard spawned one final Normal Guard Impact at the configured Scene anchor with accepted real-camera scale and brightness;
+- the runtime instance was explicitly cleaned up;
+- Perfect Guard and unhandled hits did not spawn the Ordinary effect;
+- existing damage prevention/damage remained correct and the Console stayed clean.
+
+Perfect Guard VFX regressions passed on 2026-09-01:
+
+- Perfect Guard spawned one final Perfect Guard Impact and did not spawn the Ordinary effect;
+- Ordinary and unhandled hits did not spawn the Perfect effect;
+- the runtime instance was explicitly cleaned up;
+- existing damage prevention/damage remained correct and the Console stayed clean;
+- the persisted Perfect Guard close Event remained `0.16666667s`.
 
 Still unclaimed or deferred:
 

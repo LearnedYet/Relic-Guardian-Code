@@ -39,8 +39,10 @@ Do not read `Docs/DEV_LOG.md` or `Docs/Archive/` in full during ordinary startup
 - The learner writes key gameplay code first unless they explicitly ask Codex to implement or take over.
 - A correct prediction, explanation, fill-in answer, or messages such as `继续`, `嗯`, `好`, `好了`, or `正确` are not authorization to write gameplay code.
 - Before any key gameplay-code edit, explicitly establish who will type it.
+- Establish authorship once for a bounded, continuous learning feature. After the learner begins editing that feature, keep the learner-as-author default for its subsequent related steps until the learner explicitly asks Codex to take over or the task scope changes materially; do not repeat the who-will-type question for every small edit.
 - After the learner edits a file, inspect the actual file and review that implementation before continuing.
 - Codex may directly fix only unambiguous formatting, indentation, line breaks, and obvious spelling mistakes. This permission never includes behavioral, logical, structural, or architectural changes.
+- When Codex directly fixes an unambiguous spelling mistake, briefly report the exact correction. If a name has more than one plausible intended meaning or the correction could change behavior, stop and ask instead of treating it as a typo.
 - Repetitive, simple, low-risk Editor configuration for one already-explained concept may be handled as one batch. Do not batch separate gameplay decisions.
 - Do not treat copying or following instructions once as proof that a concept is understood. Use a small prediction, explanation, correction, reconstruction, or runtime test as evidence.
 
@@ -56,6 +58,19 @@ Before asking the learner to create any new class, method, property, field, para
 6. Every English word in the proposed identifier, its Chinese meaning, and the complete naming reason.
 
 Do not assume that understanding gameplay logic means the learner can independently choose variable scope or English names.
+
+## Multi-Agent Delegation Rules
+
+- Multi-Agent is opt-in by task shape. Codex may use subagents only when the task contains independent, bounded workstreams whose parallel investigation or independent review would materially improve speed, coverage, or main-thread context quality.
+- Do not use subagents for learner-first code entry, small or strictly sequential edits, immediate learner-file review, or continuous Unity Scene, Prefab, Animator, or Animation Event configuration.
+- For a new task or after compaction, the root agent must complete the core `relic-guardian-context` bootstrap itself before delegating task-specific investigation. Do not assign multiple agents to reread the complete startup context.
+- Investigation subagents are read-only by default. They must not edit files, mutate Unity Editor state, stage Git changes, commit, push, or copy licensed assets unless the learner explicitly authorizes that exact delegated action.
+- Use at most one subagent for an ordinary complex task and two to three only for genuinely independent cross-module work. Avoid recursive delegation unless the concrete task requires it.
+- Default delegated context to `fork_turns="none"` and provide a bounded task packet. Use limited recent turns only when required; do not default to the full parent history.
+- Keep one writer. During learner-first work, the learner remains the writer of key code. After explicit Codex takeover, only the root or one designated writer may modify a given scope.
+- The root agent owns architecture decisions, conflict resolution, final review, and verification against actual files, build output, Unity Console, Runtime evidence, and current Git state.
+- Unity MCP instance selection and shared mutable Unity work remain root-owned unless one subagent receives an explicit exclusive instance and mutation scope.
+- Use `.agents/skills/relic-guardian-multi-agent/SKILL.md` for the full delegation workflow.
 
 ## Unity and Architecture Boundaries
 

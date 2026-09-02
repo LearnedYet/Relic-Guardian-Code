@@ -15,19 +15,23 @@ At a new task, after context compaction, or when resuming from a Handoff:
 
 Actual code, Unity assets, current Editor state, and Git status remain authoritative. Use `rg` to locate historical evidence before reading narrow excerpts. Never read the whole `Docs/Archive/` or `Docs/DEV_LOG.md` by default.
 
-## Current Exact Next Route: Guard Result Presentation
+## Current Exact Next Route: Guard SFX Integration
 
 Read:
 
+- `Docs/COMBAT_PRESENTATION_FEEDBACK_DESIGN.md`
+- `Docs/COMBAT_SFX_RESOURCE_TRACKING.md`
 - `Docs/GUARD_HIT_RESOLUTION_DESIGN.md`
 - `Docs/COMBAT_VFX_RESOURCE_TRACKING.md`
 - `Assets/RelicGuardian/Player/Scripts/HitContext.cs`
+- `Assets/RelicGuardian/Player/Scripts/GuardResult.cs`
 - `Assets/RelicGuardian/Player/Scripts/PlayerHitReceiver.cs`
 - `Assets/RelicGuardian/Player/Scripts/PlayerActionController.cs`
 - `Assets/RelicGuardian/Player/Scripts/PlayerBlock.cs`
+- `Assets/RelicGuardian/Player/Scripts/PlayerGuardPresentation.cs`
 - `Assets/RelicGuardian/Player/Scripts/PlayerAnimator.cs`
 
-Scope boundary: the hit-data seam, Startup/Hold Guard Coverage, pre-hit Attack Threat Facing Assist, and minimal Perfect Guard Window/classification are implemented and runtime-verified for the current enemy. Next define only the smallest result-to-presentation boundary and connect one feedback layer at a time. VFX assets are locally validated but not integrated. Enemy reaction, Parry/Counter, Guard Break, Dodge, Projectile, Boss timing data, deadline-specific turn tuning, and a general result/Damage Framework remain separate concepts.
+Scope boundary: the hit-data seam, Startup/Hold Guard Coverage, pre-hit Attack Threat Facing Assist, minimal Perfect Guard Window/classification, `GuardResult -> PlayerGuardPresentation` route, and distinct Ordinary/Perfect Guard VFX layers are implemented and runtime-verified for the current enemy. Seven selected WAV files plus preserved GUIDs and accepted 3-layer Ordinary / 4-layer Perfect settings are imported under the ignored local SFX boundary but are not connected. Next implement only the learner-led Guard SFX presentation route with DSP scheduling. Keep Hitstop, Camera Impulse, Attack feedback, pooling, AudioMixer, and Gameplay Consequences separate. The persisted Perfect Guard close Event remains `0.16666667s`.
 
 ## Combat VFX Resource Selection or Local Restoration
 

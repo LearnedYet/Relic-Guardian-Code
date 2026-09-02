@@ -1,6 +1,6 @@
 # Relic Guardian Implemented Architecture
 
-Last reviewed against the actual project-owned C# source: 2026-08-31.
+Last reviewed against the actual project-owned C# source: 2026-09-02.
 
 This file is the compact architecture map for behavior that is currently implemented. Actual code, Unity assets, current Editor state, and Git status remain authoritative. Approved but unimplemented feature designs belong in their feature-design documents and must not be treated as runtime facts.
 
@@ -19,14 +19,17 @@ This file is the compact architecture map for behavior that is currently impleme
 | `PlayerInputReader` | Records movement/look values, held Sprint/Block state, and one-use Attack/Jump/Lock-On/Block requests. It does not decide whether an action is legal. |
 | `PlayerActionController` | Sole owner of the coarse player action state and deterministic Block/Attack/Jump request arbitration. |
 | `PlayerCombat` | Owns the four-step Basic Attack sequence, attack targets, windows, queue/restart state, attack facing requests, lunge requests, enemy damage requests, and complete attack cleanup. |
-| `PlayerBlock` | Owns the internal Block `Startup`, `Hold`, and `Release` phases, phase-aware Hold movement permission, directional Guard Coverage decisions, and the internal ordinary-versus-perfect Guard classification. |
+| `PlayerBlock` | Owns the internal Block `Startup`, `Hold`, and `Release` phases, phase-aware Hold movement permission, directional Guard Coverage decisions, and production of the explicit `GuardResult`. |
 | `PlayerMovement` | Sole owner of player `CharacterController` movement and actual player Transform-facing application. Other gameplay components request facing or displacement through it. |
 | `PlayerTargeting` | Owns the current Lock-On target, nearest-target acquisition, toggle/cancel behavior, and break-distance validation. Lock-On is orthogonal to the coarse action state. |
 | `PlayerCameraController` | Selects Free/Lock-On Cinemachine camera priorities, input-axis ownership, and the weighted Lock-On camera target. |
 | `PlayerAnimator` | Writes Animator parameters and triggers code-driven presentation changes. It does not decide gameplay permission, damage, coverage, or action state. |
-| `PlayerHitReceiver` | Single entry for defendable incoming hits. It resolves same-frame action requests, delegates `Blocking` hits to `PlayerBlock`, and forwards unhandled hits to `PlayerHealth`. |
+| `PlayerHitReceiver` | Single entry for defendable incoming hits. It resolves same-frame action requests, asks `PlayerBlock` for a `GuardResult`, forwards `Unhandled` hits to `PlayerHealth`, and routes handled results once to Guard presentation. |
+| `PlayerGuardPresentation` | Consumes an already-decided Ordinary or Perfect `GuardResult`. It owns the configurable Guard impact anchor, independent Normal/Perfect Prefab references and cleanup lifetimes, independent Ordinary/Perfect `CombatAudioData`, result-specific VFX/SFX routing, and diagnostic logs; it never decides damage or Guard legality. |
+| `CombatAudioPlayer` | Reusable presentation component that owns preconfigured `AudioSource` channels, maps one `CombatAudioData` layer array to them, stops prior scheduled playback, and schedules valid layers from one DSP-time base. It does not classify hits or own combat permission. |
 | `PlayerHealth` | Stores player health and subtracts integer damage forwarded by `PlayerHitReceiver`. It has no clamp, death flow, or Guard decision logic. |
 | `PlayerAttackData` | Serializable per-step Basic Attack configuration for damage, target range, lunge speed, and lunge distance. |
+| `CombatAudioLayer` / `CombatAudioData` | Serializable presentation data for one Clip/Volume/Pitch/Delay layer and one Master-Volume-plus-layers cue. They contain no playback or gameplay decisions. |
 
 ## Coarse Player Action State
 
@@ -108,7 +111,7 @@ During Hold, `AllowsMovement` is true only while the Block input remains held. `
 
 Startup and Hold can handle hits inside the adjustable horizontal Guard Coverage angle. Release, invalid horizontal direction, and coverage failure remain unhandled and continue to health. A real enemy Startup preview may begin fixed-direction Facing Assist during Startup/Hold; the matching hit still uses the saved pre-assist facing for coverage.
 
-`BeginBlock()` opens the minimal Perfect Guard Window during Startup. The authored `Block_Start` Event closes it, and Hold/Release entry closes it defensively. Only after coverage succeeds does `TryHandleHit()` classify the handled hit as Perfect while the window is open or Ordinary otherwise. The current consequence is diagnostic logging only; no VFX, SFX, camera, enemy-reaction, or general result contract is implemented.
+`BeginBlock()` opens the minimal Perfect Guard Window during Startup. The authored `Block_Start` Event closes it, and Hold/Release entry closes it defensively. Only after coverage succeeds does `ResolveGuardHit()` return `GuardResult.Perfect` while the window is open or `GuardResult.Ordinary` otherwise; failed Guard resolution returns `GuardResult.Unhandled`. `PlayerHitReceiver` routes handled results to `PlayerGuardPresentation`. Ordinary and Perfect each spawn and explicitly clean their own local Guard Impact Prefab, then submit their independent layered cue to `CombatAudioPlayer`. No Hitstop, Camera Impulse, or enemy reaction is implemented.
 
 ## Player Movement and Facing
 
@@ -169,14 +172,17 @@ EnemyAttack.TryStartAttack(PlayerHitReceiver)
 -> EnemyAttack.OpenHitWindow removes the preview and sends the real HitContext
 ```
 
-Current handled Guard classification is:
+Current Guard result and presentation flow is:
 
 ```text
-PlayerBlock.TryHandleHit(HitContext)
+PlayerBlock.ResolveGuardHit(HitContext)
 -> validate Startup/Hold and Guard Coverage
--> Perfect Guard Window open: log Perfect Guard
--> otherwise: log Ordinary Guard
--> return handled without health damage
+-> return Unhandled, Ordinary, or Perfect GuardResult
+-> PlayerHitReceiver
+   ├─ Unhandled -> PlayerHealth.TakeDamage(int)
+   └─ Ordinary/Perfect -> PlayerGuardPresentation.PresentGuardResult()
+      ├─ Ordinary -> one Normal Guard Impact + 3-layer DSP-scheduled cue + log
+      └─ Perfect -> one Perfect Guard Impact + 4-layer DSP-scheduled cue + log
 ```
 
 Range is checked before attack Startup. The later Hit Window damages the saved target without a new overlap, range, or line-of-sight confirmation, so the current prototype is a scheduled hit attempt rather than physical hitbox confirmation.
@@ -194,6 +200,6 @@ Range is checked before attack Startup. The later Hit Window damages the saved t
 
 ## Approved but Not Implemented
 
-`HitContext`, `PlayerHitReceiver`, Startup/Hold Guard Coverage, the core pre-hit Attack Threat Facing Assist route, and minimal Perfect Guard classification are implemented. The current enemy's `40-50` degree core turn/guard path, empty-Guard no-turn check, Release-cancellation check, and ordinary/perfect classification are learner-reported runtime verified.
+`HitContext`, `PlayerHitReceiver`, Startup/Hold Guard Coverage, the core pre-hit Attack Threat Facing Assist route, minimal Perfect Guard classification, the explicit `GuardResult -> PlayerGuardPresentation` boundary, and independent Guard VFX/SFX routes are implemented. The current enemy's `40-50` degree core turn/guard path, empty-Guard no-turn check, Release-cancellation check, ordinary/perfect classification, unhandled damage route, and distinct presentation feedback are learner-reported runtime verified.
 
-The next presentation work must define the smallest explicit way to carry the internal classification into feedback without moving damage permission into `PlayerAnimator` or prebuilding a general hit-result framework. Locally validated Combat VFX assets exist under the ignored licensed boundary, but no runtime VFX owner or spawn route is implemented.
+The next presentation work is Guard Hitstop. Its owner, clock/restoration boundary, durations, and overlap behavior must be defined before implementation; Camera Impulse, pooling, and gameplay consequences remain separate.

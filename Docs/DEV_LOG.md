@@ -4,7 +4,69 @@ This file records daily progress, learned concepts, problems, and solutions.
 
 ---
 
+## 2026-09-02
+
+### Completed Layered Guard SFX
+
+- Added reusable serialized `CombatAudioLayer` data for Clip, Volume, Pitch, and Delay and `CombatAudioData` for Master Volume plus a variable-length layer array. These types contain no playback or combat-resolution decisions.
+- Added the small `CombatAudioPlayer` presentation component with four Scene-wired channels, one `AudioSettings.dspTime + 0.020s` scheduling base, per-layer `PlayScheduled()` delay, prior-playback cancellation, and `OnDisable()` cleanup.
+- Kept `PlayerGuardPresentation` as the result-specific consumer: Ordinary submits the accepted three-layer data and Perfect submits the accepted four-layer data with the fourth `0.030s` accent. `PlayerBlock`, Perfect Guard Window, hit routing, and damage logic were unchanged.
+- Created the Scene-local `CombatAudio` hierarchy with four 2D, non-looping, Play-On-Awake-disabled `AudioSource` channels. Licensed WAV files remain inside ignored `Assets/LocalLicensed/CombatSFX/Selected/Guard/` and are never staged.
+- Corrected learner typing mistakes during actual-file review: `SerializaField -> SerializeField`, `Layersayers -> Layers`, `ScheduleLeaTime -> ScheduleLeadTime`, and `audioSource[sourceIndex] -> audioSources[sourceIndex]`.
+- `Assembly-CSharp.csproj` compiled with zero warnings and zero errors. The learner runtime-verified distinct Ordinary/Perfect VFX and SFX, one matching feedback group per hit, no branch crossover, preserved handled-hit prevention, preserved one-hit unblocked damage without Guard feedback, and a clean Console. Disable cleanup exists but was not separately runtime-tested.
+
+### Next
+
+- Define and implement only Guard Hitstop, beginning with ownership, time restoration, duration selection, and overlap behavior. Keep Camera Impulse and later feedback separate.
+
+---
+
+## 2026-09-01
+
+### Completed First Ordinary Guard VFX Layer
+
+- The learner finalized `Normal Guard Impact.prefab` and `Perfect Guard Impact.prefab` under the ignored `Assets/LocalLicensed/CombatVFX/Selected/GuardImpacts/` boundary; only Normal was connected in this layer.
+- Added the Scene-local `GuardImpactAnchor` under the protected player instance at local position `(0, 1.2, 0.45)` and assigned it to `PlayerGuardPresentation` without applying the override to the protected Prefab.
+- Added independent serialized Ordinary Prefab and accepted `1.2s` lifetime fields. `PlayOrdinaryGuardImpact()` instantiates exactly one Normal effect at the anchor and explicitly destroys the runtime instance because the selected Particle Systems use Stop Action None.
+- Perfect and unhandled results do not call the Ordinary spawn route. Presentation continues to consume the already-decided `GuardResult` without deciding Guard legality or damage.
+- The final Normal root scale is `0.5`. Both final Guard Prefabs use View-aligned Particle Renderers; `IncomingDirection` is carried to Presentation but is not used for rotation in the current Ordinary implementation.
+- The learner's focused Play Mode pass accepted the real-camera position, scale, brightness, branch isolation, cleanup, existing damage behavior, and clean Console.
+- The current local CombatVFX tree contains `208` files and uses approximately `64.28 MiB`. All licensed Combat VFX remain ignored and excluded from GitHub.
+
+### Completed Perfect Guard VFX Layer
+
+- Added independent `perfectGuardImpactPrefab` and `perfectGuardImpactLifetime = 1.8f` fields without changing Perfect Guard Gameplay Resolution.
+- The learner reconstructed `PlayPerfectGuardImpact()` from the Ordinary pattern, using the shared configurable anchor but the Perfect-specific Prefab, runtime instance, and cleanup lifetime.
+- Connected only the Perfect branch to the final `Perfect Guard Impact.prefab`; Ordinary and unhandled results cannot call it.
+- The learner's focused Play Mode pass accepted the distinct Perfect presentation, branch isolation, cleanup, preserved damage behavior, and clean Console. The persisted `ClosePerfectGuardWindow` Event remained `0.16666667s`; Codex did not change it.
+
+### Imported and Recorded Final Guard SFX Candidates
+
+- Built an independent Combat Audio Layer Lab in `RelicGuardianAssetLab` for categorized Edit Mode preview and four-layer DSP-scheduled Play Mode comparison without touching formal Gameplay.
+- Indexed `1243` AudioClips from `Melee Weapons Pack 1` across `81` leaf folders and recorded a shareable directory/naming guide.
+- The learner selected one 3-layer Ordinary Guard combination and one 4-layer Perfect Guard combination. Perfect retains a distinct `0.030s` delayed tonal accent.
+- Copied only the selected seven WAV files and original `.meta` files into the ignored formal-project `Assets/LocalLicensed/CombatSFX/Selected/Guard/` boundary; all seven GUIDs were preserved and had no prior formal-project conflicts.
+- Stored the exact accepted Master Volume, per-layer Volume, Pitch, and Delay values in local `Guard_SFX_Layer_Configuration.json` and tracked them in `Docs/COMBAT_SFX_RESOURCE_TRACKING.md`.
+- Formal Unity imported exactly seven AudioClips plus the configuration TextAsset with zero Console errors or warnings. No formal audio playback, `PlayerGuardPresentation`, `PlayerBlock`, `PlayerHitReceiver`, Hitstop, Camera, or Gameplay code was changed by this import step.
+
+### Next Task
+
+- Teach and implement only the minimum Guard SFX presentation route from the existing `GuardResult`, preserving the accepted layer settings and using DSP scheduling. Keep Hitstop as the following separate feedback layer.
+
 ## 2026-08-31
+
+### Completed Minimum Guard Result-to-Presentation Boundary
+
+- Added `GuardResult` with only `Unhandled`, `Ordinary`, and `Perfect`; it is a per-hit result value rather than a stored action state or general result hierarchy.
+- Renamed `PlayerBlock.TryHandleHit()` to `ResolveGuardHit()` and changed it to return the explicit result after the existing phase, direction, Guard Coverage, and Perfect Window checks.
+- Updated `PlayerHitReceiver` to keep `Unhandled` on the existing `PlayerHealth` damage path and route handled results once to the new same-GameObject `PlayerGuardPresentation` component.
+- Moved the Ordinary/Perfect diagnostic logs out of `PlayerBlock` and into `PlayerGuardPresentation`, preserving the rule that Presentation consumes but never decides Gameplay Resolution.
+- `Assembly-CSharp.csproj` compiled with zero errors and zero warnings. The learner's focused Play Mode pass confirmed unblocked damage, one Ordinary presentation log without damage, one Perfect presentation log without damage, and a clean Console.
+- No VFX Prefab, SFX, Hitstop, Camera Impulse, pooling, enemy reaction, Parry, Counter, or Guard Break was added.
+
+### Next Task
+
+- Connect only `GuardImpact_Normal_Test.prefab` for Ordinary Guard through `PlayerGuardPresentation`, using a configurable presentation anchor and explicit instance cleanup. Perfect Guard remains a separate no-VFX branch until this layer passes runtime verification.
 
 ### Completed Minimal Perfect Guard Window and Classification
 
