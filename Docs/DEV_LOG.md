@@ -4,6 +4,19 @@ This file records daily progress, learned concepts, problems, and solutions.
 
 ---
 
+## 2026-09-05
+
+### Saved and Synchronized the Guard Reaction and Attack Motion Checkpoint
+
+- Recompiled `Assembly-CSharp.csproj` with zero warnings and zero errors, reviewed the code/document diff, and created local full-project feature checkpoint `472d946 Complete Guard reactions and attack motion feedback` from an explicit 23-file allowlist.
+- Excluded the protected `RelicGuardianPlayer.controller`, player Prefab, `SampleScene`, index/line-ending-only `PlayerHealth.cs`, every ignored `Assets/LocalLicensed/` resource, and all licensed Animation Event/import data from the local checkpoint.
+- Read the active Windows proxy `127.0.0.1:7897`, applied it only to individual Git commands, and fetched `origin --prune`. Remote `main` remained at `c6c397e`; no remote-only commit required integration.
+- The prior mirror worktree contained unrelated unstaged changes, so it was left untouched. A new clean worktree and `codex/guard-attack-motion-sync-20260905` branch were created from current `origin/main`.
+- Created mirror feature checkpoint `e484ca1 Sync Guard reactions and attack motion feedback` from an explicit 21-file flattened C#/documentation allowlist. No Scene, Prefab, Controller, `.meta`, licensed asset, README, Input Actions, or other remote-only file was included.
+- Pushed normally without force and verified GitHub `refs/heads/main` at `e484ca14e425aba9757fc85377b1d70b4c68b6b3`. A record-only documentation follow-up carries these checkpoint references.
+
+---
+
 ## 2026-09-04
 
 ### Completed Attack1-4 Motion Whoosh

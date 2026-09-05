@@ -32,7 +32,7 @@ For a new task or post-compaction recovery, read `AGENTS.md`, `Docs/CURRENT_STAT
 - The learner runtime-verified Perfect-only `0.07s` Hitstop, automatic recovery, Ordinary/unhandled exclusion, preserved damage and VFX/SFX routes, post-recovery control, disabled-owner recovery/rejection, and a clean Console. Overlap is code-reviewed but not independently runtime-tested for the current single-hit enemy.
 - The learner runtime-accepted `Block_Start = 2` and `Block_End = 1.5` in the combined Guard flow. The actual local `ClosePerfectGuardWindow` Event is at clip time `0.3s`; older `0.16666667s` documentation is superseded.
 - Licensed Combat VFX/SFX remain under ignored `Assets/LocalLicensed/`. Exact resources and accepted values are in `Docs/COMBAT_VFX_RESOURCE_TRACKING.md` and `Docs/COMBAT_SFX_RESOURCE_TRACKING.md`.
-- Local full-project feature checkpoint: `f7a1d53`; local documentation checkpoint: `8388d96`. GitHub feature-mirror checkpoint: `873df7d`; verified remote `main` after documentation follow-up: `c6c397e8f41314bc28361ca42a68a5708a995513`.
+- Local full-project feature checkpoint: `472d946 Complete Guard reactions and attack motion feedback`. GitHub feature-mirror checkpoint: `e484ca1 Sync Guard reactions and attack motion feedback`; the push was verified at full hash `e484ca14e425aba9757fc85377b1d70b4c68b6b3` before the record-only documentation follow-up.
 
 ## Exact Next Concept
 
@@ -43,9 +43,9 @@ Guard expansion remains paused. Next connect only the selected confirmed Attack 
 ## Protected Git State
 
 - The protected Unity working state retains `Assets/RelicGuardian/Player/Animator/RelicGuardianPlayer.controller`, `Assets/RelicGuardian/Player/RelicGuardianPlayer.prefab`, `Assets/Scenes/SampleScene.unity`, and the index-only `Assets/RelicGuardian/Player/Scripts/PlayerHealth.cs` entry. Do not reset, overwrite, or broadly stage them.
-- New Hitstop source is uncommitted: `HitstopController.cs/.meta` and the `PlayerGuardPresentation.cs` integration. The protected Scene contains its local component/reference wiring.
-- This Handoff refresh additionally leaves `AGENTS.md`, `Docs/DEVELOPMENT_RULES.md`, `Docs/HANDOFF.md`, `Docs/CURRENT_STATE.md`, and `Docs/CONTEXT_INDEX.md` modified plus `Docs/Archive/HANDOFF_2026-08-31_GUARD_VFX_RESOURCES.md` untracked. They have not been committed or pushed.
+- `HitstopController`, `PlayerAttackPresentation`, their project-owned integrations, maintained documentation, and the archived prior Handoff are included in local feature checkpoint `472d946` and GitHub feature mirror `e484ca1`.
+- The current record-only documentation follow-up updates checkpoint references after that verified feature push.
 - The Scene contains the locally wired Guard VFX/SFX references and therefore must remain outside GitHub unless a separate reproducible replacement plan is approved.
 - `Assets/LocalLicensed/CombatVFX/`, `Assets/LocalLicensed/CombatSFX/`, the imported `Assets/LocalLicensed/SwordAnimationPack/Guard/Block_Hit.anim`, and all other `Assets/LocalLicensed/` content are ignored licensed assets and must never be committed or uploaded.
 - The GitHub repository is the separate flattened code/document mirror. Do not pull its `main` into the full Unity workspace.
-- This Handoff does not authorize new staging, commits, pushes, history rewrites, or remote mutations.
+- No further staging, commits, pushes, history rewrites, or remote mutations are authorized beyond the learner-requested checkpoint synchronization recorded here.
