@@ -36,10 +36,10 @@ Do not read `Docs/DEV_LOG.md` or `Docs/Archive/` in full during ordinary startup
 ## Learner-First Development Rules
 
 - Teach and implement one new concept at a time.
-- The learner writes key gameplay code first unless they explicitly ask Codex to implement or take over.
-- A correct prediction, explanation, fill-in answer, or messages such as `继续`, `嗯`, `好`, `好了`, or `正确` are not authorization to write gameplay code.
-- Before any key gameplay-code edit, explicitly establish who will type it.
-- Establish authorship once for a bounded, continuous learning feature. After the learner begins editing that feature, keep the learner-as-author default for its subsequent related steps until the learner explicitly asks Codex to take over or the task scope changes materially; do not repeat the who-will-type question for every small edit.
+- The learner writes key gameplay and presentation code first unless they explicitly ask Codex to implement or take over.
+- A correct prediction, explanation, fill-in answer, or messages such as `继续`, `嗯`, `好`, `好了`, or `正确` are not authorization to write key gameplay or presentation code.
+- Before a key gameplay- or presentation-code edit, apply the already-established author default. If no author default has been established yet, explicitly establish who will type it.
+- Once the learner-as-author default is established for this project, preserve it across bounded feature changes, context compaction, Handoffs, and new conversations. At the start of a new feature, state that the learner remains the author when useful; do not ask again. Reconfirm only when the learner explicitly proposes Codex takeover or authorship is genuinely ambiguous because of a direct implementation request.
 - After the learner edits a file, inspect the actual file and review that implementation before continuing.
 - Codex may directly fix only unambiguous formatting, indentation, line breaks, and obvious spelling mistakes. This permission never includes behavioral, logical, structural, or architectural changes.
 - When Codex directly fixes an unambiguous spelling mistake, briefly report the exact correction. If a name has more than one plausible intended meaning or the correction could change behavior, stop and ask instead of treating it as a typo.

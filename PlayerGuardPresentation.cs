@@ -10,6 +10,15 @@ public class PlayerGuardPresentation : MonoBehaviour
     [SerializeField] private CombatAudioPlayer combatAudioPlayer;
     [SerializeField] private CombatAudioData ordinaryGuardAudioData = new CombatAudioData();
     [SerializeField] private CombatAudioData perfectGuardAudioData = new CombatAudioData();
+    [SerializeField] private HitstopController hitstopController;
+    [SerializeField] private float perfectGuardHitstopDuration = 0.07f;
+
+    private PlayerAnimator playerAnimator;
+
+    private void Awake()
+    {
+        playerAnimator = GetComponent<PlayerAnimator>();
+    }
 
     public void PresentGuardResult(GuardResult guardResult, Vector3 incomingDirection)
     {
@@ -22,6 +31,11 @@ public class PlayerGuardPresentation : MonoBehaviour
                 combatAudioPlayer.Play(perfectGuardAudioData);
             }
 
+            if (hitstopController != null)
+            {
+                hitstopController.RequestHitstop(perfectGuardHitstopDuration);
+            }
+
             Debug.Log("Perfect Guard");
             return;
         }
@@ -29,6 +43,7 @@ public class PlayerGuardPresentation : MonoBehaviour
         if (guardResult == GuardResult.Ordinary)
         {
             PlayOrdinaryGuardImpact();
+            playerAnimator.PlayOrdinaryGuardReaction();
 
             if (combatAudioPlayer != null)
             {

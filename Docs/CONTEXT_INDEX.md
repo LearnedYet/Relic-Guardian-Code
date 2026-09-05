@@ -15,23 +15,22 @@ At a new task, after context compaction, or when resuming from a Handoff:
 
 Actual code, Unity assets, current Editor state, and Git status remain authoritative. Use `rg` to locate historical evidence before reading narrow excerpts. Never read the whole `Docs/Archive/` or `Docs/DEV_LOG.md` by default.
 
-## Current Exact Next Route: Guard SFX Integration
+## Current Exact Next Route: Ordinary Guard Reaction
 
 Read:
 
 - `Docs/COMBAT_PRESENTATION_FEEDBACK_DESIGN.md`
-- `Docs/COMBAT_SFX_RESOURCE_TRACKING.md`
+- `Docs/GUARD_REACTION_DESIGN.md`
 - `Docs/GUARD_HIT_RESOLUTION_DESIGN.md`
-- `Docs/COMBAT_VFX_RESOURCE_TRACKING.md`
-- `Assets/RelicGuardian/Player/Scripts/HitContext.cs`
 - `Assets/RelicGuardian/Player/Scripts/GuardResult.cs`
 - `Assets/RelicGuardian/Player/Scripts/PlayerHitReceiver.cs`
 - `Assets/RelicGuardian/Player/Scripts/PlayerActionController.cs`
 - `Assets/RelicGuardian/Player/Scripts/PlayerBlock.cs`
 - `Assets/RelicGuardian/Player/Scripts/PlayerGuardPresentation.cs`
 - `Assets/RelicGuardian/Player/Scripts/PlayerAnimator.cs`
+- `Assets/RelicGuardian/Player/Scripts/PlayerMovement.cs`
 
-Scope boundary: the hit-data seam, Startup/Hold Guard Coverage, pre-hit Attack Threat Facing Assist, minimal Perfect Guard Window/classification, `GuardResult -> PlayerGuardPresentation` route, and distinct Ordinary/Perfect Guard VFX layers are implemented and runtime-verified for the current enemy. Seven selected WAV files plus preserved GUIDs and accepted 3-layer Ordinary / 4-layer Perfect settings are imported under the ignored local SFX boundary but are not connected. Next implement only the learner-led Guard SFX presentation route with DSP scheduling. Keep Hitstop, Camera Impulse, Attack feedback, pooling, AudioMixer, and Gameplay Consequences separate. The persisted Perfect Guard close Event remains `0.16666667s`.
+Scope boundary: the hit-data seam, Guard classification, distinct Ordinary/Perfect Guard VFX and layered SFX, and Perfect-only `0.07s` Hitstop are implemented and learner-reported runtime verified for the current enemy. `Block_Hit.anim` is imported under the ignored licensed boundary with Loop Time disabled but is not connected. Next implement and verify Ordinary Guard Movement Lock as a gameplay deadline owned by `PlayerBlock`, then separately add an independent Animator reaction layer owned by `PlayerAnimator`. Presentation must not control movement permission. Keep Perfect player reaction, Camera feedback, Attack feedback, enemy reaction, Counter, Guard Break, and general frameworks outside this slice.
 
 ## Combat VFX Resource Selection or Local Restoration
 
@@ -126,6 +125,7 @@ Read only the track or feature currently being discussed.
 
 Historical sources are not startup context:
 
+- `Docs/Archive/HANDOFF_2026-08-31_GUARD_VFX_RESOURCES.md`
 - `Docs/Archive/HANDOFF_HISTORY_THROUGH_2026-08-29.md`
 - `Docs/DEV_LOG.md`
 - older checkpoint sections in planning/learning documents.

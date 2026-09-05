@@ -7,6 +7,7 @@ public class PlayerAnimator : MonoBehaviour
     [SerializeField] private float blockCrossFadeDuration = 0.12f;
     [SerializeField] private float blockExitCrossFadeDuration = 0.45f;
     [SerializeField] private float softRecoveryInterruptCrossFadeDuration = 0.05f;
+    [SerializeField] private float guardReactionCrossFadeDuration = 0.03f;
     [SerializeField] private float debugBodyYawOffset;
 
     private Animator animator;
@@ -61,10 +62,27 @@ public class PlayerAnimator : MonoBehaviour
     public void PlayBlockEnd()
     {
         isBlockHoldPresentationActive = false;
+        ClearGuardReaction();
 
         animator.CrossFadeInFixedTime(
             "Base Layer.Block_End",
             blockCrossFadeDuration
+        );
+    }
+
+    public void PlayOrdinaryGuardReaction()
+    {
+        animator.CrossFadeInFixedTime(
+            "Guard Reaction.Ordinary_Guard_Hit",
+            guardReactionCrossFadeDuration
+        );
+    }
+
+    private void ClearGuardReaction()
+    {
+        animator.CrossFadeInFixedTime(
+            "Guard Reaction.Empty",
+            guardReactionCrossFadeDuration
         );
     }
 

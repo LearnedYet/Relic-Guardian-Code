@@ -1,6 +1,6 @@
 # Guard Hit Resolution, Pre-Hit Facing Assist, and Perfect Guard Design
 
-Status: revised on 2026-09-01. `HitContext`, `PlayerHitReceiver`, Startup/Hold Guard Coverage, `AttackThreatContext`, pre-hit Facing Assist, the minimal Perfect Guard Window/classification, the `GuardResult -> PlayerGuardPresentation` boundary, and distinct Ordinary/Perfect Guard VFX layers are implemented and runtime-verified for the current enemy. Guard SFX and later feedback layers remain pending.
+Status: revised on 2026-09-02. `HitContext`, `PlayerHitReceiver`, Startup/Hold Guard Coverage, `AttackThreatContext`, pre-hit Facing Assist, the minimal Perfect Guard Window/classification, the `GuardResult -> PlayerGuardPresentation` boundary, distinct Ordinary/Perfect Guard VFX/SFX, and Perfect-only Hitstop are implemented and runtime-verified for the current enemy. Ordinary Guard Movement Lock/player reaction is the next separate direction in `Docs/GUARD_REACTION_DESIGN.md`.
 
 This document supersedes every earlier plan that made Guard search for a target, reuse Lock-On for defense, or wait until the hit landed before beginning Facing Assist.
 
@@ -142,13 +142,13 @@ Each strike of a future overlapping multi-hit attack may require its own threat 
 The minimal classification is implemented:
 
 1. `BeginBlock()` opens the window after entering Startup;
-2. the authored `Block_Start.anim` Event closes it at `0.16666667s`;
+2. the current local authored `Block_Start.anim` Event closes it at clip time `0.3s`;
 3. entering Hold or Release also closes it defensively;
 4. after Guard Coverage succeeds, `ResolveGuardHit()` returns `GuardResult.Perfect` for an open-window hit and `GuardResult.Ordinary` for any other legal Startup/Hold hit; failed Guard resolution returns `GuardResult.Unhandled`;
 5. `PlayerHitReceiver` keeps `Unhandled` on the damage path and sends handled results once to `PlayerGuardPresentation`;
-6. the current observable consequence is only the corresponding diagnostic log owned by Presentation.
+6. Presentation routes the corresponding VFX/SFX, and Perfect additionally requests the shared `0.07s` Hitstop; these effects do not decide the result.
 
-Ordinary and Perfect Guard now each spawn and explicitly clean one distinct final impact Prefab through the verified presentation boundary. The next work selects and connects only distinct Guard SFX, without changing classification or adding Hitstop. Do not prebuild a general `HitResult` hierarchy or combine enemy reaction, Parry, Counter, Guard Break, Dodge, pooling, and multiple feedback layers into one step.
+Ordinary and Perfect Guard each spawn and explicitly clean one distinct final impact Prefab and play one independent layered SFX cue. Perfect alone requests `0.07s` Hitstop. The next work keeps classification unchanged while adding Ordinary Guard Movement Lock and player reaction as two separate checkpoints. Do not prebuild a general `HitResult` hierarchy or combine enemy reaction, Parry, Counter, Guard Break, Dodge, pooling, and multiple feedback layers into one step.
 
 ## Verification State
 
@@ -192,7 +192,7 @@ Perfect Guard VFX regressions passed on 2026-09-01:
 - Ordinary and unhandled hits did not spawn the Perfect effect;
 - the runtime instance was explicitly cleaned up;
 - existing damage prevention/damage remained correct and the Console stayed clean;
-- the persisted Perfect Guard close Event remained `0.16666667s`.
+- the Perfect Guard close Event was later tuned to current clip time `0.3s` and accepted with `Block_Start` Speed `2`.
 
 Still unclaimed or deferred:
 

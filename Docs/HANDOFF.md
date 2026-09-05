@@ -1,8 +1,8 @@
 # Relic Guardian Current Handoff
 
-Last updated: 2026-08-31.
+Last updated: 2026-09-05.
 
-This file contains only the latest cross-conversation Handoff. The prior 2026-08-30 Handoff is preserved at `Docs/Archive/HANDOFF_2026-08-30_PREHIT_FACING_ASSIST.md`.
+This file contains only the latest cross-conversation Handoff. The prior 2026-08-31 Handoff is preserved at `Docs/Archive/HANDOFF_2026-08-31_GUARD_VFX_RESOURCES.md`.
 
 ## Context Entry Points
 
@@ -10,27 +10,42 @@ For a new task or post-compaction recovery, read `AGENTS.md`, `Docs/CURRENT_STAT
 
 ## Actual Implementation State
 
-- `PlayerActionController` remains the sole coarse-state owner for `Free`, `Attacking`, and `Blocking`.
-- `PlayerBlock` owns Startup/Hold/Release, Hold movement permission, Guard Coverage, pre-hit Facing Assist, and the minimal ordinary-versus-perfect Guard classification.
-- `BeginBlock()` opens the Perfect Guard Window during Startup. The local authored `Block_Start.anim` Event closes it at `0.16666667s`; Hold and Release entry also close it.
-- After coverage succeeds, `TryHandleHit()` logs `Perfect Guard` while the window is open or `Ordinary Guard` otherwise, then returns handled before health damage. No presentation consequence or reusable result contract exists yet.
-- Pre-hit Facing Assist still stores one fixed direction and saved pre-assist facing; `PlayerMovement` remains the sole player Transform-facing owner.
-- The current enemy attack remains a scheduled hit attempt without Hit Window-time physical confirmation.
+- `PlayerActionController` remains the sole coarse-state owner for `Free`, `Attacking`, and `Blocking`; `PlayerBlock` owns Guard phases, Coverage, pre-hit Facing Assist, and production of `GuardResult.Unhandled`, `Ordinary`, or `Perfect`.
+- `PlayerHitReceiver` is the result-routing boundary: `Unhandled` reaches `PlayerHealth`, while Ordinary/Perfect reach `PlayerGuardPresentation` once. Presentation does not decide Guard legality or damage.
+- `PlayerGuardPresentation` owns independent Ordinary/Perfect Guard VFX resources and lifetimes plus independent `CombatAudioData`. Each handled branch spawns only its matching effect and submits only its matching cue.
+- `CombatAudioLayer` stores one Clip/Volume/Pitch/Delay record; `CombatAudioData` stores Master Volume plus a variable layer array. `CombatAudioPlayer` owns four preconfigured channels, stops prior scheduled playback, maps valid layers, and uses one DSP-time base plus per-layer delay.
+- `HitstopController` is the sole current `Time.timeScale` writer/restorer for Hitstop. Perfect Guard requests `0.07s`; Ordinary and unhandled hits do not request it. The owner uses an unscaled absolute deadline, later-deadline overlap, exact prior-scale restoration, normal/disable cleanup, and disabled-request rejection.
+- `SampleScene` contains the local `GuardImpactAnchor` and `CombatAudio` hierarchy under the player. Ordinary uses the final Normal Guard Impact and three SFX layers; Perfect uses the final Perfect Guard Impact and four SFX layers with a `0.030s` fourth-layer accent.
+- The local Animator state speeds are `Block_Start = 2` and `Block_End = 1.5`. The actual `Block_Start.anim` close/decision Events are at clip times `0.3s` and `0.4s`.
+- The learner-selected `Block_Hit.anim` is connected to the full-body Override `Guard Reaction` layer with Speed `2`, Exit Time `0.9`, and fixed `0.08s` exit blending. Ordinary alone requests it; automatic exit and `PlayBlockEnd()` return the layer to `Empty`.
+- Subtle 1 is connected Scene-locally as the independent always-on `WeaponAura`. Subtle 2 is connected to the shared blade endpoints as `AttackTrail`; Attack1-4 use independent normalized windows `0.18911798 -> 0.41242826`, `0.2189475 -> 0.37530434`, `0.17673774 -> 0.34686896`, and `0.3032368 -> 0.4152874`. `PlayerAttackPresentation` owns VFX playback, while `PlayerCombat` validates indices `0/1/2/3` and guarantees new-step/end/cancel cleanup. The full four-step runtime checks passed. Attack4 deliberately remains in the same ordinary basic-attack Trail tier.
+- `FX_hit_03_Blood.prefab` plus its two independent Blood materials are imported under the ignored selected AttackHits boundary and selected as the primary ordinary-Attack confirmed-hit VFX candidate. All dependencies resolve, but it is not connected or real-camera tuned.
+- Attack Motion audio is connected through a separate Scene-local two-channel `AttackAudio` player. Attack1-3 use accepted one-layer indexed Whoosh cues at normalized times `0.23050807`, `0.21698608`, and `0.20805433`. Attack4 uses `PlayWeaponWindup(3)` at `0.05673332` and `PlayWeaponWhoosh(3)` at `0.3182363` with no fixed delayed layer. The selected two confirmed-hit clips remain unconnected.
+- Apply Root Motion remains off. `PlayerMovement` remains the sole player Transform-facing owner, and the enemy attack remains a scheduled hit attempt without Hit Window-time physical confirmation.
 
 ## Runtime and Asset Verification
 
-- The learner reported both ordinary Guard and Perfect Guard classification working in Play Mode, with handled hits preventing damage and a clean Console.
-- `Block_Start.anim` currently persists `ClosePerfectGuardWindow` at `0.16666667s` and `StartupDecisionPoint` at `0.4s`.
-- Four Combat VFX packages were visually validated in `RelicGuardianAssetLab`. Only the selected assets, their dependency closure, required complete support-script/importer groups, and the final Guard scene were copied into the main project's ignored `Assets/LocalLicensed/CombatVFX/` boundary with GUIDs preserved.
-- The pruned copy is based on `79` Unity assets and contains `199` files including generated metadata, using approximately `62.90 MB`. The main project imported it with zero Console errors and zero warnings; selected Prefabs/HDR materials resolve, and the Guard validation scene has no missing scripts or broken Prefabs. No main-project combat VFX hookup or final in-camera tuning has been runtime verified.
-- Exact package names, versions, selected candidates, paths, and restoration steps are in `Docs/COMBAT_VFX_RESOURCE_TRACKING.md`.
+- On 2026-09-02 the learner runtime-verified distinct Ordinary and Perfect Guard VFX/SFX, one matching feedback group per hit without crossover or duplicate playback, preserved no-damage Guard handling, and a clean Console.
+- A separate unblocked-hit regression damaged the player once and produced no Guard VFX/SFX or Console exception.
+- `CombatAudioPlayer.OnDisable()` cleanup is implemented but was not recorded as a separate focused Runtime test.
+- `Assembly-CSharp.csproj` compiled with zero warnings and zero errors after the Guard Hitstop connection.
+- The learner runtime-verified Perfect-only `0.07s` Hitstop, automatic recovery, Ordinary/unhandled exclusion, preserved damage and VFX/SFX routes, post-recovery control, disabled-owner recovery/rejection, and a clean Console. Overlap is code-reviewed but not independently runtime-tested for the current single-hit enemy.
+- The learner runtime-accepted `Block_Start = 2` and `Block_End = 1.5` in the combined Guard flow. The actual local `ClosePerfectGuardWindow` Event is at clip time `0.3s`; older `0.16666667s` documentation is superseded.
+- Licensed Combat VFX/SFX remain under ignored `Assets/LocalLicensed/`. Exact resources and accepted values are in `Docs/COMBAT_VFX_RESOURCE_TRACKING.md` and `Docs/COMBAT_SFX_RESOURCE_TRACKING.md`.
+- Local full-project feature checkpoint: `f7a1d53`; local documentation checkpoint: `8388d96`. GitHub feature-mirror checkpoint: `873df7d`; verified remote `main` after documentation follow-up: `c6c397e8f41314bc28361ca42a68a5708a995513`.
 
 ## Exact Next Concept
 
-Define the smallest explicit boundary that carries the internal Ordinary/Perfect classification into presentation, then connect one feedback layer at a time. Before any key gameplay or presentation code is edited, explicitly establish whether the learner or Codex will type it. Keep enemy reaction, Parry/Counter, Guard Break, Dodge, and a general result hierarchy separate.
+Ordinary Guard Movement Lock and the independent player reaction are implemented and learner-reported runtime verified. `PlayerBlock` owns the scaled `0.45s` deadline inside the existing `Blocking` lifecycle, extends `AllowsMovement`, retains the later deadline on overlap, and delays Release until the committed impact boundary. Ordinary alone starts the lock and reaction; Perfect remains excluded. The learner remains the default author for key gameplay and presentation code.
+
+Guard expansion remains paused. Next connect only the selected confirmed Attack Hit VFX/SFX after the existing gameplay confirmation. Do not combine enemy reaction, Perfect player reaction, Camera feedback, Counter, or Guard Break into the same slice.
 
 ## Protected Git State
 
-- Existing changes to `Assets/RelicGuardian/Player/RelicGuardianPlayer.prefab`, `Assets/Scenes/SampleScene.unity`, the Animator Controller, Guard/Enemy scripts, package manifests, and maintained documents are protected and must not be overwritten or broadly staged.
-- `Assets/LocalLicensed/CombatVFX/` and all other `Assets/LocalLicensed/` content are ignored local licensed assets and must never be committed or uploaded.
-- No staging, commit, push, history rewrite, or remote mutation is authorized by this Handoff.
+- The protected Unity working state retains `Assets/RelicGuardian/Player/Animator/RelicGuardianPlayer.controller`, `Assets/RelicGuardian/Player/RelicGuardianPlayer.prefab`, `Assets/Scenes/SampleScene.unity`, and the index-only `Assets/RelicGuardian/Player/Scripts/PlayerHealth.cs` entry. Do not reset, overwrite, or broadly stage them.
+- New Hitstop source is uncommitted: `HitstopController.cs/.meta` and the `PlayerGuardPresentation.cs` integration. The protected Scene contains its local component/reference wiring.
+- This Handoff refresh additionally leaves `AGENTS.md`, `Docs/DEVELOPMENT_RULES.md`, `Docs/HANDOFF.md`, `Docs/CURRENT_STATE.md`, and `Docs/CONTEXT_INDEX.md` modified plus `Docs/Archive/HANDOFF_2026-08-31_GUARD_VFX_RESOURCES.md` untracked. They have not been committed or pushed.
+- The Scene contains the locally wired Guard VFX/SFX references and therefore must remain outside GitHub unless a separate reproducible replacement plan is approved.
+- `Assets/LocalLicensed/CombatVFX/`, `Assets/LocalLicensed/CombatSFX/`, the imported `Assets/LocalLicensed/SwordAnimationPack/Guard/Block_Hit.anim`, and all other `Assets/LocalLicensed/` content are ignored licensed assets and must never be committed or uploaded.
+- The GitHub repository is the separate flattened code/document mirror. Do not pull its `main` into the full Unity workspace.
+- This Handoff does not authorize new staging, commits, pushes, history rewrites, or remote mutations.

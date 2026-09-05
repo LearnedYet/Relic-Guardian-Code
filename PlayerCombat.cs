@@ -9,6 +9,7 @@ public class PlayerCombat : MonoBehaviour
     private PlayerActionController playerActionController;
     private PlayerMovement playerMovement;
     private PlayerTargeting playerTargeting;
+    private PlayerAttackPresentation playerAttackPresentation;
 
     private bool isHitWindowOpen;
     private bool isAttackFacingActive;
@@ -49,6 +50,7 @@ public class PlayerCombat : MonoBehaviour
         playerActionController = GetComponent<PlayerActionController>();
         playerMovement = GetComponent<PlayerMovement>();
         playerTargeting = GetComponent<PlayerTargeting>();
+        playerAttackPresentation = GetComponent<PlayerAttackPresentation>();
     }
 
     public void OpenHitWindow(int attackIndex)
@@ -87,6 +89,46 @@ public class PlayerCombat : MonoBehaviour
 
         isHitWindowOpen = false;
         confirmedAttackTarget = null;
+    }
+
+    public void OpenWeaponTrail(int attackIndex)
+    {
+        if (!IsCurrentAttackStep(attackIndex))
+        {
+            return;
+        }
+
+        playerAttackPresentation.OpenWeaponTrail();
+    }
+
+    public void CloseWeaponTrail(int attackIndex)
+    {
+        if (!IsCurrentAttackStep(attackIndex))
+        {
+            return;
+        }
+
+        playerAttackPresentation.CloseWeaponTrail();
+    }
+
+    public void PlayWeaponWhoosh(int attackIndex)
+    {
+        if (!IsCurrentAttackStep(attackIndex))
+        {
+            return;
+        }
+
+        playerAttackPresentation.PlayWeaponWhoosh(attackIndex);
+    }
+
+    public void PlayWeaponWindup(int attackIndex)
+    {
+        if (!IsCurrentAttackStep(attackIndex))
+        {
+            return;
+        }
+
+        playerAttackPresentation.PlayWeaponWindup(attackIndex);
     }
 
     public void OpenComboWindow(int attackIndex)
@@ -144,6 +186,8 @@ public class PlayerCombat : MonoBehaviour
 
     private void EndAttack()
     {
+        playerAttackPresentation.CloseWeaponTrail();
+
         isHitWindowOpen = false;
         isComboWindowOpen = false;
         isRestartWindowOpen = false;
@@ -235,6 +279,8 @@ public class PlayerCombat : MonoBehaviour
 
     private void StartAttackStep(int attackIndex)
     {
+        playerAttackPresentation.CloseWeaponTrail();
+
         currentAttackIndex = attackIndex;
         isRestartWindowOpen = false;
 

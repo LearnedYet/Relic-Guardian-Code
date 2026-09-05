@@ -4,6 +4,7 @@ public class PlayerBlock : MonoBehaviour
 {
     [SerializeField] private float guardCoverageHalfAngle = 90f;
     [SerializeField] private float facingAssistHalfAngle = 60f;
+    [SerializeField] private float ordinaryGuardMovementLockDuration = 0.45f;
 
     private bool isPerfectGuardWindowOpen;
     private PlayerInputReader playerInputReader;
@@ -23,13 +24,15 @@ public class PlayerBlock : MonoBehaviour
     private Transform guardFacingAssistSource;
     private Vector3 guardFacingBeforeAssist;
     private float guardFacingAssistEndTime;
+    private float ordinaryGuardMovementLockEndTime;
 
     public bool AllowsMovement
     {
         get
         {
             return currentBlockPhase == BlockPhase.Hold
-                && playerInputReader.IsBlockHeld;
+                && playerInputReader.IsBlockHeld
+                && Time.time >= ordinaryGuardMovementLockEndTime;
         }
     }
 
@@ -142,6 +145,7 @@ public class PlayerBlock : MonoBehaviour
         }
         else
         {
+            ordinaryGuardMovementLockEndTime = Mathf.Max(ordinaryGuardMovementLockEndTime, Time.time + ordinaryGuardMovementLockDuration);
             return GuardResult.Ordinary;
         }
     }
@@ -168,6 +172,7 @@ public class PlayerBlock : MonoBehaviour
 
         if (playerActionController.CurrentActionState == PlayerActionState.Blocking
             && currentBlockPhase == BlockPhase.Hold
+            && Time.time >= ordinaryGuardMovementLockEndTime
             && !playerInputReader.IsBlockHeld)
         {
             EnterRelease();
@@ -178,6 +183,7 @@ public class PlayerBlock : MonoBehaviour
     {
         ClosePerfectGuardWindow();
         ClearGuardFacingAssist();
+        ordinaryGuardMovementLockEndTime = 0f;
         currentBlockPhase = BlockPhase.Startup;
         OpenPerfectGuardWindow();
 
@@ -248,6 +254,7 @@ public class PlayerBlock : MonoBehaviour
     private void EnterRelease()
     {
         ClearGuardFacingAssist();
+        ordinaryGuardMovementLockEndTime = 0f;
         ClosePerfectGuardWindow();
         currentBlockPhase = BlockPhase.Release;
         playerAnimator.PlayBlockEnd();

@@ -39,28 +39,45 @@ Assets/LocalLicensed/CombatVFX/
 └─ Validation/     final Guard composition scene
 ```
 
-The initial whole-package copy contained `1825` files and used approximately `424.37 MB`. It was replaced by a dependency list of `79` Unity assets. After Unity generated folder metadata and the learner created the final in-project Guard Prefabs, the current local tree contains `208` files total and uses approximately `64.28 MiB`. The earlier serialized GUID cross-check found zero references to omitted assets from the former broad CombatVFX tree. The dependency-pruned Unity refresh compiled cleanly, and the later Ordinary in-combat integration also left the Console clean.
+The initial whole-package copy contained `1825` files and used approximately `424.37 MB`. It was replaced by a dependency list of `79` Unity assets. After Unity generated folder metadata and later selected local variants were added, the current local tree contains `222` files total and uses approximately `70.88 MiB`. The earlier serialized GUID cross-check found zero references to omitted assets from the former broad CombatVFX tree. The dependency-pruned Unity refresh compiled cleanly, and the later focused imports left the Console clean.
 
 ## Selected Attack Layers
 
 ### Weapon Trail
 
-Validated Prefabs:
+Current selected roles:
 
-- primary: `Selected/WeaponTrails/Ice Stylized 3.prefab`;
-- alternate: `Ice Water 1.prefab`;
-- alternate: `Ice Water 2.prefab`, visually accepted at one brightness step below Water 1.
+- basic Attack candidate A: `Selected/WeaponTrails/Subtle 1 Ice.prefab`, a restrained ice-blue recolor of vendor `Subtle 1`;
+- basic Attack candidate B: `Selected/WeaponTrails/Subtle 2 Ice.prefab`, a slightly stronger ice-blue recolor of vendor `Subtle 2`;
+- future Perfect Guard Counter candidate: `Selected/WeaponTrails/Ice Stylized 3.prefab`;
+- other higher-emphasis Attack candidates: `Ice Water 1.prefab` and `Ice Water 2.prefab`, with Water 2 retained at one brightness step below Water 1.
+
+The two Subtle Prefabs preserve their vendor GUIDs `dd506520638422b488b79ab9ee75186f` and `a37e8b71f3b77d443a68f3e279bac75b`. Their shared missing dependency `INab_Noise_21.png` was added under `Dependencies/INab Studio/Common/Textures/Noise/` with GUID `14d21f23f8c0e564697377fe780a21bc`.
+
+Initial local color values, pending real-camera tuning:
+
+| Prefab | Color | Main Color | Secondary Color |
+| --- | --- | --- | --- |
+| `Subtle 1 Ice` | `(0.75, 2.5, 5, 1)` | `(1, 2.5, 4, 1)` | `(0.0375, 0.25, 0.75, 0.105882354)` |
+| `Subtle 2 Ice` | `(1.5, 5, 10, 1)` | `(2, 5, 8, 1)` | `(0.075, 0.5, 1.5, 0.5176471)` |
 
 The package produces a real trail from weapon motion. It is suitable for an authored Attack Trail Window controlled by Animation Events; it is not a fixed crescent Slash Prefab.
 
 ### Hit Impact
 
-Final candidates:
+Current basic-Attack selection:
+
+- `Selected/AttackHits/Blood/FX_hit_03_Blood.prefab`, selected as the primary confirmed-hit visual candidate for ordinary Attack1-4 hits;
+- independent materials: `Blood/Materials/M_AttackHit_Blood_Add_HDR.mat` and `M_AttackHit_Blood_APB.mat`.
+
+The selected Blood Prefab preserves AssetLab GUID `b33c07f1ea0c90d45a6b04302ea31a43`; the two materials preserve GUIDs `7c6181ef189d94e438de16382445a0ed` and `4684a66084693b74fb88af52f711a32a`. Main-project dependency inspection resolved all `10` direct/indirect assets with zero missing references, and Unity imported the selection with a clean Console. It remains unconnected and pending real-camera placement, orientation, scale, lifetime, and brightness tuning.
+
+Reserved ice candidates:
 
 - `Selected/AttackHits/FX_hit_04_Ice.prefab`;
 - `Selected/AttackHits/FX_hit_11_Ice.prefab`.
 
-`FX_hit_11_Ice` keeps its first slash-shaped layer thin and compresses the other layers to approximately `50%` of their original world-space Y extent. Both use the local independent material `M_AttackHit_Ice_Add_HDR.mat`. Its currently persisted `Emission_Power` is `6.6`; treat this as an AssetLab value, not a final main-project brightness decision.
+`FX_hit_11_Ice` keeps its first slash-shaped layer thin and compresses the other layers to approximately `50%` of their original world-space Y extent. Both Ice Prefabs use the local independent material `M_AttackHit_Ice_Add_HDR.mat`. Its currently persisted `Emission_Power` is `6.6`; treat this as an AssetLab value, not a final main-project brightness decision.
 
 ## Selected Guard Layers
 

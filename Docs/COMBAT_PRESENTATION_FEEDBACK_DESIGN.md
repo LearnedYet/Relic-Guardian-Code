@@ -1,6 +1,6 @@
 # Combat Presentation Feedback Design
 
-Status: approved direction on 2026-08-31 and reviewed on 2026-09-02. The minimum `GuardResult -> PlayerGuardPresentation` boundary and distinct Ordinary/Perfect Guard VFX and layered SFX are implemented and learner-reported runtime verified. Later feedback layers remain unimplemented unless a later current-state entry says otherwise.
+Status: approved direction on 2026-08-31 and revised through 2026-09-04. Guard feedback through Ordinary player reaction and Attack1-4 Motion feedback through Trail plus Whoosh are implemented and learner-reported runtime verified. Confirmed-hit layers remain pending unless a later current-state entry says otherwise.
 
 ## Goal
 
@@ -73,16 +73,17 @@ The first Guard VFX therefore uses a configurable player Guard impact anchor and
 2. Connect only Ordinary Guard VFX.
 3. Connect a visually distinct Perfect Guard VFX.
 4. Add Guard SFX, with different audio content for Ordinary and Perfect rather than volume-only differentiation.
-5. Add Hitstop as feedback without changing resolution rules.
-6. Add short Camera Impulse with increasing but restrained emphasis from ordinary attack to Ordinary Guard to Perfect Guard.
-7. Add Attack hit-confirmed VFX and SFX.
-8. Add a weapon-motion Trail controlled by its own authored window; it never decides damage.
-9. Consider presentation-only Hit Reaction.
-10. Consider restrained Screen or UI FX, then tune the complete feedback stack together.
+5. Add and runtime-verify Perfect-only Hitstop without changing resolution rules.
+6. Add Ordinary Guard player impact reaction in two separate checkpoints: gameplay-owned Movement Lock, then presentation-owned reaction-layer playback.
+7. Pause Guard expansion and add Attack Motion feedback: authored weapon Trail windows and separate Whoosh cues.
+8. Add confirmed Attack Hit VFX and SFX.
+9. Establish the minimum enemy light-hit reaction boundary from real player Attack hits.
+10. Return to Perfect Guard enemy recoil/Stagger design, then design a non-automatic Counter Window only after its gameplay consequence is explicit.
+11. Consider Camera Impulse, Screen/UI FX, and Boss-heavy feedback only as later separate layers.
 
 ## Current Exact Slice
 
-The Guard result-to-presentation boundary and first Ordinary Guard VFX layer are implemented and runtime verified. Ordinary uses:
+The Guard result-to-presentation boundary and distinct Guard VFX/SFX are implemented and runtime verified. Ordinary uses:
 
 `Assets/LocalLicensed/CombatVFX/Selected/GuardImpacts/Normal Guard Impact.prefab`
 
@@ -92,7 +93,11 @@ Perfect uses the separately selected:
 
 Both VFX branches are implemented and runtime verified as explicitly distinct through `GuardResult`; neither effect is layered into the other. Both selected Prefabs use non-looping, Play On Awake Particle Systems with Stop Action None, so Presentation owns explicit cleanup. Their Particle Renderers are View-aligned; `IncomingDirection` is carried but not used for rotation in the current implementation.
 
-The selected Guard SFX resources and exact layer settings are imported and recorded in `Docs/COMBAT_SFX_RESOURCE_TRACKING.md`. The 3-layer Ordinary and 4-layer Perfect routes now use reusable serialized cue data and one DSP-scheduled playback component. Hitstop is the next separate learner-led layer.
+The selected Guard SFX resources and exact layer settings are imported and recorded in `Docs/COMBAT_SFX_RESOURCE_TRACKING.md`. The 3-layer Ordinary and 4-layer Perfect routes use reusable serialized cue data and one DSP-scheduled playback component.
+
+Perfect alone requests `0.07s` from the shared `HitstopController`. Its unscaled deadline, overlap extension, exact prior-scale restoration, normal expiry, disabled-owner recovery, and disabled-request rejection are implemented. Ordinary and unhandled hits do not request Hitstop. The learner runtime-verified the current branch isolation, recovery, existing damage/VFX/SFX behavior, and clean Console; overlap is code-reviewed but not independently runtime-tested for the current single-hit enemy.
+
+Ordinary Guard Reaction and Attack Motion feedback are complete. Scene-local Subtle 1 is the always-on `WeaponAura`; Subtle 2 is the indexed Attack1-4 `AttackTrail`. A separate two-channel `AttackAudio` bank plays one indexed Whoosh for Attack1-3, while Attack4 uses separate Windup and main-swing pose Events rather than a delayed future layer. `PlayerCombat` validates all indexed Events before `PlayerAttackPresentation` selects and submits presentation data. Confirmed Attack Hit VFX/SFX is next.
 
 ## Later Feedback Notes
 
@@ -103,13 +108,13 @@ The selected Guard SFX resources and exact layer settings are imported and recor
 
 ### Hitstop
 
-Initial tuning ranges, not accepted final values:
+Initial guidance and current accepted Guard value:
 
 - light ordinary attack: approximately `0.03-0.06s`;
-- Ordinary Guard: approximately `0.04-0.07s`;
-- Perfect Guard: approximately `0.07-0.12s`.
+- Ordinary Guard: no Hitstop in the current version;
+- Perfect Guard: accepted current value `0.07s`.
 
-A global `Time.timeScale` implementation can affect enemy phases, Animator playback, particles, movement, and other clocks. Before implementation, define one owner, start/end boundaries, overlap behavior, and guaranteed restoration. Do not let Hitstop create duplicate or delayed gameplay resolution.
+The implemented global `Time.timeScale` owner uses `Time.unscaledTime`, preserves the pre-Hitstop scale only on first entry, keeps the later overlap deadline, and restores normally or on disable. It remains a small execution component and does not classify hits. A future Pause or Slow Motion system must explicitly coordinate global time ownership rather than independently saving and restoring the same value.
 
 ### Camera Impulse
 
@@ -129,6 +134,8 @@ The later Trail window may use authored open/close Animation Events, but Trail s
 ### Hit Reaction
 
 A short presentation-only reaction is acceptable only while it does not interrupt an attack, skip or reopen Animation Events, change an enemy phase, or block gameplay permission. Once it does any of those things, it becomes a separately designed Gameplay Consequence.
+
+The approved Ordinary Guard player reaction deliberately contains both sides but keeps them separate: `PlayerBlock` owns a short scaled Movement Lock, while `PlayerGuardPresentation -> PlayerAnimator` owns the independent reaction layer. The selected Clip visually recovers toward Guard; movement may resume at the recoverable point while the visual tail continues. Presentation must never be the authority that grants movement permission.
 
 ## Verification Contract
 

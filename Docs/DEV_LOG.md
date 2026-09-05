@@ -4,7 +4,99 @@ This file records daily progress, learned concepts, problems, and solutions.
 
 ---
 
+## 2026-09-04
+
+### Completed Attack1-4 Motion Whoosh
+
+- Added independent indexed Whoosh and Windup data to `PlayerAttackPresentation` and a separate Scene-local two-channel `AttackAudio` `CombatAudioPlayer`, preventing Attack motion cues from sharing the Guard SFX channel bank.
+- `PlayerCombat.PlayWeaponWhoosh(int)` and `PlayWeaponWindup(int)` reuse current-step validation before forwarding the same index. Empty swings still play motion audio, while cancelled stale Events are rejected without consulting hit confirmation.
+- Attack1-3 use one accepted single-layer Whoosh each at normalized times `0.23050807`, `0.21698608`, and `0.20805433`. Exact selected clips and mix values are recorded in `Docs/COMBAT_SFX_RESOURCE_TRACKING.md`.
+- Attack4's originally delayed two-layer idea was split into two pose-authored Events: Windup at `0.05673332` and main Whoosh at `0.3182363`. This prevents a pre-scheduled main swing from playing after Block cancellation and keeps timing aligned if Animator Speed changes.
+- Actual-file review caught `PlayAttackWindup -> PlayWeaponWindup` plus method indentation; the final four-step motion audio, cancellation behavior, Guard-audio isolation, and Console were learner-reported normal. Script compilation passed with zero warnings and zero errors.
+
+---
+
+## 2026-09-03
+
+### Completed the First Attack1 Trail Window
+
+- Split the selected ice-blue resources by role: Subtle 1 is the Scene-local always-on `WeaponAura`; Subtle 2 is the independently controlled transient `AttackTrail`. Both use the saved blade endpoints, but Attack cleanup never controls the Aura.
+- Added `PlayerAttackPresentation` as the focused owner of the transient `VisualEffect`. Its open/close methods set the Graph's exact `Effect Active` and `Effect Value` properties and send Play/Stop, while `Awake()` and `OnDisable()` share the close boundary.
+- Added indexed `PlayerCombat.OpenWeaponTrail(int)` / `CloseWeaponTrail(int)` Event proxies. They reuse `IsCurrentAttackStep()` so stale outgoing events cannot affect a new or cancelled attack. `StartAttackStep()` and shared `EndAttack()` force the Trail closed without touching Hit Window or damage state.
+- Attack1 opens at normalized time `0.18911798` and closes at `0.41242826`, surrounding but remaining independent from its `0.27714157 -> 0.34921503` Hit Window. The learner also tuned the Scene-local Subtle 2 presentation, including `Bottom Fade Distance = 0.02`.
+- Runtime testing passed idle isolation, empty and confirmed-hit swings, Block cancellation, stale Event rejection, Attack2 handoff cleanup, persistent WeaponAura isolation, existing damage behavior, and a clean Console. Script compilation passed with zero warnings and zero errors.
+- Extended the same contract to Attack2 at normalized `0.2189475 -> 0.37530434` with index `1` and Attack3 at `0.17673774 -> 0.34686896` with index `2`. Actual-file review caught and the learner corrected an accidental Attack2 open index `22 -> 1`; the final three-step Trail sequence was learner-reported normal.
+- The learner chose to keep Attack4 in the same ordinary basic-attack visual tier rather than introduce a stronger resource prematurely. Attack4 reuses Subtle 2 at normalized `0.3032368 -> 0.4152874` with index `3`; the complete four-step Trail sequence and cleanup were learner-reported normal.
+
+### Completed Ordinary Guard Movement Lock
+
+- The learner implemented an Ordinary-only scaled deadline in `PlayerBlock`, extended `AllowsMovement`, and used `Mathf.Max(oldEndTime, Time.time + duration)` so overlapping hits retain the later deadline without adding durations.
+- The final accepted current-Scene tuning is `0.45s`; the code fallback remains `0.4s`.
+- Releasing Block during the lock now waits until the deadline before `EnterRelease()`. The player remains in the existing Blocking/Hold lifecycle and retains Guard coverage during that committed interval; beginning a new Block and entering Release clear stale lock state.
+- Focused Play Mode testing passed held-input movement recovery, Release-after-lock behavior, later-deadline overlap, Perfect exclusion, and the learner reported no issue. `Assembly-CSharp.csproj` compiled with zero warnings and zero errors.
+- No new action state, Block phase, reaction animation, Camera feedback, Attack feedback, enemy reaction, Counter, or Guard Break was added.
+
+### Completed Ordinary Guard Player Reaction
+
+- Added the independent full-body Override `Guard Reaction` Animator layer with `Empty` as its default state and the selected non-looping `Block_Hit` as `Ordinary_Guard_Hit`. The Base Layer continues evaluating Startup/Hold/Release and its gameplay Animation Events.
+- `PlayerGuardPresentation` requests `PlayerAnimator.PlayOrdinaryGuardReaction()` only from the already-resolved Ordinary branch. Perfect remains stable and does not request a player reaction.
+- `PlayerAnimator.PlayBlockEnd()` clears the reaction layer to `Empty`, while the state also exits automatically after playback. Repeated Ordinary hits can restart the reaction without adding Animator entry transitions from every Base Layer state.
+- The Speed `1` test exposed sliding when movement recovered before the full-body animation tail released the legs. The learner accepted Speed `2`, Exit Time `0.9`, fixed Transition Duration `0.08s`, and the Scene Movement Lock `0.45s`; the resulting movement handoff no longer showed the reported slide.
+- Final script compilation passed with zero warnings and zero errors. No Camera feedback, Perfect player reaction, Attack feedback, enemy reaction, Counter, or Guard Break was added.
+
+### Imported the Selected Blood Hit VFX
+
+- Selected `FX_hit_03_Blood` from the AssetLab comparison as the primary ordinary-Attack confirmed-hit visual candidate; the three Blood Slash variants remain optional directional accents rather than the main contact effect.
+- Copied the Prefab and its two independent Blood materials into ignored `Assets/LocalLicensed/CombatVFX/Selected/AttackHits/Blood/`, preserving AssetLab GUIDs.
+- Reused the already-restored VFX Klaus Shader Graph and texture dependencies. Main-project `AssetDatabase.GetDependencies()` returned `10` resolved entries and zero missing references.
+- Unity recognized the Prefab and both materials with a clean Console. No Scene, Prefab wiring, `PlayerCombat`, hit-confirm route, cleanup lifetime, or runtime Attack presentation was changed.
+
+### Imported Attack Motion and Hit Audio Candidates
+
+- Copied eight learner-selected WAV files plus original `.meta` files from the local licensed `Melee Weapons Pack 1` AssetLab into ignored `Assets/LocalLicensed/CombatSFX/Selected/Attack/`, preserving all source GUIDs.
+- Classified four clips as the Attack1-3 Whoosh candidate pool, two clips as the intended Attack4 motion layers, and two clips as the intended confirmed-hit layers.
+- Main-project Unity recognized all eight files as `AudioClip` assets with matching GUIDs and reported zero Console errors or warnings.
+- Kept screenshot/live Lab Pitch, Delay, Mute, and Volume values as temporary audition state rather than accepted formal mix data. Attack Motion audio must follow authored swing timing; Hit audio must begin only after gameplay confirms the hit.
+- No `PlayerCombat`, `PlayerAnimator`, `CombatAudioData`, Scene, Prefab, Animation Event, or runtime Attack audio connection was changed.
+
+### Imported Ice-Blue Subtle Trail Candidates
+
+- Selected vendor `Subtle 1` and `Subtle 2` as restrained basic-Attack Trail foundations while preserving the existing Ice variants for future higher-emphasis actions.
+- Copied independent local Prefabs to `Assets/LocalLicensed/CombatVFX/Selected/WeaponTrails/Subtle 1 Ice.prefab` and `Subtle 2 Ice.prefab`, preserving source GUIDs `dd506520638422b488b79ab9ee75186f` and `a37e8b71f3b77d443a68f3e279bac75b`.
+- Added the only missing serialized dependency, `INab_Noise_21.png`, under the existing dependency tree with GUID `14d21f23f8c0e564697377fe780a21bc`. All other VFX Graph, binder, and texture dependencies were already present.
+- Applied a restrained ice-blue palette to Subtle 1 and a brighter second tier to Subtle 2 without modifying the AssetLab originals or the previously selected Ice Prefabs.
+- The main-project Asset Database recognizes both Prefabs as GameObjects with complete VisualEffect, VFXRenderer, property-binder, and transform-binder components. The import produced zero Console errors and zero warnings.
+- Resource roles are now: Subtle 1/2 for basic Attacks, Ice Stylized 3 for a future Perfect Guard Counter, and Ice Water 1/2 for other higher-emphasis attacks. No Trail has been connected to Attack code, Animator Events, Scene, or Prefab wiring.
+
+### Next
+
+- Pause Guard expansion and begin Attack Motion feedback next. Tune one imported Subtle Trail candidate in the real combat camera and author Trail windows separately from gameplay Hit Windows; keep Whoosh separate from confirmed-hit SFX.
+
+---
+
 ## 2026-09-02
+
+### Completed Perfect-Only Guard Hitstop
+
+- The learner created `HitstopController` as the shared execution owner rather than writing global time control directly into `PlayerGuardPresentation`.
+- `RequestHitstop(float)` rejects non-positive or disabled-owner requests, saves the pre-Hitstop scale only on first entry, freezes with `Time.timeScale = 0f`, and extends repeated requests to the later absolute `Time.unscaledTime` deadline without adding durations.
+- Normal expiry and `OnDisable()` reuse one idempotent restoration method. The disabled-owner guard prevents a public request from freezing time after the component can no longer run `Update()`.
+- `PlayerGuardPresentation` requests the accepted `0.07s` only after Perfect VFX and DSP audio submission. Ordinary and unhandled results do not request Hitstop; Guard classification, damage routing, and audio scheduling remain unchanged.
+- The Scene-local owner/reference is connected on the protected player instance and was not applied to the player Prefab. `Assembly-CSharp.csproj` compiled with zero warnings and zero errors.
+- The learner runtime-verified Perfect-only pause and recovery, Ordinary/unhandled exclusion, post-recovery control, preserved result-specific VFX/SFX and damage behavior, disabled-owner immediate recovery and request rejection, and a clean Console. Overlap behavior is code-reviewed but is not independently runtime-tested for the current single-hit enemy.
+- The learner also accepted the current local Guard timing with `Block_Start` Speed `2`, `Block_End` Speed `1.5`, `ClosePerfectGuardWindow` at clip time `0.3s`, `StartupDecisionPoint` at `0.4s`, and `FinishRelease` at `0.75s`.
+
+### Selected and Imported Ordinary Guard Block Hit Reaction
+
+- The learner selected licensed `Block_Hit.anim` after P09 preview in `RelicGuardianAssetLab`. Its authored motion receives the impact and later returns toward a Guard pose.
+- Copied the selected `.anim` and original `.meta` into ignored `Assets/LocalLicensed/SwordAnimationPack/Guard/Block_Hit.anim`, preserving GUID `7db438147f2220249abbe5611214ea2e`.
+- The formal copy is approximately `0.8333334s`, has Loop Time disabled, has no Animation Events, and has no additive reference pose. It is imported only; no Animator layer/state, AvatarMask, code route, or main-project runtime behavior is connected yet.
+- Approved the updated order: implement and verify gameplay-owned Ordinary Guard Movement Lock first, then independently connect the player reaction layer; pause Guard afterward for Attack Motion/Hit feedback and the minimum enemy light-hit reaction boundary before returning to Enemy Perfect Guard Reaction and Counter.
+- Movement Lock begins only from an already-resolved Ordinary result, uses scaled `Time.time`, extends to the later deadline without adding durations, never becomes a new action state/phase, and cannot be owned by Presentation. Initial `0.15s`, reaction playback Speed, and crossfade remain real-camera tuning values.
+
+### Next
+
+- Teach and implement only Ordinary Guard Movement Lock in `PlayerBlock`, then run focused Startup/Hold/Release, locked/unlocked facing, Perfect exclusion, damage, and Console regressions before connecting `Block_Hit`.
 
 ### Completed Layered Guard SFX
 

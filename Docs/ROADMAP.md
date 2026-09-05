@@ -214,6 +214,20 @@
   - [x] Connect and runtime-verify the separately selected `Perfect Guard Impact` with independent Prefab/lifetime fields, one Perfect-only spawn route, explicit cleanup, and no branch crossover.
   - [x] Select and import seven local-only Guard AudioClips with preserved GUIDs and record the accepted 3-layer Ordinary / 4-layer Perfect volume, pitch, and delay settings.
   - [x] Connect and runtime-verify the imported Guard SFX through the existing result-to-presentation boundary using reusable layer/group data, four Scene-owned playback channels, DSP scheduling, independent 3-layer Ordinary and 4-layer Perfect configurations, and preserved unhandled damage.
+  - [x] Add and runtime-verify Perfect-only `0.07s` Hitstop through the shared `HitstopController`, including unscaled expiry, non-additive later-deadline overlap logic, exact prior-scale restoration, disabled-owner recovery/rejection, Ordinary/unhandled exclusion, and preserved Guard result/VFX/SFX/damage behavior.
+  - [x] Runtime-accept the current local Guard timing with `Block_Start` Speed `2`, `Block_End` Speed `1.5`, `ClosePerfectGuardWindow` at clip time `0.3s`, and unchanged `StartupDecisionPoint` / `FinishRelease` authored boundaries.
+  - [x] Select, import, connect, and runtime-verify local licensed `Block_Hit.anim` for Ordinary Guard player reaction with its original GUID preserved and Loop Time disabled.
+  - [x] Add and verify only Ordinary Guard Movement Lock as a scaled deadline owned by `PlayerBlock`, without a new coarse state/phase or Presentation-owned permission; later-deadline overlap and Release-after-lock behavior passed with the current `SampleScene` value `0.45s`.
+  - [x] Add and verify Ordinary Guard `Block_Hit` on the separate full-body Override `Guard Reaction` layer, preserving Base Layer Guard Events and clearing the reaction on Release. Accepted timing is Speed `2`, Exit Time `0.9`, and fixed transition duration `0.08s`.
+  - [ ] Pause further Guard expansion after Ordinary player reaction; complete Attack Motion/Hit feedback and the minimum enemy light-hit reaction boundary before returning to Enemy Perfect Guard Reaction and Counter design.
+  - [x] Import and validate the dependency closure for ice-blue `Subtle 1/2`, preserving source GUIDs and keeping existing Ice Trail variants reserved for Perfect Guard Counter and other higher-emphasis attacks.
+  - [x] Connect Subtle 1 as an independent always-on Scene-local `WeaponAura`, then connect and runtime-verify Subtle 2 as Attack1's authored Trail Window through `PlayerAttackPresentation`, indexed Event validation, and new-step/end/cancel cleanup.
+  - [x] Extend the same indexed Trail contract to Attack2/3 with clip-specific timings and runtime-verify the three-step presentation and cleanup.
+  - [x] Connect and runtime-verify Attack4 through the same Subtle 2 ordinary-basic-attack Trail tier with its own indexed authored interval; stronger Trail resources remain reserved for genuinely higher-emphasis attacks.
+  - [x] Connect and runtime-verify motion-timed Whoosh cues separately from confirmed-hit SFX: Attack1-3 use one indexed cue each, while Attack4 uses independent Windup and main-swing pose Events with cancellation-safe stale Event rejection.
+  - [ ] Connect the selected confirmed-hit VFX/SFX only after the existing gameplay hit confirmation.
+  - [x] Select and import `FX_hit_03_Blood` plus its independent materials as the primary ordinary-Attack confirmed-hit VFX candidate; dependency validation passed with zero missing assets, while gameplay connection and real-camera tuning remain pending.
+  - [x] Import eight selected Attack AudioClips with preserved GUIDs; connect and verify the six Attack Motion clips through indexed authored timing, while the two confirmed-hit layers remain pending.
 - [ ] Dodge
 - [ ] Perfect Dodge
 - [x] Lock-on (first usable version)

@@ -77,7 +77,7 @@ Do not treat an explanation followed by successful copying as evidence of master
 - A request such as "continue" authorizes the next teaching step, not automatic code mutation.
 - For key learning code, after the learner answers a prediction or scaffold, explicitly ask the learner to enter the code in the project and wait for them to report completion. Then inspect and review their actual file before editing it.
 - Codex may write key learning code only when the learner explicitly asks Codex to implement or edit it, or when the learner has attempted it, remains blocked after progressive hints, and asks for direct help.
-- Before any key-code mutation, state who will type the code. If that has not been established, do not call a file-editing or Unity script-mutation tool.
+- Before any key-code mutation, the author must already be established. The project-wide default is the learner, and that default persists across feature changes, Handoffs, and new conversations. State the continuing default when useful instead of asking again. Reconfirm only after an explicit Codex-takeover proposal or a genuinely ambiguous direct implementation request; otherwise do not call a file-editing or Unity script-mutation tool for the learner's key code.
 - Mechanical formatting or cleanup after the learner's implementation must remain behavior-preserving and must be described as such.
 - If Codex violates this gate, stop further implementation, disclose exactly what was written, do not treat the learner as having authored or mastered it, and let the learner choose whether to keep it, revert it, or reconstruct it.
 

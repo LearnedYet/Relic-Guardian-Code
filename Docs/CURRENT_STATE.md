@@ -1,6 +1,6 @@
 # Relic Guardian Current State
 
-Last reviewed against the local workspace: 2026-09-02
+Last reviewed against the local workspace: 2026-09-05
 
 This is the short current-state entry point. Actual code, Unity assets, current Editor state, and Git status remain authoritative when they conflict with this file.
 
@@ -21,21 +21,31 @@ This is the short current-state entry point. Actual code, Unity assets, current 
 - GitHub code/document mirror: `LearnedYet/Relic-Guardian-Code`; current line: remote `main`.
 - Latest local full-project feature checkpoint: `f7a1d53 Complete Guard VFX and layered SFX presentation`.
 - Latest confirmed GitHub code/document feature-mirror checkpoint: `873df7d Sync Guard VFX and layered SFX presentation`.
+- Latest local documentation checkpoint: `8388d96 Record Guard presentation checkpoints`.
+- Latest verified GitHub `main`: `c6c397e8f41314bc28361ca42a68a5708a995513`.
 - The local full-project repository and GitHub mirror have different history shapes. Resolve each current tip in its own repository; never compare their hashes as one ancestry or directly pull/merge mirror `main` into the full Unity workspace.
 - The mirror stores flattened project-owned C# files at its root and selected reproducible Unity configuration under `UnityConfig/`; it is not a complete Unity-project clone.
 
 The following protected mixed Unity assets remain intentionally modified locally and must not be reset, restored, overwritten, or staged without a separate explicit review:
 
+- `Assets/RelicGuardian/Player/Animator/RelicGuardianPlayer.controller`
 - `Assets/RelicGuardian/Player/RelicGuardianPlayer.prefab`
 - `Assets/Scenes/SampleScene.unity`
+- `Assets/RelicGuardian/Player/Scripts/PlayerHealth.cs` (index/line-ending-only state; no content diff)
 
 Their local wiring includes licensed presentation and the current Scene-level `PlayerBlock` component. They remain outside the focused code/document checkpoint.
 
 `Assets/LocalLicensed/` is ignored and must never be committed or uploaded. It contains the P09 presentation, Katana/Sword animation assets, Animator Override mappings, and local Animation Event/import tuning. The locally verified Attack4 `FinishAttack(3)` time is therefore documented but not mirrored as an asset change.
 
-The selected dependency closure from four locally licensed Combat VFX packages validated in `RelicGuardianAssetLab` is restored under `Assets/LocalLicensed/CombatVFX/`. After final in-project Guard Prefab composition, the local tree contains `208` files including generated metadata and uses approximately `64.28 MiB`, still far below the rejected `424.37 MB` whole-package copy. Selected Prefabs, package versions, local paths, validation evidence, and restoration steps are recorded in `Docs/COMBAT_VFX_RESOURCE_TRACKING.md`. The final local `Normal Guard Impact.prefab` and `Perfect Guard Impact.prefab` are both connected to their distinct result branches and runtime verified.
+The learner-selected licensed `Block_Hit.anim` is imported at `Assets/LocalLicensed/SwordAnimationPack/Guard/Block_Hit.anim` with its original GUID preserved and Loop Time disabled. It is connected to the independent `Guard Reaction` Animator layer and the Ordinary-only presentation route.
 
-Seven learner-selected Guard WAV files from local licensed `Melee Weapons Pack 1` are imported under the ignored `Assets/LocalLicensed/CombatSFX/Selected/Guard/` boundary with original GUIDs preserved. Their accepted 3-layer Ordinary and 4-layer Perfect volume/pitch/delay settings are stored in the local `Guard_SFX_Layer_Configuration.json` and tracked in `Docs/COMBAT_SFX_RESOURCE_TRACKING.md`. They import with a clean Console but are not connected to formal presentation code yet.
+The selected dependency closure from four locally licensed Combat VFX packages validated in `RelicGuardianAssetLab` is restored under `Assets/LocalLicensed/CombatVFX/`. The current local tree contains `222` files including generated metadata and uses approximately `70.88 MiB`, still far below the rejected `424.37 MB` whole-package copy. The final local Guard impact Prefabs are connected and runtime verified. Subtle 1 is connected Scene-locally as `WeaponAura`, Subtle 2 is connected as the authored Attack1-4 `AttackTrail`, and `FX_hit_03_Blood` is selected but still unconnected as the primary ordinary-Attack confirmed-hit visual candidate. Existing Ice Trail/Hit variants remain reserved for Perfect Guard Counter or other higher-emphasis attacks. Exact resources and values are recorded in `Docs/COMBAT_VFX_RESOURCE_TRACKING.md`.
+
+Seven learner-selected Guard WAV files from local licensed `Melee Weapons Pack 1` are imported under the ignored `Assets/LocalLicensed/CombatSFX/Selected/Guard/` boundary with original GUIDs preserved. Their accepted 3-layer Ordinary and 4-layer Perfect volume/pitch/delay settings are stored in the local `Guard_SFX_Layer_Configuration.json` and tracked in `Docs/COMBAT_SFX_RESOURCE_TRACKING.md`. They are connected through the formal result-to-presentation route and runtime verified.
+
+Eight additional Attack WAV files are imported under `Assets/LocalLicensed/CombatSFX/Selected/Attack/` with preserved GUIDs. Attack1-4 Motion cues are connected through the independent `AttackAudio` route with accepted clip, mix, and authored Event timings. The two confirmed Attack Hit clips remain selected but unconnected.
+
+Attack Motion Trail VFX is verified for Attack1-4. Scene-local `WeaponAura` uses Subtle 1 with `OnPlay` and remains independent of attack state. Scene-local `AttackTrail` uses Subtle 2 with shared blade-tip/bottom binders and accepted local visual overrides. `PlayerAttackPresentation` owns only its `VisualEffect` playback. Attack1 uses normalized `0.18911798 -> 0.41242826`, Attack2 uses `0.2189475 -> 0.37530434`, Attack3 uses `0.17673774 -> 0.34686896`, and Attack4 uses `0.3032368 -> 0.4152874`; `PlayerCombat` validates indices `0/1/2/3`, and new-step/end/cancel cleanup forces the transient Trail closed. Empty swings, confirmed hits, Block cancellation, stale Event rejection, WeaponAura isolation, full-combo handoff, and Console behavior are learner-reported runtime normal. All four current attacks remain one ordinary basic-attack tier, so Attack4 deliberately reuses Subtle 2 rather than introducing a stronger Trail resource.
 
 ## Context and Documentation Boundary
 
@@ -60,10 +70,11 @@ Seven learner-selected Guard WAV files from local licensed `Melee Weapons Pack 1
 - `BeginBlock()` starts Startup. `StartupDecisionPoint()` enters Hold if Block is still held or Release if it was released. Releasing during Hold enters Release. `FinishRelease()` returns to `Free`.
 - `PlayerAnimator` presents `Block_Start`, Hold, and `Block_End` using code-driven `CrossFadeInFixedTime()`; `PlayBlockHold()` selects unlocked `Guard_Free_Locomotion` or locked `Guard_Locked_Locomotion` from `PlayerTargeting.IsLockedOn`. During an active Hold, two presentation-only bools detect a Lock-On mode change and refresh exactly once. There are no Animator-authored gameplay permission decisions.
 - The local copied Clips are `Block_Start.anim`, `Block_Loop.anim`, and `Block_End_NoRootTurn.anim`; the Animator state remains named `Block_End`. Their facing correction was runtime-accepted after matching the Guard root-rotation offsets at `-66`.
-- Local Animation Events are `StartupDecisionPoint` at `0.4s` in `Block_Start` and `FinishRelease` at `0.75s` in `Block_End_NoRootTurn`.
+- Local Animation Events are `ClosePerfectGuardWindow` at `0.3s` and `StartupDecisionPoint` at `0.4s` in `Block_Start`, plus `FinishRelease` at `0.75s` in `Block_End_NoRootTurn`.
+- The locally accepted Animator state speeds are `2` for `Block_Start` and `1.5` for `Block_End`; these speeds also change the real-time gameplay Event boundaries and were accepted through the latest Guard regression.
 - The current Scene tuning is Guard crossfade `0.03s`, normal Block End -> Locomotion exit `0.45s`, and soft-recovery interruption crossfade `0.05s`.
 - Apply Root Motion remains disabled. Guard Startup and Release remain stationary, while held Hold now reuses ordinary movement and facing through a phase-aware permission.
-- `PlayerBlock.AllowsMovement` exposes only the internal Hold permission and also requires the Block input to remain held, so release closes movement without depending on `MonoBehaviour.Update()` order.
+- `PlayerBlock.AllowsMovement` exposes only the internal Hold permission, requires Block to remain held, and denies movement until the Ordinary Guard lock deadline. Releasing during that lock delays `EnterRelease()` until the deadline; outside the lock the existing held-input release behavior remains unchanged.
 - `PlayerActionController` keeps `CanMove` and `CanSprint` separate. Guard Hold can move at normal speed, while Sprint and its locked-mode `CancelLockOn()` path remain available only in `Free`.
 
 ## Implemented Soft Recovery
@@ -92,7 +103,7 @@ Seven learner-selected Guard WAV files from local licensed `Melee Weapons Pack 1
 
 ## Implemented Perfect Guard Classification and Presentation Boundary
 
-- `BeginBlock()` opens one minimal Perfect Guard Window inside Startup. The local `Block_Start.anim` closes it through `ClosePerfectGuardWindow` at `0.16666667s`; entering Hold or Release also closes it defensively.
+- `BeginBlock()` opens one minimal Perfect Guard Window inside Startup. The current local `Block_Start.anim` closes it through `ClosePerfectGuardWindow` at clip time `0.3s`; entering Hold or Release also closes it defensively.
 - After phase, direction, and Guard Coverage succeed, `PlayerBlock.ResolveGuardHit()` returns the explicit `GuardResult.Perfect` or `GuardResult.Ordinary`; phase, invalid-direction, and coverage failures return `GuardResult.Unhandled`.
 - `PlayerHitReceiver` keeps damage routing authoritative: `Unhandled` continues to `PlayerHealth`, while handled results are sent once to the same-GameObject `PlayerGuardPresentation` before damage returns.
 - `PlayerGuardPresentation.PresentGuardResult()` is the minimum presentation consumer. It distinguishes Ordinary and Perfect, owns their independent VFX lifecycles and audio-data selection, and never decides damage or Guard legality.
@@ -105,13 +116,13 @@ Seven learner-selected Guard WAV files from local licensed `Melee Weapons Pack 1
 - Ordinary Guard calls one private `PlayOrdinaryGuardImpact()`, spawns the Prefab at the anchor's world position/rotation, and destroys the runtime instance after the serialized `1.2s` lifetime. Perfect Guard and unhandled hits do not spawn the Ordinary effect.
 - The selected Normal and Perfect Prefabs use View-aligned Particle Renderers, so the current visible planes face the camera. `IncomingDirection` is carried to Presentation but is not used for rotation in this first layer.
 - The learner runtime-verified the new Normal Guard Impact in the real combat camera on 2026-09-01: Ordinary spawned once with accepted placement/size/brightness, cleanup completed, Perfect and unhandled hits did not spawn it, existing damage prevention/damage remained correct, and the Console was clean.
-- Hitstop, Camera Impulse, pooling, Attack feedback, enemy reaction, Parry, Counter, and Guard Break remain unimplemented.
+- Ordinary Guard has no Hitstop. Camera Impulse, pooling, Attack feedback, player/enemy reaction, Parry, Counter, and Guard Break remain unimplemented.
 
 ## Implemented Perfect Guard VFX
 
 - `perfectGuardImpactPrefab` references the ignored local final `Assets/LocalLicensed/CombatVFX/Selected/GuardImpacts/Perfect Guard Impact.prefab`; its main named root uses the learner-accepted scale `0.68`.
 - Perfect Guard calls the independently reconstructed `PlayPerfectGuardImpact()`, reuses the configured Guard impact anchor, and explicitly cleans the spawned instance with the code default `1.8s` lifetime. Ordinary and unhandled hits do not call the Perfect route.
-- The learner runtime-verified distinct Ordinary and Perfect effects, branch isolation, cleanup, preserved damage behavior, and a clean Console on 2026-09-01. The persisted `ClosePerfectGuardWindow` Event remains `0.16666667s`; Codex did not change it.
+- The learner runtime-verified distinct Ordinary and Perfect effects, branch isolation, cleanup, preserved damage behavior, and a clean Console on 2026-09-01. The current persisted `ClosePerfectGuardWindow` Event is at clip time `0.3s`.
 - Both current Guard Prefabs are View-aligned. `IncomingDirection` remains carried to Presentation but unused by these camera-facing Particle Renderers.
 
 ## Implemented Guard SFX
@@ -121,6 +132,14 @@ Seven learner-selected Guard WAV files from local licensed `Melee Weapons Pack 1
 - `PlayerGuardPresentation` owns independent Ordinary and Perfect `CombatAudioData` fields and passes only the already-selected result's data to the reusable player. Ordinary stores three layers; Perfect stores four, including the accepted fourth-layer `0.030s` accent.
 - `SampleScene` keeps one local `CombatAudio` child under the player with four 2D, non-looping, Play-On-Awake-disabled channels. Licensed clips remain under ignored `Assets/LocalLicensed/CombatSFX/Selected/Guard/` and are not assigned directly to the channels.
 - On 2026-09-02 the learner runtime-verified distinct Ordinary and Perfect Guard SFX, correct VFX/SFX branch isolation, no duplicate group per hit, preserved no-damage Guard handling, preserved one-hit unblocked damage with no Guard feedback, and a clean Console. The disable cleanup exists in code but was not recorded as a separate focused runtime test.
+
+## Implemented Perfect Guard Hitstop
+
+- `HitstopController` is the sole current Hitstop writer/restorer of `Time.timeScale`. It saves the pre-Hitstop value only on inactive-to-active entry, freezes at `0`, uses an absolute `Time.unscaledTime` deadline, and merges repeated requests by keeping the later deadline rather than adding durations.
+- Normal expiry and `OnDisable()` share one idempotent restoration boundary. Disabled components reject new requests through `isActiveAndEnabled`, preventing a disabled owner from freezing time without a running `Update()`.
+- `PlayerGuardPresentation` requests `0.07s` only from its Perfect branch after spawning VFX and scheduling DSP audio. Ordinary and unhandled hits do not request Hitstop; Guard classification, damage, and DSP scheduling remain unchanged.
+- The Scene-local `HitstopController` and serialized Presentation reference are connected on the protected `SampleScene` player instance, not applied to the player Prefab.
+- The learner runtime-verified Perfect-only pause and automatic recovery, Ordinary/unhandled exclusion, preserved result-specific VFX/SFX and damage behavior, post-recovery controls, disabled-owner immediate recovery and request rejection, and a clean Console. Overlap behavior is code-reviewed but not independently runtime-tested because the current enemy does not produce overlapping handled hits.
 
 ## Implemented Pre-Hit Attack Threat and Guard Facing Assist
 
@@ -152,19 +171,20 @@ The learner reported the final combined behavior as normal on 2026-08-28:
 - The minimum incoming-hit seam passed the learner's focused Play Mode checks on 2026-08-29: an ordinary hit changed player health from `3 -> 2` exactly once, a hit during `Blocking` also changed `3 -> 2` exactly once because Guard prevention is intentionally not connected yet, and the Console remained clean.
 - Guard Coverage passed the learner's focused Play Mode checks on 2026-08-30: Free frontal hits damaged, frontal Startup and Hold hits were handled without damage, rear Hold hits damaged, frontal Release hits damaged, and the Console remained clean.
 - Pre-hit Attack Threat Facing Assist passed the learner's focused Play Mode checks on 2026-08-30: with the attacker approximately `40-50` degrees off the player's forward direction, `Block_Start` and turning began together after a real Startup preview, turning continued into Hold before impact, impact did not restart `Block_Start`, the hit was guarded without health loss, and the Console remained clean. A follow-up confirmed that Block without a real preview does not auto-turn and that entering Release before impact stops assist; Release visibility used a temporary Play Mode-only `startupDuration = 2` that reverted on exit. Exact mathematical arrival at impact was not claimed.
-- The minimal Startup Perfect Guard Window and ordinary-versus-perfect classification passed the learner's focused runtime checks on 2026-08-31. The authored close Event is persisted at `0.16666667s`; ordinary Guard and Perfect Guard were both observed, handled hits caused no health loss, and the Console remained clean.
+- The minimal Startup Perfect Guard Window and ordinary-versus-perfect classification passed the learner's focused runtime checks on 2026-08-31. Ordinary Guard and Perfect Guard were both observed, handled hits caused no health loss, and the Console remained clean. The close Event was later tuned locally to the current clip time `0.3s` and accepted with `Block_Start` Speed `2`.
 - The minimum `GuardResult -> PlayerGuardPresentation` boundary passed the learner's focused runtime checks on 2026-08-31. Unblocked hits still damaged, Ordinary and Perfect results each reached only their presentation log once without health loss, and the Console remained clean. `Assembly-CSharp.csproj` compiled with zero errors and zero warnings before the Play Mode pass.
 - The first Ordinary Guard VFX layer passed the learner's focused Play Mode checks on 2026-09-01 using the final `Normal Guard Impact.prefab`: one Ordinary spawn, accepted in-camera presentation, explicit cleanup, no Ordinary effect for Perfect or unhandled hits, preserved damage behavior, and a clean Console.
 - The Perfect Guard VFX layer passed the learner's focused Play Mode checks on 2026-09-01 using the final `Perfect Guard Impact.prefab`: one Perfect spawn, distinct presentation, explicit cleanup, no branch crossover, preserved damage behavior, and a clean Console.
 - The Guard SFX layer passed the learner's focused Play Mode checks on 2026-09-02: the accepted 3-layer Ordinary and 4-layer Perfect combinations stayed distinct, each hit produced one matching VFX/SFX group without crossover or duplicate playback, handled hits still prevented damage, an unblocked hit damaged once without Guard feedback, and the Console remained clean.
-- The selected dependency closure from four Combat VFX packages and the final Guard validation scene were restored into the main project's ignored `Assets/LocalLicensed/CombatVFX/` boundary on 2026-08-31. Main-project import completed with zero Console errors and zero warnings; scene validation found no missing scripts or broken Prefabs. Final in-combat visual tuning and Gameplay connection remain unverified.
+- The Perfect Guard Hitstop layer passed the learner's focused Play Mode checks on 2026-09-02 at `0.07s`: Perfect paused and recovered, Ordinary/unhandled remained excluded, controls resumed, disabled-owner cleanup/rejection worked, existing VFX/SFX and damage behavior remained correct, and the Console stayed clean. The learner also accepted `Block_Start` Speed `2` and `Block_End` Speed `1.5` in the combined Guard regression.
+- The selected dependency closure from four Combat VFX packages and the final Guard validation scene were restored into the main project's ignored `Assets/LocalLicensed/CombatVFX/` boundary on 2026-08-31. Main-project import completed with zero Console errors and zero warnings; scene validation found no missing scripts or broken Prefabs. The selected Ordinary/Perfect Guard effects were subsequently connected, tuned, and runtime verified as recorded above.
 
-The current workspace source compiled through `Assembly-CSharp.csproj` with zero errors and zero warnings after the Guard SFX connection. Runtime results above are learner-reported Play Mode verification.
+The current workspace source compiled through `Assembly-CSharp.csproj` with zero errors and zero warnings after the Guard Hitstop connection. Runtime results above are learner-reported Play Mode verification.
 
 ## Deferred Guard Work
 
 - The earlier target-search and post-hit assist plans are superseded. Empty Guard performs no Physics or Lock-On target search. A real `AttackThreatContext` emitted by enemy Startup may start one fixed-direction pre-hit assist while Blocking.
-- `HitContext`, `PlayerHitReceiver`, directional Startup/Hold Guard Coverage, the core pre-hit threat/assist route, the minimal Startup Perfect Guard classification, the explicit `GuardResult -> PlayerGuardPresentation` route, and distinct Ordinary/Perfect Guard VFX and SFX are implemented. Hitstop and later presentation layers, Guard Break, Parry, and Counter remain unimplemented. The current design is recorded in `Docs/GUARD_HIT_RESOLUTION_DESIGN.md` and `Docs/COMBAT_PRESENTATION_FEEDBACK_DESIGN.md`.
+- `HitContext`, `PlayerHitReceiver`, directional Startup/Hold Guard Coverage, the core pre-hit threat/assist route, the minimal Startup Perfect Guard classification, the explicit `GuardResult -> PlayerGuardPresentation` route, distinct Ordinary/Perfect Guard VFX/SFX, Perfect-only Hitstop, and Ordinary-only Guard Movement Lock/player reaction are implemented. Later Attack feedback, enemy reaction, Guard Break, Parry, and Counter remain unimplemented. Current reaction direction is recorded in `Docs/GUARD_REACTION_DESIGN.md`.
 - Startup and Hold are defendable; Release is not. The Perfect Guard Window is a short authored subset of Startup, while other legal Startup/Hold hits resolve as ordinary Guard.
 - Default adjustable half-angles are `60` degrees for Facing Assist (total `120`) and `90` degrees for Guard Coverage (total `180`). Assist eligibility uses pre-turn facing, and the matching real hit reuses that saved facing for coverage.
 - `PlayerMovement` remains the only facing owner. Its implemented branch is active Guard Facing Assist, otherwise Locked Facing, otherwise Free Movement Facing. Assist stores a fixed preview direction until expected impact and never follows `Source`.
@@ -176,7 +196,7 @@ The current workspace source compiled through `Assembly-CSharp.csproj` with zero
 
 ## Exact Next Development Step
 
-Design and implement only Guard Hitstop as the next learner-led presentation concept. First define its presentation owner, start/end and guaranteed restoration boundaries, Ordinary/Perfect durations, and overlap rule. It must consume the already-resolved `GuardResult`, must not change `PlayerBlock`, the Perfect Guard Window, damage routing, or DSP audio scheduling, and must not add Camera Impulse, Attack feedback, Weapon Trail, Hit Reaction, pooling, enemy reaction, Parry/Counter, Guard Break, Dodge, or a general time/effect framework in the same concept.
+Attack Motion feedback is runtime accepted for all four basic attacks: Subtle 2 Trail Windows plus indexed Whoosh cues, with Attack4 split into separately authored Windup and main-swing Events. Next connect only confirmed Attack Hit VFX/SFX after the existing gameplay hit confirmation. Enemy reaction, Perfect player reaction, Camera feedback, Counter, and Guard Break remain outside this immediate slice.
 
 ## Files to Read Next
 
@@ -186,6 +206,7 @@ Design and implement only Guard Hitstop as the next learner-led presentation con
 - `Docs/HANDOFF.md`
 - `Docs/CONTEXT_INDEX.md`
 - `Docs/COMBAT_PRESENTATION_FEEDBACK_DESIGN.md`
+- `Docs/GUARD_REACTION_DESIGN.md`
 - `Docs/COMBAT_SFX_RESOURCE_TRACKING.md`
 - `Docs/GUARD_HIT_RESOLUTION_DESIGN.md`
 - `Docs/COMBAT_VFX_RESOURCE_TRACKING.md`
@@ -202,6 +223,7 @@ Design and implement only Guard Hitstop as the next learner-led presentation con
 - `Assets/RelicGuardian/Player/Scripts/CombatAudioLayer.cs`
 - `Assets/RelicGuardian/Player/Scripts/CombatAudioData.cs`
 - `Assets/RelicGuardian/Player/Scripts/CombatAudioPlayer.cs`
+- `Assets/RelicGuardian/Player/Scripts/HitstopController.cs`
 - `Assets/RelicGuardian/Player/Scripts/PlayerMovement.cs`
 
 Inspect the protected Prefab and Scene only when current local wiring or runtime values are necessary. Never overwrite them from a tracked baseline.
