@@ -21,6 +21,14 @@ This file records daily progress, learned concepts, problems, and solutions.
 - Then add the minimum coarse Enemy state owner and coordinate natural attack finish/cancellation while keeping `EnemyAttackPhase` as the internal execution lifecycle.
 - Keep HitReaction, retained-corpse Death, Perfect Guard Stagger, multiple attacks/cooldowns, hit-time Miss validation, Strong Combo and Goblin Animator integration outside the first slice.
 
+### Saved and Synchronized the Confirmed-Hit Checkpoint
+
+- Recompiled `Assembly-CSharp.csproj` with zero warnings and zero errors, then created local full-project checkpoint `be75058 Add enemy hit receiving and feedback` from an explicit 21-file allowlist.
+- Kept `RelicGuardianPlayer.controller`, the player Prefab, `PlayerHealth.cs`, mixed `SampleScene.unity`, every ignored `Assets/LocalLicensed/` resource and all licensed VFX/SFX/animation content outside the checkpoint. The project-owned audio-player Prefab contains no licensed resource reference and is included only in the local full-project history.
+- Read the active Windows proxy `127.0.0.1:7897` and applied it only to individual Git commands. After one transient Schannel handshake failure, the process-local OpenSSL/HTTP/1.1 retry succeeded; `origin/main` remained at `e6374b4` with no remote-only commit to integrate.
+- Created clean mirror branch `codex/enemy-hit-feedback-sync-20260908` from current `origin/main`, then created `7e6e18b Sync enemy hit receiving and feedback` from an explicit 16-file flattened C#/documentation allowlist. No Scene, Prefab, Controller, `.meta`, licensed asset, README, UnityConfig or other remote-only file was included.
+- Pushed normally without force and verified GitHub `refs/heads/main` at `7e6e18b547a02b33ba84f8c01c32f867a9e2accd`. A record-only documentation follow-up carries these checkpoint references.
+
 ---
 
 ## 2026-09-05

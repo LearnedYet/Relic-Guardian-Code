@@ -51,12 +51,12 @@ The first single concept is the EnemyAttack execution cleanup contract: close fu
 
 ## Git and Protected Local State
 
-- Local feature checkpoint: 472d946; local documentation follow-up: 9c225c8.
-- GitHub feature mirror: e484ca1; last remote verification from the 2026-09-05 synchronization was e6374b401bdc26d86508ec34bc922da941695219. No remote refresh was performed in this documentation task.
+- Local confirmed-hit receiving/feedback feature checkpoint: be75058. The preceding Guard reaction/attack-motion documentation follow-up remains 9c225c8.
+- GitHub confirmed-hit receiving/feedback feature mirror: 7e6e18b. The 2026-09-08 push was verified with `git ls-remote` at `7e6e18b547a02b33ba84f8c01c32f867a9e2accd`.
 - Full Unity history and flattened GitHub code/document mirror remain separate. Do not merge their main branches. Durable Git and licensed-asset rules remain in AGENTS.md.
 - Protected pre-existing local changes remain in RelicGuardianPlayer.controller, RelicGuardianPlayer.prefab and PlayerHealth.cs. SampleScene.unity contains both protected earlier local work and the newly accepted Enemy receiving/VFX/SFX configuration; preserve it as a mixed dirty file and never broadly replace or stage it.
-- Current uncommitted feature files include PlayerCombat.cs, EnemyHitReceiver.cs/meta, EnemyHitPresentation.cs/meta and the project-owned EnemyHitAudioPlayer Prefab/folder metadata. Obtain the live list from git status before any future staging discussion.
-- Existing pending design work: ENEMY_COMBAT_AGENT_DESIGN.md, CONTEXT_INDEX.md and ROADMAP.md. This cleanup adds documentation edits only; inspect git status to obtain the live list.
+- PlayerCombat.cs, EnemyHitReceiver.cs/meta, EnemyHitPresentation.cs/meta and the project-owned EnemyHitAudioPlayer Prefab/folder metadata are included in local checkpoint be75058. The flattened GitHub mirror includes the project-owned C# and maintained documentation; Scene wiring and the Prefab remain outside that mirror boundary.
+- ENEMY_COMBAT_AGENT_DESIGN.md, ENEMY_COMBAT_RESOURCE_TRACKING.md and the related maintained planning/context updates are included in the same checkpoint synchronization.
 - Assets/LocalLicensed/ and its .meta boundary remain ignored and never uploaded. Licensed models, Clips/import Events, VFX/SFX and local wiring remain outside the focused code/document checkpoint.
 
 ## Context Recovery and History
