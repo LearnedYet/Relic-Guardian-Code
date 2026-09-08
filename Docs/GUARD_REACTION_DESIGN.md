@@ -14,9 +14,30 @@ PlayerBlock.ResolveGuardHit(HitContext)
    `- Ordinary/Perfect -> PlayerGuardPresentation
 ```
 
-Ordinary and Perfect Guard already have distinct VFX and layered SFX. Perfect alone requests the shared `HitstopController` for `0.07s`; Ordinary has no Hitstop. No Camera Impulse, FOV change, camera pull, player reaction, enemy reaction, Stagger, or Counter is implemented.
+Ordinary and Perfect Guard already have distinct VFX and layered SFX. Perfect alone requests the shared `HitstopController` for `0.07s`; Ordinary has no Hitstop. Ordinary player reaction is connected. Camera Impulse, FOV change, camera pull, enemy reaction/Stagger and Counter remain future work.
 
-Current locally accepted Guard timing uses Animator state Speed `2` for `Block_Start` and `1.5` for `Block_End`. The actual local `Block_Start.anim` Events are `ClosePerfectGuardWindow` at clip time `0.3s` and `StartupDecisionPoint` at `0.4s`. These authored Events continue to define the existing Guard lifecycle until a separately approved timing refactor exists.
+## Saved Guard Timing and Historical Acceptance
+
+Static audit: 2026-09-06. These values come from saved Scene overrides, code defaults, the player Controller and local Guard Clips; this audit is not a fresh runtime test.
+
+| Parameter | Current saved value / source |
+| --- | --- |
+| Block_Start / Block_End state Speed | 2 / 1.5, Controller |
+| ClosePerfectGuardWindow | 0.35 Clip seconds, Block_Start.anim |
+| StartupDecisionPoint | 0.4 Clip seconds, Block_Start.anim |
+| FinishRelease | 0.75 Clip seconds, Block_End_NoRootTurn.anim |
+| Ordinary Movement Lock | 0.45 game seconds, Scene and code default |
+| Guard crossfade | 0.03 seconds, Scene override; code default 0.12 |
+| Block exit crossfade / soft-recovery interrupt | 0.45 / 0.05 seconds, Scene and code |
+| Reaction start/clear crossfade | 0.03 seconds, code default |
+| Ordinary_Guard_Hit Speed / Exit Time / fixed exit blend | 2 / 0.9 normalized / 0.08 seconds |
+| Perfect-only Hitstop | 0.07 unscaled seconds, Scene and code |
+| Coverage / Facing Assist half-angle | 90 / 60 degrees, Scene |
+| Block_Start / Block_End_NoRootTurn rotation offset | -66 degrees, local Clip settings |
+
+Historical acceptance: 2026-09-02 recorded ClosePerfectGuardWindow at 0.3 Clip seconds (an older 0.16666667-second close is superseded); the saved 0.35-second close is later tuning and has no separate runtime acceptance claim in this audit. The 2026-09-03 reaction checkpoint accepted Speed 2, Exit Time 0.9, 0.08s blend and Scene lock 0.45s. Historical soft-exit tuning and forward Guard walk offset -36 degrees are retained in DEV_LOG.md (Guard rotation/Hold sections); other directional clips were not individually accepted by that checkpoint.
+
+Clip seconds, normalized Exit Time and game/unscaled seconds are distinct. State Speed changes the real-time Event boundary. Exact VFX/SFX parameters live in their resource tracking documents.
 
 ## Selected Ordinary Guard Reaction Asset
 
@@ -35,7 +56,7 @@ The Clip begins with a visible Guard impact and later recovers to a Guard pose. 
 
 ## Ordinary Guard Reaction Responsibility
 
-Ordinary Guard will split the already-resolved result into independent Gameplay and Presentation work:
+Ordinary Guard splits the already-resolved result into independent Gameplay and Presentation work:
 
 ```text
 Ordinary Guard resolved
@@ -56,8 +77,9 @@ The Movement Lock is an orthogonal deadline inside the existing `Blocking` actio
 - Permission effect: extend `PlayerBlock.AllowsMovement`; do not consume movement input or modify Sprint, Jump, damage, Guard Coverage, or Perfect classification.
 - Startup: already cannot move; an Ordinary hit late in Startup may carry the remaining lock into Hold.
 - Hold: normal movement resumes automatically when the deadline expires if Block remains held.
-- Release: releasing Block during the lock records the existing held-input change but delays `EnterRelease()` until the gameplay deadline. The player remains in the current Blocking/Hold lifecycle and retains Guard coverage during this committed interval.
-- Exit/reset: beginning a new Block and completing Release must not inherit a stale prior lock.
+- Hold release: Update waits for the lock deadline before EnterRelease; held input still controls movement eligibility. The player retains Hold coverage during this interval.
+- Existing Startup boundary: StartupDecisionPoint directly enters Release when Block is not held; it currently does not test the lock deadline. Thus the implemented delay is a Hold rule, not a verified all-phase guarantee. A late-Startup Ordinary hit followed by release needs a focused future check; this documentation task changes no code.
+- Reset: BeginBlock and EnterRelease clear the deadline. FinishRelease returns the coarse action to Free.
 
 With the current `PlayerMovement` implementation, making `PlayerActionController.CanMove` false also pauses ordinary locked-target facing for the short lock, while active Guard Facing Assist remains the higher-priority facing branch. The learner accepted the current gameplay timing in the focused runtime test; any later facing split remains a separate change.
 
@@ -65,7 +87,7 @@ Movement Lock should visually cover the committed impact portion, not necessaril
 
 ## Animator Layer Direction
 
-The current Controller has only `Base Layer`. Ordinary Guard Reaction requires a separate layer so the existing Base Layer continues evaluating `Block_Start`, Guard Hold, and `Block_End`, including `ClosePerfectGuardWindow`, `StartupDecisionPoint`, and `FinishRelease`.
+The Controller contains Base Layer and the separate Guard Reaction layer so the existing Base Layer continues evaluating `Block_Start`, Guard Hold, and `Block_End`, including `ClosePerfectGuardWindow`, `StartupDecisionPoint`, and `FinishRelease`.
 
 The accepted first layer uses:
 
@@ -77,18 +99,13 @@ The accepted first layer uses:
 
 The accepted reaction uses Speed `2`, Exit Time `0.9`, and fixed `0.08s` exit blending. The first Speed `1` test exposed sliding because the full-body recovery tail still overrode locomotion after movement unlocked; the final accelerated timing hands the legs back to Base Layer at approximately the accepted `0.45s` control boundary.
 
-## Development Order After Ordinary Guard Reaction
+## Historical Completion and Future Design References
 
-1. Implement and runtime-verify only Ordinary Guard Movement Lock. Completed on 2026-09-03 with a current Scene value of `0.45s`, later-deadline overlap, Ordinary-only entry, and delayed Release.
-2. Build and runtime-verify the separate player Guard reaction layer using the selected `Block_Hit`. Completed on 2026-09-03.
-3. Pause Guard expansion.
-4. Add Attack Motion feedback: authored per-attack Weapon Trail windows and separate Whoosh cues. Begin basic-Attack tuning from the imported ice-blue `Subtle 1/2` candidates and the imported Attack1-3/Attack4 motion-audio candidates; reserve `Ice Stylized 3` for a future Perfect Guard Counter and `Ice Water 1/2` for other higher-emphasis attacks.
-5. Add confirmed Attack Hit VFX/SFX only after the existing gameplay confirmation, beginning visual tuning from imported `FX_hit_03_Blood` and audio tuning from the selected sword-impact plus flesh/gore layers.
-6. Use normal player Attack hits as the first concrete need for a minimal enemy light-reaction receiving boundary.
-7. Return to Perfect Guard and decide whether enemy recoil remains presentation-only or becomes Recovery/Stagger gameplay.
-8. Design a non-automatic Counter Window and Counter Attack only after the enemy consequence is explicit.
+Movement Lock and the separate reaction layer were completed as two checkpoints on 2026-09-03. The earlier cross-feature development order is superseded by ENEMY_COMBAT_AGENT_DESIGN.md and ROADMAP.md. CURRENT_STATE.md alone maintains the active Exact Next Step. This document retains the Guard reaction contract and timing evidence; it does not maintain a competing next-step list.
 
-The current outgoing player hit path directly calls `EnemyHealth.TakeDamage(int)` from `PlayerCombat.OpenHitWindow()`. Before Attack Hit feedback and Enemy Reaction are connected, define the smallest victim-side receiving/presentation seam required by that real feature. Do not prebuild a large damage or reaction framework.
+## Attack Soft-Recovery Timing Reference
+
+Preserved here with the shared Guard/Attack soft-recovery contract rather than repeated in startup documents. Saved Attack4 FBX importer values audited 2026-09-06: OpenHitWindow(3) 0.31615335, CloseHitWindow(3) 0.39201885, FinishAttack(3) 0.59016937, all normalized; Controller Speed 1.15. The early FinishAttack establishes the previously runtime-accepted visual soft tail. Full attack-flow design remains in COMBO_ATTACK_ARCHITECTURE.md.
 
 ## Deferred and Excluded
 

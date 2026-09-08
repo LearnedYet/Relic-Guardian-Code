@@ -1,6 +1,6 @@
 # Relic Guardian Context Index
 
-This file is a routing index. It tells Codex which small set of files to read for a task; it is not an implementation or design source of truth.
+This file maps task types to bounded reading sets. It contains no current-task or next-step record. CURRENT_STATE.md alone maintains the active Exact Next Step; choose a route here from that step or the user's task.
 
 ## Core Context Contract
 
@@ -15,22 +15,22 @@ At a new task, after context compaction, or when resuming from a Handoff:
 
 Actual code, Unity assets, current Editor state, and Git status remain authoritative. Use `rg` to locate historical evidence before reading narrow excerpts. Never read the whole `Docs/Archive/` or `Docs/DEV_LOG.md` by default.
 
-## Current Exact Next Route: Ordinary Guard Reaction
+## Enemy Receiving and Confirmed Player Attack Hit Feedback
 
 Read:
 
 - `Docs/COMBAT_PRESENTATION_FEEDBACK_DESIGN.md`
-- `Docs/GUARD_REACTION_DESIGN.md`
-- `Docs/GUARD_HIT_RESOLUTION_DESIGN.md`
-- `Assets/RelicGuardian/Player/Scripts/GuardResult.cs`
-- `Assets/RelicGuardian/Player/Scripts/PlayerHitReceiver.cs`
-- `Assets/RelicGuardian/Player/Scripts/PlayerActionController.cs`
-- `Assets/RelicGuardian/Player/Scripts/PlayerBlock.cs`
-- `Assets/RelicGuardian/Player/Scripts/PlayerGuardPresentation.cs`
-- `Assets/RelicGuardian/Player/Scripts/PlayerAnimator.cs`
-- `Assets/RelicGuardian/Player/Scripts/PlayerMovement.cs`
+- `Docs/ENEMY_COMBAT_AGENT_DESIGN.md` (Authority/Immediate Scope, Receiving and Confirmed Feedback, and the relevant acceptance gate)
+- `Docs/COMBAT_VFX_RESOURCE_TRACKING.md` / `Docs/COMBAT_SFX_RESOURCE_TRACKING.md` (selected confirmed-hit resources)
+- `Assets/RelicGuardian/Player/Scripts/PlayerCombat.cs`
+- `Assets/RelicGuardian/Player/Scripts/HitContext.cs`
+- `Assets/RelicGuardian/Enemy/Scripts/EnemyHealth.cs`
+- `Assets/RelicGuardian/Player/Scripts/CombatAudioPlayer.cs`
+- `Assets/RelicGuardian/Player/Scripts/CombatAudioData.cs`
+- `Assets/RelicGuardian/Player/Scripts/CombatAudioLayer.cs`
+- `Assets/RelicGuardian/Enemy/Scripts/EnemyHitReceiver.cs` and `EnemyHitPresentation.cs` once created; these are planned files, not current implementation evidence.
 
-Scope boundary: the hit-data seam, Guard classification, distinct Ordinary/Perfect Guard VFX and layered SFX, and Perfect-only `0.07s` Hitstop are implemented and learner-reported runtime verified for the current enemy. `Block_Hit.anim` is imported under the ignored licensed boundary with Loop Time disabled but is not connected. Next implement and verify Ordinary Guard Movement Lock as a gameplay deadline owned by `PlayerBlock`, then separately add an independent Animator reaction layer owned by `PlayerAnimator`. Presentation must not control movement permission. Keep Perfect player reaction, Camera feedback, Attack feedback, enemy reaction, Counter, Guard Break, and general frameworks outside this slice.
+Use this route for enemy receiving, confirmed-hit presentation and lethal-feedback lifetime questions. Consult the dedicated feature design for scope and acceptance requirements.
 
 ## Combat VFX Resource Selection or Local Restoration
 
@@ -38,7 +38,7 @@ Read:
 
 - `Docs/COMBAT_VFX_RESOURCE_TRACKING.md`;
 - the Git/licensed-asset sections of `AGENTS.md` and `Docs/DEVELOPMENT_RULES.md`;
-- the Git Boundary section of `Docs/CURRENT_STATE.md`;
+- the Git and Protected Local State section of `Docs/CURRENT_STATE.md`;
 - actual assets only under the ignored `Assets/LocalLicensed/CombatVFX/` boundary.
 
 Do not load or modify protected gameplay Scenes/Prefabs merely to inspect a resource. Use the local validation scenes first. Never stage, commit, upload, or mirror the licensed assets.
@@ -63,6 +63,8 @@ Inspect animation assets or Animation Events only when the concrete question req
 Read:
 
 - `Docs/GUARD_HIT_RESOLUTION_DESIGN.md` only when the task concerns incoming Guard resolution.
+- `Docs/GUARD_REACTION_DESIGN.md` for reaction, movement-lock and animation timing.
+- `Docs/COMBAT_VFX_RESOURCE_TRACKING.md` / `Docs/COMBAT_SFX_RESOURCE_TRACKING.md` for exact presentation configuration.
 - `Assets/RelicGuardian/Player/Scripts/PlayerActionController.cs`
 - `Assets/RelicGuardian/Player/Scripts/PlayerBlock.cs`
 - `Assets/RelicGuardian/Player/Scripts/PlayerAnimator.cs`
@@ -86,6 +88,8 @@ Read:
 
 Read only the involved files from:
 
+- `Docs/ENEMY_COMBAT_AGENT_DESIGN.md` (approved future direction; select sections for the current stage)
+- `Docs/ENEMY_COMBAT_RESOURCE_TRACKING.md` when the task selects, imports, configures or verifies SwordShield Goblin animation/presentation resources.
 - `Assets/RelicGuardian/Enemy/Scripts/EnemyAI.cs`
 - `Assets/RelicGuardian/Enemy/Scripts/EnemyMovement.cs`
 - `Assets/RelicGuardian/Enemy/Scripts/EnemyAttack.cs`
@@ -101,7 +105,7 @@ Read:
 
 - the Git and licensed-asset sections of `AGENTS.md`;
 - `Docs/DEVELOPMENT_RULES.md`, using headings/search to select the relevant workflow;
-- the Git Boundary section of `Docs/CURRENT_STATE.md`;
+- the Git and Protected Local State section of `Docs/CURRENT_STATE.md`;
 - current `git status`, configured remotes, and connectivity/proxy evidence required by the operation.
 
 Read matching excerpts of `Docs/DEV_LOG.md` only when diagnosing a previous failure. Never infer permission to stage, commit, push, or alter remote state from a context-sync request.
@@ -112,6 +116,8 @@ Project feature planning:
 
 - `Docs/PROJECT_PLAN.md`
 - `Docs/ROADMAP.md`
+- `Docs/ENEMY_COMBAT_AGENT_DESIGN.md` for the SwordShield Goblin receiving/state/reaction/Strong Combo/spacing roadmap.
+- `Docs/ENEMY_COMBAT_RESOURCE_TRACKING.md` for the selected Goblin animation set, source GUIDs and main-project import status.
 
 Learning state and internship preparation:
 
@@ -134,9 +140,4 @@ First search for a date, class, method, feature, error text, or decision name wi
 
 ## Protected Unity Files
 
-The following mixed local assets require a separate explicit review before staging or modification:
-
-- `Assets/RelicGuardian/Player/RelicGuardianPlayer.prefab`
-- `Assets/Scenes/SampleScene.unity`
-
-`Assets/LocalLicensed/` and `Assets/LocalLicensed.meta` remain ignored and must never be committed or uploaded.
+Use AGENTS.md for the durable modification/staging and licensed-asset rules, and current git status plus CURRENT_STATE.md for the protected working-tree snapshot. This route does not grant permission to mutate Unity assets.

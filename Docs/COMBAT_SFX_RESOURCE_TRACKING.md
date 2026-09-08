@@ -1,17 +1,19 @@
 # Combat SFX Resource Tracking
 
-Last verified: 2026-09-03.
+Saved configuration audited: 2026-09-06. Runtime acceptance dates are stated separately; this audit did not run Play Mode.
 
 ## Status and Boundary
 
 - Source package: local licensed `Melee Weapons Pack 1` in `RelicGuardianAssetLab`.
 - Seven learner-selected WAV files and their original `.meta` files were copied into the ignored formal-project boundary `Assets/LocalLicensed/CombatSFX/Selected/Guard/` with GUIDs preserved.
-- Eight learner-selected Attack WAV files and their original `.meta` files were copied into `Assets/LocalLicensed/CombatSFX/Selected/Attack/` with GUIDs preserved. They are classified as Attack1-3 Whoosh candidates, an Attack4 two-layer candidate, and a confirmed-hit two-layer candidate; none is connected yet.
-- The accepted layer settings are stored locally at `Assets/LocalLicensed/CombatSFX/Selected/Guard/Guard_SFX_Layer_Configuration.json`.
+- Eight learner-selected Attack WAV files and their original `.meta` files were copied into `Assets/LocalLicensed/CombatSFX/Selected/Attack/` with GUIDs preserved. Attack1-3 Whoosh and Attack4 separate Windup/Whoosh cues are connected. The confirmed-hit pair is connected through a dedicated temporary two-channel player; its trimmed derivative remains local and ignored.
+- The earlier Guard audition snapshot is stored locally at `Assets/LocalLicensed/CombatSFX/Selected/Guard/Guard_SFX_Layer_Configuration.json`.
 - Formal Guard presentation now consumes these clips through independent serialized Ordinary and Perfect cue data. `PlayerBlock`, `PlayerHitReceiver`, damage resolution, Hitstop, Camera Impulse, and Gameplay consequences remain unchanged by the SFX connection.
 - Everything under `Assets/LocalLicensed/CombatSFX/` remains unstaged and must never be committed or uploaded.
 
-## Ordinary Guard - 3 Layers
+## Ordinary Guard - Current Saved 3 Layers
+
+The following Scene values were rechecked on 2026-09-06 and match the earlier 2026-09-02 accepted mix.
 
 - Master Volume: `1.0`
 - Mute/Solo: false for every layer
@@ -26,7 +28,9 @@ All paths above are relative to:
 
 `Assets/LocalLicensed/CombatSFX/Selected/Guard/`
 
-## Perfect Guard - 4 Layers
+## Perfect Guard - Historical 2026-09-02 Accepted Mix
+
+The following table and fourth-layer 0.030s delay describe the earlier accepted configuration, not the current Scene. Preserve them as historical evidence.
 
 - Master Volume: `1.0`
 - Mute/Solo: false for every layer
@@ -38,7 +42,20 @@ All paths above are relative to:
 | 3 | `Perfect/METLTonl_Designed Metal Hit Ring 03_DDUMAIS_NONE.wav` | `2e64b826b7ffaec4f9017a3ce41a8a36` | `0.274` | `0.789` | `0.000s` |
 | 4 | `Perfect/METLTonl_Designed Metal Hit Tonal 09_DDUMAIS_NONE.wav` | `ce37be239b8858945823bbd54b2e576e` | `1.000` | `1.000` | `0.030s` |
 
+## Perfect Guard - Current Saved Configuration (2026-09-06)
+
+Read from SampleScene.PlayerGuardPresentation.perfectGuardAudioData; GUIDs resolved from local .meta files. Master Volume is 1. This is a static saved-state audit, not a new runtime acceptance claim.
+
+| Layer | Path relative to CombatSFX/Selected/Guard | GUID | Volume | Pitch | Delay seconds |
+| ---: | --- | --- | ---: | ---: | ---: |
+| 1 | Perfect/METLTonl_Designed Metal Hit Tonal 22_DDUMAIS_NONE.wav | a0547ff09cd591445bf16fac1ced8d14 | 0.68 | 1.4 | 0 |
+| 2 | Perfect/METLImpt_Impact Metal Ring 10_DDUMAIS_NONE.wav | 9e4dde098d5fdd6498653026650e2e18 | 0.64 | 1.37 | 0.01 |
+| 3 | Perfect/METLTonl_Designed Metal Hit Ring 03_DDUMAIS_NONE.wav | 2e64b826b7ffaec4f9017a3ce41a8a36 | 0.21 | 1.42 | 0.03 |
+| 4 | Ordinary/METLImpt_Designed Metal Hit High 04_DDUMAIS_NONE.wav | 97ba20f7558fefc488e4c02ed3ed0581 | 1 | 1.8 | 0.01 |
+
 ## Attack Motion and Hit Resources
+
+The motion mix and Events below were rechecked against the saved Scene and four LightCombo FBX importers on 2026-09-06. Runtime acceptance was learner-reported on 2026-09-04. Event time means normalized Clip time (0-1); Delay is DSP seconds and is not automatically scaled by Animator Speed.
 
 All paths below are relative to:
 
@@ -63,7 +80,7 @@ The accepted Attack1-3 mappings are single-layer cues on the independent Scene-l
 
 `SWSH_Swing 3 Small 04_DDUMAIS_NONE.wav` remains an unused local candidate.
 
-### Attack4 Two-Layer Candidate
+### Attack4 Separate Windup and Whoosh Cues
 
 | Layer role | Local path | GUID |
 | --- | --- | --- |
@@ -86,13 +103,13 @@ Separating the Events keeps both cues pose-authored and lets attack-step validat
 | Sword impact | `Hit/SWSH_Sword Slash Impact V1 Assorted 18_DDUMAIS_NONE.wav` | `a12b51e550e35b247811a0b78c3f49df` |
 | Flesh/gore body | `Hit/GOREFlsh_Flesh And Gore Assorted 08_DDUMAIS_NONE.wav` | `b0a4b84c8a8b7de439d9bf2d474da3a2` |
 
-The earlier screenshots and Lab state contained temporary audition values; the tables above now record the accepted runtime Attack Motion mappings. Hit cue values remain candidates and must begin only after the existing gameplay route confirms a target and applies the hit. Whoosh and Hit audio remain separate.
+The earlier screenshots and Lab state contained temporary audition values; the tables above record the accepted runtime Attack Motion mappings. The original Sword Slash Impact contains a long motion lead, so the connected Layer 0 currently uses the learner-trimmed local derivative `Hit/2.wav` (approximately `2.001s`, audible from file time zero) rather than moving confirmed feedback before hit resolution. Current confirmed-hit data on both targets is Master `1`: trimmed Sword Volume `0.8`, Pitch `1`, Delay `0`; Flesh/Gore Volume `0.5`, Pitch `1`, Delay `0.05s`. The temporary `EnemyHitAudioPlayer.prefab` has two bound 2D AudioSources and a `2.0s` lifetime; the learner accepted the current sound at runtime on 2026-09-08. Motion Whoosh and confirmed Hit audio remain separate.
 
 ## Implemented Guard Integration
 
 1. `GuardResult` remains the authoritative Ordinary/Perfect classification; `PlayerGuardPresentation` selects one corresponding `CombatAudioData` after Gameplay Resolution.
 2. `CombatAudioLayer` stores one Clip, Volume, Pitch, and Delay. `CombatAudioData` stores Master Volume plus a variable-length layer array. These data types do not play audio.
 3. One Scene-local `CombatAudioPlayer` owns four 2D `AudioSource` channels, stops prior scheduled playback, maps valid layers, and calls `PlayScheduled()` from one `AudioSettings.dspTime + 0.020s` base. `OnDisable()` performs cleanup.
-4. Ordinary and Perfect retain the exact independent 3-layer and 4-layer settings above; the Perfect fourth layer keeps its `0.030s` accent delay.
+4. Ordinary and Perfect use separate 3-layer and 4-layer cue data. Use the current saved tables for reconstruction; the older Perfect table is historical.
 5. AudioMixer, EQ, randomized variations, pooling, Hitstop, Camera Impulse, and Gameplay Consequences remain outside this implementation.
 6. The learner runtime-verified both result-specific VFX/SFX groups, no branch crossover or duplicate group per hit, preserved handled-hit prevention, preserved one-hit unblocked damage without Guard feedback, and a clean Console on 2026-09-02. Disable cleanup is implemented but was not recorded as a separate focused runtime test.

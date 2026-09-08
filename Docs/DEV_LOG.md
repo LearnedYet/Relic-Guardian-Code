@@ -4,6 +4,25 @@ This file records daily progress, learned concepts, problems, and solutions.
 
 ---
 
+## 2026-09-08
+
+### Completed Confirmed Player Attack Receiving and Hit Feedback
+
+- Added `EnemyHitReceiver` as the victim-side entry for confirmed Player Attack `HitContext` delivery. `PlayerCombat.OpenHitWindow(int)` preserves its existing step and saved-target range confirmation, then submits the damage/source/direction snapshot; `EnemyHealth` remains the sole health mutation owner.
+- Added `EnemyHitPresentation` for confirmed Blood VFX and two-layer Hit SFX. The selected `FX_hit_03_Blood` is spawned independently, every Local-scaling Particle System is scaled, and the instance is explicitly cleaned up.
+- Added project-owned `EnemyHitAudioPlayer.prefab` with two bound 2D AudioSources. Each accepted hit spawns a temporary independent player so victim deactivation does not own audio lifetime. The connected cue uses a trimmed local Sword Impact derivative at Volume `0.8`/Delay `0` plus Flesh/Gore at Volume `0.5`/Delay `0.05s`, with a `2.0s` temporary lifetime.
+- Diagnosed the first exported WAV as `9.91s` with real audio beginning at `7.85s`; the replacement `2.wav` is approximately `2.001s` and begins audibly at file time zero. All derived audio remains under ignored `Assets/LocalLicensed/`.
+- The learner reported the receiving chain, current VFX/SFX and both prototype targets normal in Play Mode. The final Unity Console contained zero errors and zero warnings.
+- Main-Editor inspection found all nine copied SwordShield Goblin FBX files recognized as Generic Clips using Copy From Other Avatar and the valid shared `SK_GoblinAvatar`. Loop Time/Loop Pose and Root Transform locks are currently false for all; preview and final import-setting approval remain required before Animator integration.
+
+### Next Direction
+
+- Begin Enemy Combat Agent stage 2 with one concept: define and verify an idempotent `EnemyAttack` cancellation/cleanup boundary that removes saved threats and clears execution-owned target, timing, delayed-animation and telegraph state.
+- Then add the minimum coarse Enemy state owner and coordinate natural attack finish/cancellation while keeping `EnemyAttackPhase` as the internal execution lifecycle.
+- Keep HitReaction, retained-corpse Death, Perfect Guard Stagger, multiple attacks/cooldowns, hit-time Miss validation, Strong Combo and Goblin Animator integration outside the first slice.
+
+---
+
 ## 2026-09-05
 
 ### Saved and Synchronized the Guard Reaction and Attack Motion Checkpoint

@@ -67,11 +67,15 @@ public class PlayerCombat : MonoBehaviour
         if (IsCurrentAttackTargetInRange())
         {
             confirmedAttackTarget = currentAttackTarget;
-            EnemyHealth enemyHealth = confirmedAttackTarget.GetComponent<EnemyHealth>();
+            EnemyHitReceiver enemyHitReceiver = confirmedAttackTarget.GetComponent<EnemyHitReceiver>();
 
-            if (enemyHealth != null)
+            if (enemyHitReceiver != null)
             {
-                enemyHealth.TakeDamage(CurrentAttackData.Damage);
+                Vector3 incomingDirection = confirmedAttackTarget.transform.position - transform.position;
+
+                HitContext hitContext = new HitContext(CurrentAttackData.Damage, transform, incomingDirection);
+
+                enemyHitReceiver.ReceiveHit(hitContext);
             }
         }
         else

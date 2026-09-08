@@ -225,7 +225,7 @@
   - [x] Extend the same indexed Trail contract to Attack2/3 with clip-specific timings and runtime-verify the three-step presentation and cleanup.
   - [x] Connect and runtime-verify Attack4 through the same Subtle 2 ordinary-basic-attack Trail tier with its own indexed authored interval; stronger Trail resources remain reserved for genuinely higher-emphasis attacks.
   - [x] Connect and runtime-verify motion-timed Whoosh cues separately from confirmed-hit SFX: Attack1-3 use one indexed cue each, while Attack4 uses independent Windup and main-swing pose Events with cancellation-safe stale Event rejection.
-  - [ ] Connect the selected confirmed-hit VFX/SFX only after the existing gameplay hit confirmation.
+  - [x] Establish and runtime-verify the minimum EnemyHitReceiver / EnemyHitPresentation boundary, then connect confirmed-hit Blood VFX and independent two-layer Hit SFX while preserving target confirmation, damage and lethal-feedback lifetime.
   - [x] Select and import `FX_hit_03_Blood` plus its independent materials as the primary ordinary-Attack confirmed-hit VFX candidate; dependency validation passed with zero missing assets, while gameplay connection and real-camera tuning remain pending.
   - [x] Import eight selected Attack AudioClips with preserved GUIDs; connect and verify the six Attack Motion clips through indexed authored timing, while the two confirmed-hit layers remain pending.
 - [ ] Dodge
@@ -243,8 +243,25 @@
 
 ## Phase 5 - Enemy AI
 
-- [ ] State Machine
-- [ ] Patrol
+Approved future direction: `Docs/ENEMY_COMBAT_AGENT_DESIGN.md` (2026-09-05). The sequence below crosses the existing broad roadmap phases and is the execution order for the first SwordShield Goblin. Unchecked entries are design, not runtime facts.
+
+- [x] Select the first-version SwordShield Goblin animation set in the isolated project: Idle/Run, four-direction combat movement, three independent Forward Attacks, GetHit, and Death. Reserve GetHit as the provisional Perfect Guard Stagger visual; exclude packaged combo Clips, Block/protected idle/normal walk, Dagger/Slingshot and `_RM` variants. Import/runtime status is tracked separately in `Docs/ENEMY_COMBAT_RESOURCE_TRACKING.md`.
+- [x] Copy the nine previously missing selected non-Root-Motion FBX/meta pairs into the main licensed Goblin boundary with source hashes/GUIDs preserved and without overwriting existing prototype files; Unity Clip/Console validation remains pending.
+
+1. [x] Minimum EnemyHitReceiver, confirmed Player Attack Hit VFX, then Hit SFX; preserved hit confirmation and independent feedback lifetime, learner-runtime-verified 2026-09-08.
+2. [ ] Minimum Enemy coarse state owner and reliable EnemyAttack.Cancel(); preserve EnemyAttackPhase as the internal attack lifecycle.
+3. [ ] Ordinary HitReaction only from Idle/Chase/Combat, cooldown starting on short-reaction exit, and terminal Death with retained corpse and hit/target exclusion. Ordinary light hits do not interrupt Attacking or reset Staggered.
+4. [ ] Minimal HitResult return and Perfect Guard forced attack cancellation/Stagger, independent of ordinary reaction cooldown.
+5. [ ] Ordinary multi-attack selection and Global Attack Cooldown on finish/cancel.
+6. [ ] Enemy hit-time distance, direction and live-target validation with actual Miss behavior.
+7. [ ] Independent Strong Attack / Strong Combo stage: first establish Player HitStun, functional Dodge and death-safe control recovery; then add PerfectOnly, clear telegraph, first-hit commit, per-step hit validation and reliable bilateral cleanup. Strong cooldown is consumed on accepted start. Guaranteed three-hit capture requires a separate lightweight pairing/position-correction sub-stage.
+8. [ ] Spacing/Approach/Retreat/Strafe/Wait and decision pacing with separate move/facing directions; EnemyMovement retains execution ownership.
+9. [ ] Integrated moderately aggressive SwordShield Goblin acceptance across discovery, chase, attack selection/cooldowns, reactions, Perfect Guard, Strong Combo and Death.
+
+Attack Hitstop is a separate later feedback tuning checkpoint. Poise, Enemy Block, full Guard Break, BT/Utility/GOAP, advanced navigation and generic combat frameworks remain deferred. Patrol is optional later content, not a blocker for the first agent.
+
+Existing chase foundation (retain its recorded verification):
+
 - [ ] Chase
   - [x] Import and preview non-Root-Motion sword-and-shield Walk and Run clips; reserve Walk for patrol and Run for chase.
   - [x] Add and manually verify `Speed`-driven `Idle <-> Run` Animator transitions.
@@ -253,8 +270,8 @@
   - [x] Expose actual horizontal speed from `EnemyMovement` for presentation consumers.
   - [x] Synchronize the Goblin Animator `Speed` parameter from actual movement and runtime-verify chase-to-attack behaviour.
   - [x] Add an explicit zero-movement boundary and prevent chase from resuming before the active enemy attack returns to `Ready`.
-- [ ] Attack
-- [ ] Death
+
+The ordered stages above define the future attack, state and death work; do not duplicate those as a second competing schedule.
 
 ---
 

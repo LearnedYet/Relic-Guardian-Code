@@ -1,6 +1,6 @@
 # Relic Guardian Implemented Architecture
 
-Last reviewed against the actual project-owned C# source: 2026-09-02.
+Documentation updated against inspected source and saved Scene: 2026-09-08. Runtime acceptance is recorded in CURRENT_STATE.md.
 
 This file is the compact architecture map for behavior that is currently implemented. Actual code, Unity assets, current Editor state, and Git status remain authoritative. Approved but unimplemented feature designs belong in their feature-design documents and must not be treated as runtime facts.
 
@@ -10,7 +10,7 @@ This file is the compact architecture map for behavior that is currently impleme
 - Player and enemy displacement use `CharacterController`.
 - Apply Root Motion remains disabled.
 - Project-owned gameplay scripts live under `Assets/RelicGuardian/`.
-- `Assets/LocalLicensed/` contains ignored local presentation dependencies and is never a code or documentation source of truth.
+- `Assets/LocalLicensed/` contains ignored local presentation dependencies; actual saved asset settings remain evidence for local configuration, while approved gameplay design belongs in project documents.
 
 ## Player Component Ownership
 
@@ -19,16 +19,17 @@ This file is the compact architecture map for behavior that is currently impleme
 | `PlayerInputReader` | Records movement/look values, held Sprint/Block state, and one-use Attack/Jump/Lock-On/Block requests. It does not decide whether an action is legal. |
 | `PlayerActionController` | Sole owner of the coarse player action state and deterministic Block/Attack/Jump request arbitration. |
 | `PlayerCombat` | Owns the four-step Basic Attack sequence, attack targets, windows, queue/restart state, attack facing requests, lunge requests, enemy damage requests, and complete attack cleanup. |
-| `PlayerBlock` | Owns the internal Block `Startup`, `Hold`, and `Release` phases, phase-aware Hold movement permission, directional Guard Coverage decisions, and production of the explicit `GuardResult`. |
+| `PlayerBlock` | Owns the internal Block `Startup`, `Hold`, and `Release` phases, Ordinary movement-lock deadline and Hold release gate, phase-aware Hold movement permission, directional Guard Coverage decisions, and production of the explicit `GuardResult`. |
 | `PlayerMovement` | Sole owner of player `CharacterController` movement and actual player Transform-facing application. Other gameplay components request facing or displacement through it. |
 | `PlayerTargeting` | Owns the current Lock-On target, nearest-target acquisition, toggle/cancel behavior, and break-distance validation. Lock-On is orthogonal to the coarse action state. |
 | `PlayerCameraController` | Selects Free/Lock-On Cinemachine camera priorities, input-axis ownership, and the weighted Lock-On camera target. |
 | `PlayerAnimator` | Writes Animator parameters and triggers code-driven presentation changes. It does not decide gameplay permission, damage, coverage, or action state. |
 | `PlayerHitReceiver` | Single entry for defendable incoming hits. It resolves same-frame action requests, asks `PlayerBlock` for a `GuardResult`, forwards `Unhandled` hits to `PlayerHealth`, and routes handled results once to Guard presentation. |
-| `PlayerGuardPresentation` | Consumes an already-decided Ordinary or Perfect `GuardResult`. It owns result-specific Guard VFX/SFX configuration and asks the shared Hitstop owner only for the Perfect duration; it never decides damage, Guard legality, or time restoration. |
+| `PlayerGuardPresentation` | Consumes GuardResult; owns result-specific VFX/SFX selection, requests Ordinary reaction from PlayerAnimator and Perfect-only Hitstop from the shared owner. |
 | `CombatAudioPlayer` | Reusable presentation component that owns preconfigured `AudioSource` channels, maps one `CombatAudioData` layer array to them, stops prior scheduled playback, and schedules valid layers from one DSP-time base. It does not classify hits or own combat permission. |
 | `HitstopController` | Sole current writer/restorer of global `Time.timeScale` for Hitstop. It uses an unscaled deadline, keeps the pre-Hitstop value across overlaps, extends only to the later requested deadline, restores normally or on disable, and rejects requests while disabled. |
 | `PlayerHealth` | Stores player health and subtracts integer damage forwarded by `PlayerHitReceiver`. It has no clamp, death flow, or Guard decision logic. |
+| `PlayerAttackPresentation` | Owns transient Trail playback and indexed Whoosh/Windup cue selection. Uses a separate AttackAudio instance; persistent WeaponAura is independent. |
 | `PlayerAttackData` | Serializable per-step Basic Attack configuration for damage, target range, lunge speed, and lunge distance. |
 | `CombatAudioLayer` / `CombatAudioData` | Serializable presentation data for one Clip/Volume/Pitch/Delay layer and one Master-Volume-plus-layers cue. They contain no playback or gameplay decisions. |
 
@@ -60,7 +61,7 @@ Current coarse states are only `Free`, `Attacking`, and `Blocking`. Guard phases
 | `Free` | Yes | Yes when grounded and unlocked | Yes |
 | `Attacking` | No | No | No |
 | Block `Startup` | No | No | No |
-| Block held `Hold` | Yes | No | No |
+| Block held `Hold` | Only after Ordinary movement-lock expiry | No | No |
 | Block `Release` | No | No | No |
 
 Attack lunge is an explicit `PlayerCombat` request to `PlayerMovement.MoveDuringAttack()` and does not reopen ordinary movement permission. `CanMove` and `CanSprint` remain separate so movable Guard Hold never enables Sprint or its Lock-On cancellation path.
@@ -87,7 +88,8 @@ accepted Attack request
 -> request attack presentation
 -> optional facing and code-driven lunge
 -> Animation Events open/close Hit and Combo windows
--> confirmed in-range target receives EnemyHealth.TakeDamage(int)
+-> confirmed in-range target receives HitContext through EnemyHitReceiver
+-> EnemyHealth applies damage once and EnemyHitPresentation expresses the confirmed result
 -> FinishAttack or Block cancellation uses EndAttack()
 -> coarse state returns to Free and presentation soft recovery begins
 ```
@@ -108,11 +110,11 @@ BeginBlock
 -> Free
 ```
 
-During Hold, `AllowsMovement` is true only while the Block input remains held. `PlayerAnimator.PlayBlockHold()` selects unlocked `Guard_Free_Locomotion` or locked `Guard_Locked_Locomotion`. An active Hold presentation refreshes once when authoritative Lock-On mode changes.
+During Hold, AllowsMovement requires held Block and an expired Ordinary movement-lock deadline. Update delays Hold release until that deadline; BeginBlock and EnterRelease clear it. StartupDecisionPoint still directly releases when input is no longer held, without checking this deadline. `PlayerAnimator.PlayBlockHold()` selects unlocked `Guard_Free_Locomotion` or locked `Guard_Locked_Locomotion`. An active Hold presentation refreshes once when authoritative Lock-On mode changes.
 
 Startup and Hold can handle hits inside the adjustable horizontal Guard Coverage angle. Release, invalid horizontal direction, and coverage failure remain unhandled and continue to health. A real enemy Startup preview may begin fixed-direction Facing Assist during Startup/Hold; the matching hit still uses the saved pre-assist facing for coverage.
 
-`BeginBlock()` opens the minimal Perfect Guard Window during Startup. The authored `Block_Start` Event closes it, and Hold/Release entry closes it defensively. Only after coverage succeeds does `ResolveGuardHit()` return `GuardResult.Perfect` while the window is open or `GuardResult.Ordinary` otherwise; failed Guard resolution returns `GuardResult.Unhandled`. `PlayerHitReceiver` routes handled results to `PlayerGuardPresentation`. Ordinary and Perfect each spawn and explicitly clean their own local Guard Impact Prefab, then submit their independent layered cue to `CombatAudioPlayer`. Perfect additionally requests `0.07s` from `HitstopController`; Ordinary does not request Hitstop. No Camera Impulse, player Guard reaction, enemy reaction, or Counter is implemented.
+`BeginBlock()` opens the minimal Perfect Guard Window during Startup. The authored `Block_Start` Event closes it, and Hold/Release entry closes it defensively. Only after coverage succeeds does `ResolveGuardHit()` return `GuardResult.Perfect` while the window is open or `GuardResult.Ordinary` otherwise; failed Guard resolution returns `GuardResult.Unhandled`. `PlayerHitReceiver` routes handled results to `PlayerGuardPresentation`. Ordinary and Perfect each spawn and explicitly clean their own local Guard Impact Prefab, then submit their independent layered cue to `CombatAudioPlayer`. Perfect requests shared Hitstop; Ordinary does not. Ordinary also requests PlayerAnimator's independent full-body Override Guard Reaction layer. Its Empty/Ordinary_Guard_Hit states cover the visible pose while Base Layer Guard states continue; automatic exit and PlayBlockEnd clear the reaction. Presentation never grants movement permission.
 
 ## Player Movement and Facing
 
@@ -147,6 +149,8 @@ Soft recovery is presentation state inside `PlayerAnimator`, not a coarse gamepl
 | `EnemyAttack` | Owns `Ready -> Startup -> HitWindow -> Recovery -> Ready`, telegraph/Animator triggering, a saved `PlayerHitReceiver` target, one Startup `AttackThreatContext`, and one scheduled hit-time `HitContext` delivery. |
 | `EnemyAnimator` | Writes enemy movement speed to the Animator. |
 | `EnemyHealth` | Subtracts integer damage and disables the GameObject at zero or below. |
+| `EnemyHitReceiver` | Single current entry for confirmed Player Attack hits; forwards HitContext.DamageAmount to EnemyHealth once and requests optional victim-side presentation. |
+| `EnemyHitPresentation` | Owns confirmed-hit VFX/SFX references, anchor placement, per-instance scale and cleanup. It spawns an independent Blood effect and a temporary CombatAudioPlayer Prefab so lethal deactivation does not own the feedback lifetime. |
 
 Current enemy damage flow is:
 
@@ -159,6 +163,19 @@ EnemyAI
 -> PlayerHitReceiver.ReceiveHit(HitContext)
    -> handled Blocking coverage success: stop
    -> otherwise PlayerHealth.TakeDamage(int)
+```
+
+Current confirmed Player Attack hit flow is:
+
+```text
+PlayerCombat.OpenHitWindow(int)
+-> preserve current step and saved-target-in-range confirmation
+-> construct HitContext(CurrentAttackData.Damage, player Transform, source-to-victim direction)
+-> EnemyHitReceiver.ReceiveHit(HitContext)
+   -> EnemyHealth.TakeDamage(int)
+   -> optional EnemyHitPresentation.PresentHit()
+      -> independent FX_hit_03_Blood instance and timed cleanup
+      -> independent temporary two-channel CombatAudioPlayer and timed cleanup
 ```
 
 Current pre-hit threat flow is:
@@ -182,9 +199,8 @@ PlayerBlock.ResolveGuardHit(HitContext)
 -> PlayerHitReceiver
    ├─ Unhandled -> PlayerHealth.TakeDamage(int)
    └─ Ordinary/Perfect -> PlayerGuardPresentation.PresentGuardResult()
-      ├─ Ordinary -> one Normal Guard Impact + 3-layer DSP-scheduled cue + log
-      └─ Perfect -> one Perfect Guard Impact + 4-layer DSP-scheduled cue
-                    + 0.07s shared Hitstop request + log
+      ├─ Ordinary -> matching impact/audio + independent player reaction
+      └─ Perfect -> matching impact/audio + shared Hitstop request
 ```
 
 Range is checked before attack Startup. The later Hit Window damages the saved target without a new overlap, range, or line-of-sight confirmation, so the current prototype is a scheduled hit attempt rather than physical hitbox confirmation.
@@ -200,12 +216,14 @@ Range is checked before attack Startup. The later Hit Window damages the saved t
 - Guard Hold movement permission never implies Sprint permission.
 - Do not introduce a second gameplay FSM, numeric Priority system, general Request Queue, pre-emptive `PlayerMotor`, or large Damage/Ability Framework without a concrete need.
 
-## Approved but Not Implemented
+## Attack Motion Presentation
 
-`HitContext`, `PlayerHitReceiver`, Startup/Hold Guard Coverage, the core pre-hit Attack Threat Facing Assist route, minimal Perfect Guard classification, the explicit `GuardResult -> PlayerGuardPresentation` boundary, independent Guard VFX/SFX routes, and Perfect-only shared Hitstop are implemented. The current enemy's `40-50` degree core turn/guard path, empty-Guard no-turn check, Release-cancellation check, ordinary/perfect classification, unhandled damage route, distinct presentation feedback, Hitstop restoration, and disabled-owner recovery are learner-reported runtime verified.
+PlayerCombat validates indexed Trail, Whoosh and Windup Events against the current Attacking state and attack index, then forwards them to PlayerAttackPresentation. StartAttackStep and shared EndAttack close the transient Trail; presentation Awake/OnDisable also close it. The independent WeaponAura is not controlled by these windows.
 
-Ordinary Guard Reaction is implemented without adding a new gameplay state or phase. `PlayerBlock` owns the scaled Movement Lock deadline and delayed Release permission. After the resolved Ordinary result reaches `PlayerGuardPresentation`, Presentation requests `PlayerAnimator.PlayOrdinaryGuardReaction()`. The independent full-body Override `Guard Reaction` layer temporarily plays `Ordinary_Guard_Hit` while the Base Layer continues evaluating Guard lifecycle states and Animation Events; automatic exit and `PlayBlockEnd()` both return the layer to `Empty`. Perfect Guard does not request this player reaction. Camera feedback, enemy reaction, Counter, Guard Break, and general frameworks remain separate.
+Attack motion audio uses a separate CombatAudioPlayer instance from Guard audio. Each Play call stops that instance's previous channels before DSP scheduling the new cue. Attack4 Windup and main Whoosh use separate authored Events; other attacks use one Whoosh cue. Cancellation rejects future mismatched Events but does not explicitly stop already scheduled/playing motion audio. Index validation does not uniquely distinguish two executions of the same attack step; do not claim a general execution-token guarantee.
 
-`PlayerAttackPresentation` is the focused owner for player Attack VFX playback. The first connected resource is the Scene-local Subtle 2 `AttackTrail` `VisualEffect`; the independent Subtle 1 `WeaponAura` uses `OnPlay` and is not controlled by attack windows. Attack Clips carry separate `OpenWeaponTrail(int)` / `CloseWeaponTrail(int)` Events. `PlayerCombat` reuses its authoritative attack-step identity check before delegating to Presentation, and both `StartAttackStep()` and shared `EndAttack()` force the transient Trail closed. Trail timing never opens the gameplay Hit Window or decides damage.
+## Configuration and Planning References
 
-The same `PlayerAttackPresentation` owns Attack motion-audio selection through indexed `CombatAudioData` arrays, while a separate Scene-local `AttackAudio` `CombatAudioPlayer` and two-channel bank prevent Attack cues from stopping Guard SFX. Attack1-3 each submit one Whoosh cue. Attack4 uses two separately authored pose Events: an optional indexed Windup cue followed by the main indexed Whoosh cue. Both routes pass through `PlayerCombat.IsCurrentAttackStep()` so cancellation before a future Event prevents it from playing. Motion audio is independent from target existence and confirmed-hit audio.
+VFX assets, placement and Trail Event values: COMBAT_VFX_RESOURCE_TRACKING.md. Audio clips/mixes and sound Event values: COMBAT_SFX_RESOURCE_TRACKING.md. Guard timing, reaction and shared soft-recovery parameters: GUARD_REACTION_DESIGN.md. These are configuration/design references; actual code/assets still take precedence.
+
+Enemy future state and consequence plans are in ENEMY_COMBAT_AGENT_DESIGN.md. EnemyHitReceiver and EnemyHitPresentation are now implemented; the proposed Enemy coarse state owner, HitReaction, retained-corpse Death, Strong Combo and Poise are not.

@@ -1,6 +1,6 @@
 # Combat VFX Resource Tracking
 
-Last verified: 2026-09-01.
+Saved configuration audit: 2026-09-06. Historical import/runtime verification dates are retained below.
 
 This document records local licensed Combat VFX dependencies, AssetLab validation results, and the current selected candidates. It does not prove that any VFX is connected to gameplay in the main project.
 
@@ -10,7 +10,7 @@ This document records local licensed Combat VFX dependencies, AssetLab validatio
 - Only the final selected assets, their recursive dependencies, and the final Guard validation scene are present in the main project under the ignored local-only boundary `Assets/LocalLicensed/CombatVFX/`, with Unity GUIDs preserved.
 - The main project imported the copied assets with zero Console errors and zero warnings. The selected Prefabs and custom HDR materials resolve successfully.
 - Final color, HDR intensity, size, orientation, Bloom response, spawn point, and combined readability must be tuned in the main project's real camera and combat scale.
-- `Normal Guard Impact.prefab` and `Perfect Guard Impact.prefab` are connected only to their matching Guard results through `PlayerGuardPresentation` and passed the learner's focused in-combat runtime checks. Attack VFX remains unconnected.
+- `Normal Guard Impact.prefab` and `Perfect Guard Impact.prefab` are connected only to their matching Guard results through `PlayerGuardPresentation` and passed the learner's focused in-combat runtime checks. WeaponAura and Attack1-4 Trail are connected. The confirmed Attack Hit Blood Prefab is connected through `EnemyHitPresentation` and learner-reported normal at runtime on 2026-09-08.
 - Everything under `Assets/LocalLicensed/CombatVFX/` and its parent local licensed boundary must remain unstaged and must never be committed or uploaded.
 
 ## Required Packages
@@ -39,7 +39,7 @@ Assets/LocalLicensed/CombatVFX/
 └─ Validation/     final Guard composition scene
 ```
 
-The initial whole-package copy contained `1825` files and used approximately `424.37 MB`. It was replaced by a dependency list of `79` Unity assets. After Unity generated folder metadata and later selected local variants were added, the current local tree contains `222` files total and uses approximately `70.88 MiB`. The earlier serialized GUID cross-check found zero references to omitted assets from the former broad CombatVFX tree. The dependency-pruned Unity refresh compiled cleanly, and the later focused imports left the Console clean.
+The initial whole-package copy contained `1825` files and used approximately `424.37 MB`. It was replaced by a dependency list of `79` Unity assets. After Unity generated folder metadata and later selected local variants were added, the 2026-09-03 import checkpoint recorded `222` files total and approximately `70.88 MiB` (historical inventory, not a live count). The earlier serialized GUID cross-check found zero references to omitted assets from the former broad CombatVFX tree. The dependency-pruned Unity refresh compiled cleanly, and the later focused imports left the Console clean.
 
 ## Selected Attack Layers
 
@@ -47,14 +47,14 @@ The initial whole-package copy contained `1825` files and used approximately `42
 
 Current selected roles:
 
-- basic Attack candidate A: `Selected/WeaponTrails/Subtle 1 Ice.prefab`, a restrained ice-blue recolor of vendor `Subtle 1`;
-- basic Attack candidate B: `Selected/WeaponTrails/Subtle 2 Ice.prefab`, a slightly stronger ice-blue recolor of vendor `Subtle 2`;
+- connected persistent WeaponAura: `Selected/WeaponTrails/Subtle 1 Ice.prefab`, a restrained ice-blue recolor of vendor `Subtle 1`;
+- connected Attack1-4 transient AttackTrail: `Selected/WeaponTrails/Subtle 2 Ice.prefab`, a slightly stronger ice-blue recolor of vendor `Subtle 2`;
 - future Perfect Guard Counter candidate: `Selected/WeaponTrails/Ice Stylized 3.prefab`;
 - other higher-emphasis Attack candidates: `Ice Water 1.prefab` and `Ice Water 2.prefab`, with Water 2 retained at one brightness step below Water 1.
 
 The two Subtle Prefabs preserve their vendor GUIDs `dd506520638422b488b79ab9ee75186f` and `a37e8b71f3b77d443a68f3e279bac75b`. Their shared missing dependency `INab_Noise_21.png` was added under `Dependencies/INab Studio/Common/Textures/Noise/` with GUID `14d21f23f8c0e564697377fe780a21bc`.
 
-Initial local color values, pending real-camera tuning:
+Historical 2026-09-03 import palette (not current Scene-instance color overrides):
 
 | Prefab | Color | Main Color | Secondary Color |
 | --- | --- | --- | --- |
@@ -63,6 +63,21 @@ Initial local color values, pending real-camera tuning:
 
 The package produces a real trail from weapon motion. It is suitable for an authored Attack Trail Window controlled by Animation Events; it is not a fixed crescent Slash Prefab.
 
+### Saved Attack Trail Event Configuration
+
+Audited 2026-09-06 from the four FBX .meta files under Assets/LocalLicensed/PowerfulSwordPack/Katana/LightCombo/. Times are normalized Clip positions, not seconds. Attack1-3 map to Attack_4Combo_1/2/3_Inplace; Attack4 maps to Attack_3Combo_3_Inplace.
+
+| Attack / index | OpenWeaponTrail | CloseWeaponTrail |
+| --- | ---: | ---: |
+| 1 / 0 | 0.24694112 | 0.41242826 |
+| 2 / 1 | 0.2189475 | 0.37530434 |
+| 3 / 2 | 0.17673774 | 0.34686896 |
+| 4 / 3 | 0.3032368 | 0.4152874 |
+
+Historical 2026-09-03 accepted Attack1 opening was 0.18911798; the current saved opening is 0.24694112. Its close and the other three windows retain their documented values. The new opening has not been independently runtime-tested in this documentation audit. Whoosh/Windup Events and mix values live in COMBAT_SFX_RESOURCE_TRACKING.md.
+
+WeaponAura is the independent Subtle 1 Scene instance with OnPlay; AttackTrail is the Subtle 2 instance controlled through PlayerAttackPresentation. Both use weapon-child endpoints through binders. Scene tuning is authoritative over the historical import palette; no Apply-to-Prefab operation is implied.
+
 ### Hit Impact
 
 Current basic-Attack selection:
@@ -70,7 +85,7 @@ Current basic-Attack selection:
 - `Selected/AttackHits/Blood/FX_hit_03_Blood.prefab`, selected as the primary confirmed-hit visual candidate for ordinary Attack1-4 hits;
 - independent materials: `Blood/Materials/M_AttackHit_Blood_Add_HDR.mat` and `M_AttackHit_Blood_APB.mat`.
 
-The selected Blood Prefab preserves AssetLab GUID `b33c07f1ea0c90d45a6b04302ea31a43`; the two materials preserve GUIDs `7c6181ef189d94e438de16382445a0ed` and `4684a66084693b74fb88af52f711a32a`. Main-project dependency inspection resolved all `10` direct/indirect assets with zero missing references, and Unity imported the selection with a clean Console. It remains unconnected and pending real-camera placement, orientation, scale, lifetime, and brightness tuning.
+The selected Blood Prefab preserves AssetLab GUID `b33c07f1ea0c90d45a6b04302ea31a43`; the two materials preserve GUIDs `7c6181ef189d94e438de16382445a0ed` and `4684a66084693b74fb88af52f711a32a`. Main-project dependency inspection resolved all `10` direct/indirect assets with zero missing references. `EnemyHitPresentation` spawns it only after PlayerCombat confirms the saved target, scales every Local-scaling Particle System instance, and destroys the independent instance after `1.2s`. Current saved hit scales are `0.45` on NearTarget and `0.33` on FarTarget; the learner accepted the current presentation in Play Mode on 2026-09-08.
 
 Reserved ice candidates:
 
@@ -80,6 +95,8 @@ Reserved ice candidates:
 `FX_hit_11_Ice` keeps its first slash-shaped layer thin and compresses the other layers to approximately `50%` of their original world-space Y extent. Both Ice Prefabs use the local independent material `M_AttackHit_Ice_Add_HDR.mat`. Its currently persisted `Emission_Power` is `6.6`; treat this as an AssetLab value, not a final main-project brightness decision.
 
 ## Selected Guard Layers
+
+Saved Scene anchor pose audited 2026-09-06: GuardImpactAnchor local position (0, 1.2, 0.45), identity rotation and unit scale. This is a presentation anchor, not physical contact. Scene cleanup lifetimes are Ordinary 1.2s and Perfect 1.8s, matching code defaults. Independent instances are spawned at the anchor world pose; selected Guard renderer alignment is View, and IncomingDirection is not used for placement rotation in this implementation.
 
 ### Ordinary Guard
 
