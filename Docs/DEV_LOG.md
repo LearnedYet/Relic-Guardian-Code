@@ -29,6 +29,15 @@ This file records daily progress, learned concepts, problems, and solutions.
 - A new cooldown-chase test exposed Idle-to-Run foot sliding. Actual Animator inspection found `Has Exit Time = true` on the `Speed > 0.1` transition; disabling it removed the observed slide, and the non-Play saved Controller was verified with Exit Time disabled.
 - Full-speed pursuit outside attack range during Global Attack Cooldown remains the current simple Chase behavior. Lower pursuit pressure is deferred to Approach/Retreat/Strafe/Wait decision pacing.
 
+### Saved and Synchronized the Enemy Reaction and Attack-Pacing Checkpoint
+
+- Recompiled `Assembly-CSharp.csproj` with zero warnings and zero errors, archived the replaced 2026-09-08 Handoff, and created local full-project feature checkpoint `9da9b25 Add enemy reactions and attack pacing` from an explicit 18-file allowlist.
+- Kept the protected Player Animator, player Prefab, PlayerHealth, mixed SampleScene and every ignored `Assets/LocalLicensed/` resource outside the commit. The Scene retains NearTarget wiring/tuning and the ignored Controller retains GetHit/locomotion configuration.
+- Read the active Windows proxy `127.0.0.1:7897` and applied it only to individual Git commands. `git fetch origin --prune` confirmed `origin/main` remained at `601eb8a` with no remote-only commit to integrate.
+- Created mirror branch `codex/enemy-reaction-pacing-sync-20260909` from current `origin/main`. Three immediate Windows checkout changes were traced to CRLF blobs conflicting with the repository LF attributes; the two unrelated documents were isolated from the index, while the intentionally changed EnemyHealth was included in the explicit mirror allowlist.
+- Created flattened mirror feature checkpoint `f1fe243 Sync enemy reactions and attack pacing` from eight Enemy C# files and eight maintained/archived documents. No Scene, Prefab, Controller, `.meta`, licensed asset, README, UnityConfig or unrelated remote file was included.
+- Pushed normally without force and verified GitHub `refs/heads/main` at `f1fe243404f9b00d470d4065f2ca5407ab3c7e8a`.
+
 ### Next Direction
 
 - Begin retained-corpse terminal Death with explicit Dead authority, lethal ordering, attack/threat/movement cleanup, Death presentation and target/hit exclusion while preserving independently spawned lethal feedback.

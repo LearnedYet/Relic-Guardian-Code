@@ -31,9 +31,9 @@ HitWindow-time target/range/direction validation remains deferred to its dedicat
 
 ## Checkpoint and Working-Tree Context
 
-The 2026-09-05 checkpoint synchronization completed. CURRENT_STATE.md records local feature/documentation commits and the last verified mirror ref. The former record-only follow-up is finished, not an outstanding task.
+The 2026-09-09 Enemy reaction/attack-pacing synchronization completed. Local full-project feature checkpoint is `9da9b25`; the flattened GitHub code/document feature mirror is `f1fe243`, verified at `f1fe243404f9b00d470d4065f2ca5407ab3c7e8a`. CURRENT_STATE.md records these together with earlier checkpoints.
 
-Preserve the local Animator, player Prefab, mixed Scene and PlayerHealth working-tree entries. Current uncommitted Enemy work includes EnemyAI, EnemyAnimator, EnemyAttack, EnemyHealth, EnemyHitReceiver, EnemyMovement, EnemyState/meta and EnemyStateController/meta; NearTarget's wiring shares the protected mixed Scene. Obtain the live file list from git status and apply the existing AGENTS.md protection/licensed-asset rules. This handoff grants no new commit or push authority.
+Preserve the remaining local Player Animator, player Prefab, mixed Scene and PlayerHealth working-tree entries. NearTarget's wiring and licensed Goblin Controller remain outside the focused commits. Obtain the live file list from git status and apply the existing AGENTS.md protection/licensed-asset rules. This handoff grants no new commit or push authority.
 
 ## Historical References
 

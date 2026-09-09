@@ -56,11 +56,14 @@ Begin the retained-corpse terminal Death slice. Replace the prototype immediate 
 
 - Local confirmed-hit receiving/feedback feature checkpoint: be75058. The preceding Guard reaction/attack-motion documentation follow-up remains 9c225c8.
 - GitHub confirmed-hit receiving/feedback feature mirror: 7e6e18b. The 2026-09-08 push was verified with `git ls-remote` at `7e6e18b547a02b33ba84f8c01c32f867a9e2accd`.
+- Local Enemy reaction/attack-pacing feature checkpoint: `9da9b25 Add enemy reactions and attack pacing`.
+- GitHub code/document mirror checkpoint: `f1fe243 Sync enemy reactions and attack pacing`; the 2026-09-09 push was verified with `git ls-remote` at `f1fe243404f9b00d470d4065f2ca5407ab3c7e8a`.
 - Full Unity history and flattened GitHub code/document mirror remain separate. Do not merge their main branches. Durable Git and licensed-asset rules remain in AGENTS.md.
 - Protected pre-existing local changes remain in RelicGuardianPlayer.controller, RelicGuardianPlayer.prefab and PlayerHealth.cs. SampleScene.unity contains both protected earlier local work and the newly accepted Enemy receiving/VFX/SFX configuration; preserve it as a mixed dirty file and never broadly replace or stage it.
 - PlayerCombat.cs, EnemyHitReceiver.cs/meta, EnemyHitPresentation.cs/meta and the project-owned EnemyHitAudioPlayer Prefab/folder metadata are included in local checkpoint be75058. The flattened GitHub mirror includes the project-owned C# and maintained documentation; Scene wiring and the Prefab remain outside that mirror boundary.
 - ENEMY_COMBAT_AGENT_DESIGN.md, ENEMY_COMBAT_RESOURCE_TRACKING.md and the related maintained planning/context updates are included in the same checkpoint synchronization.
-- Current uncommitted Enemy work includes EnemyAI, EnemyAnimator, EnemyAttack, EnemyHealth, EnemyHitReceiver, EnemyMovement, EnemyState/meta and EnemyStateController/meta plus maintained documentation. NearTarget's state/reaction wiring remains saved inside the protected mixed SampleScene.unity and outside any focused code/document staging scope.
+- EnemyAI, EnemyAnimator, EnemyAttack, EnemyHealth, EnemyHitReceiver, EnemyMovement, EnemyState/meta, EnemyStateController/meta, maintained documentation and the prior Handoff archive are included in local checkpoint `9da9b25`. The flattened GitHub mirror includes the eight C# files without Unity `.meta` plus the maintained documents at `f1fe243`.
+- NearTarget's state/reaction wiring and current Inspector timing values remain saved inside the protected mixed SampleScene.unity and outside the focused code/document commits.
 - Assets/LocalLicensed/ and its .meta boundary remain ignored and never uploaded. Licensed models, Clips/import Events, VFX/SFX and local wiring remain outside the focused code/document checkpoint.
 
 ## Context Recovery and History
