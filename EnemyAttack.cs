@@ -9,6 +9,7 @@ public class EnemyAttack : MonoBehaviour
     [SerializeField] private GameObject startupTelegraph;
     [SerializeField] private float attackAnimationLeadTime = 0.15f;
     [SerializeField] private Animator animator;
+    [SerializeField] private EnemyStateController enemyStateController;
 
     private EnemyAttackPhase currentPhase;
     private PlayerHitReceiver currentAttackTarget;
@@ -69,6 +70,11 @@ public class EnemyAttack : MonoBehaviour
         return false;
     }
 
+    private void OnDisable()
+    {
+        CancelAttack();
+    }
+
     public void OpenHitWindow()
     {
         if (currentPhase == EnemyAttackPhase.Startup)
@@ -99,9 +105,30 @@ public class EnemyAttack : MonoBehaviour
     {
         if (currentPhase == EnemyAttackPhase.Recovery)
         {
-            currentPhase = EnemyAttackPhase.Ready;
-            phaseElapsedTime = 0f;
-            currentAttackTarget = null;
+            CancelAttack();
+            enemyStateController.FinishAttack();
+        }
+    }
+
+    public void CancelAttack()
+    {
+        bool wasAttackActive = currentPhase != EnemyAttackPhase.Ready;
+
+        if (currentAttackTarget != null)
+        {
+            currentAttackTarget.RemoveAttackThreat(transform);
+        }
+
+        currentAttackTarget = null;
+        currentPhase = EnemyAttackPhase.Ready;
+        phaseElapsedTime = 0f;
+        hasAttackAnimationStarted = false;
+        animator.ResetTrigger("Attack");
+        startupTelegraph.SetActive(false);
+
+        if (wasAttackActive)
+        {
+            enemyStateController.StartGlobalAttackCooldown();
         }
     }
 

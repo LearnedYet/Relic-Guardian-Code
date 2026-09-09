@@ -9,4 +9,9 @@ public class EnemyAnimator : MonoBehaviour
     {
         animator.SetFloat("Speed", enemyMovement.CurrentHorizontalSpeed);
     }
+
+    public void PlayHitReaction()
+    {
+        animator.SetTrigger("HitReaction");
+    }
 }

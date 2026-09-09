@@ -249,14 +249,17 @@ Approved future direction: `Docs/ENEMY_COMBAT_AGENT_DESIGN.md` (2026-09-05). The
 - [x] Copy the nine previously missing selected non-Root-Motion FBX/meta pairs into the main licensed Goblin boundary with source hashes/GUIDs preserved and without overwriting existing prototype files; Unity Clip/Console validation remains pending.
 
 1. [x] Minimum EnemyHitReceiver, confirmed Player Attack Hit VFX, then Hit SFX; preserved hit confirmation and independent feedback lifetime, learner-runtime-verified 2026-09-08.
-2. [ ] Minimum Enemy coarse state owner and reliable EnemyAttack.Cancel(); preserve EnemyAttackPhase as the internal attack lifecycle.
-3. [ ] Ordinary HitReaction only from Idle/Chase/Combat, cooldown starting on short-reaction exit, and terminal Death with retained corpse and hit/target exclusion. Ordinary light hits do not interrupt Attacking or reset Staggered.
-4. [ ] Minimal HitResult return and Perfect Guard forced attack cancellation/Stagger, independent of ordinary reaction cooldown.
-5. [ ] Ordinary multi-attack selection and Global Attack Cooldown on finish/cancel.
-6. [ ] Enemy hit-time distance, direction and live-target validation with actual Miss behavior.
-7. [ ] Independent Strong Attack / Strong Combo stage: first establish Player HitStun, functional Dodge and death-safe control recovery; then add PerfectOnly, clear telegraph, first-hit commit, per-step hit validation and reliable bilateral cleanup. Strong cooldown is consumed on accepted start. Guaranteed three-hit capture requires a separate lightweight pairing/position-correction sub-stage.
-8. [ ] Spacing/Approach/Retreat/Strafe/Wait and decision pacing with separate move/facing directions; EnemyMovement retains execution ownership.
-9. [ ] Integrated moderately aggressive SwordShield Goblin acceptance across discovery, chase, attack selection/cooldowns, reactions, Perfect Guard, Strong Combo and Death.
+2. [x] Minimum Enemy coarse `Chase / Attacking` state owner and reliable EnemyAttack cancellation/natural-finish cleanup; preserved EnemyAttackPhase as the internal attack lifecycle and runtime-verified every current phase plus repeated cancellation on 2026-09-08.
+3. [x] Ordinary surviving-hit reaction only from Chase, fixed gameplay deadline, immediate repeated GetHit presentation during Staggered, post-reaction protection, Attacking exclusion and clean Console learner-runtime-verified 2026-09-09.
+4. [x] Start-time Attack Admission now requires distance plus a `15°` horizontal facing threshold; valid distance with invalid facing stops translation and turns toward the player without attacking. Learner-runtime-verified 2026-09-09.
+5. [x] Minimum Global Attack Cooldown begins once on effective natural-finish/cancel cleanup, counts independently through HitReaction, and joins state/range/facing admission. Combined repeated-hit/counterattack rhythm learner-runtime-verified 2026-09-09.
+6. [ ] Terminal Death with retained corpse and hit/target exclusion.
+7. [ ] Minimal HitResult return and Perfect Guard forced attack cancellation/Stagger, independent of ordinary reaction cooldown.
+8. [ ] Ordinary multi-attack selection using the established Global Attack Cooldown.
+9. [ ] Enemy hit-time distance, direction and live-target validation with actual Miss behavior. This remains separate from stage 4 start-time admission.
+10. [ ] Independent Strong Attack / Strong Combo stage: first establish Player HitStun, functional Dodge and death-safe control recovery; then add PerfectOnly, clear telegraph, first-hit commit, per-step hit validation and reliable bilateral cleanup. Strong cooldown is consumed on accepted start. Guaranteed three-hit capture requires a separate lightweight pairing/position-correction sub-stage.
+11. [ ] Spacing/Approach/Retreat/Strafe/Wait and decision pacing with separate move/facing directions; reduce the current full-speed Chase pressure during Global Attack Cooldown as part of this stage. EnemyMovement retains execution ownership.
+12. [ ] Integrated moderately aggressive SwordShield Goblin acceptance across discovery, chase, attack selection/cooldowns, reactions, Perfect Guard, Strong Combo and Death.
 
 Attack Hitstop is a separate later feedback tuning checkpoint. Poise, Enemy Block, full Guard Break, BT/Utility/GOAP, advanced navigation and generic combat frameworks remain deferred. Patrol is optional later content, not a blocker for the first agent.
 

@@ -144,19 +144,21 @@ Soft recovery is presentation state inside `PlayerAnimator`, not a coarse gamepl
 
 | Component | Implemented responsibility |
 | --- | --- |
-| `EnemyAI` | Chooses chase versus attack from distance and the current enemy attack phase. |
-| `EnemyMovement` | Applies enemy facing and `CharacterController` movement. |
-| `EnemyAttack` | Owns `Ready -> Startup -> HitWindow -> Recovery -> Ready`, telegraph/Animator triggering, a saved `PlayerHitReceiver` target, one Startup `AttackThreatContext`, and one scheduled hit-time `HitContext` delivery. |
-| `EnemyAnimator` | Writes enemy movement speed to the Animator. |
-| `EnemyHealth` | Subtracts integer damage and disables the GameObject at zero or below. |
-| `EnemyHitReceiver` | Single current entry for confirmed Player Attack hits; forwards HitContext.DamageAmount to EnemyHealth once and requests optional victim-side presentation. |
+| `EnemyAI` | Supplies Chase movement and attack decisions from coarse state, range and horizontal facing angle; in range but outside the angle threshold it stops translation and requests turn-in-place. It no longer reads EnemyAttackPhase or starts EnemyAttack directly. |
+| `EnemyStateController` | Owns coarse `Chase / Attacking / Staggered`, admits attack requests, accepts natural-finish notification, and owns ordinary surviving-hit duration, post-reaction protection and Global Attack Cooldown deadlines without exposing direct state writes. |
+| `EnemyMovement` | Applies enemy Transform facing and `CharacterController` movement. `Turn(direction)` rotates only; `Move(direction)` reuses that facing and then displaces. |
+| `EnemyAttack` | Owns internal `Ready -> Startup -> HitWindow -> Recovery -> Ready`, telegraph/Animator triggering, a saved `PlayerHitReceiver` target, one Startup `AttackThreatContext`, one scheduled hit-time `HitContext` delivery, and shared idempotent finish/cancel cleanup. One effective cleanup notifies the coarse owner to begin Global Attack Cooldown; repeated Ready cleanup does not extend it. |
+| `EnemyAnimator` | Writes enemy movement speed and exposes the presentation-only HitReaction Trigger request. Repeated hits during Staggered may restart GetHit without extending gameplay reaction time. |
+| `EnemyHealth` | Subtracts integer damage, exposes the minimum post-damage `IsAlive` evidence, and disables the GameObject at zero or below. |
+| `EnemyHitReceiver` | Single current entry for confirmed Player Attack hits; applies health first, requests optional victim-side presentation independently, then asks the coarse owner for ordinary reaction only while the victim survives. |
 | `EnemyHitPresentation` | Owns confirmed-hit VFX/SFX references, anchor placement, per-instance scale and cleanup. It spawns an independent Blood effect and a temporary CombatAudioPlayer Prefab so lethal deactivation does not own the feedback lifetime. |
 
 Current enemy damage flow is:
 
 ```text
 EnemyAI
--> EnemyAttack.TryStartAttack(PlayerHitReceiver)
+-> EnemyStateController.TryStartAttack(PlayerHitReceiver)
+-> admitted EnemyAttack.TryStartAttack(PlayerHitReceiver)
 -> timed EnemyAttack.OpenHitWindow()
 -> EnemyAttack.ApplyDamage(PlayerHitReceiver)
 -> construct HitContext(DamageAmount, Source, IncomingDirection)
@@ -164,6 +166,17 @@ EnemyAI
    -> handled Blocking coverage success: stop
    -> otherwise PlayerHealth.TakeDamage(int)
 ```
+
+Current enemy natural-finish flow is:
+
+```text
+EnemyAttack.FinishRecovery()
+-> EnemyAttack.CancelAttack() clears target/threat/timer/animation request/telegraph and restores internal Ready
+-> EnemyStateController.FinishAttack()
+-> coarse Attacking returns to Chase only if it is still the current state
+```
+
+EnemyAttack.OnDisable also invokes the same execution cleanup without choosing a coarse destination. This lets future Staggered/Dead transitions retain destination authority instead of cleanup forcing Chase.
 
 Current confirmed Player Attack hit flow is:
 
@@ -203,7 +216,7 @@ PlayerBlock.ResolveGuardHit(HitContext)
       └─ Perfect -> matching impact/audio + shared Hitstop request
 ```
 
-Range is checked before attack Startup. The later Hit Window damages the saved target without a new overlap, range, or line-of-sight confirmation, so the current prototype is a scheduled hit attempt rather than physical hitbox confirmation.
+Range and horizontal facing angle are checked before attack Startup. When only range passes, EnemyAI stops translation and asks EnemyMovement to turn in place. The later Hit Window still damages the saved target without a new overlap, range, direction, active-target, or line-of-sight confirmation, so the current prototype remains a scheduled hit attempt rather than physical hitbox confirmation.
 
 ## Implemented Architecture Invariants
 
@@ -211,6 +224,7 @@ Range is checked before attack Startup. The later Hit Window damages the saved t
 - Player Transform facing remains code-owned; Apply Root Motion stays off.
 - Lock-On remains orthogonal to the coarse player action state.
 - `PlayerActionController` remains the only coarse action-state owner.
+- `EnemyStateController` remains the only coarse enemy-state owner; `EnemyAttackPhase` is internal execution state and does not grant AI permission.
 - Attack natural finish and cancellation share one cleanup boundary.
 - Same-frame mutually exclusive requests do not rely on `MonoBehaviour.Update()` execution order.
 - Guard Hold movement permission never implies Sprint permission.
@@ -226,4 +240,4 @@ Attack motion audio uses a separate CombatAudioPlayer instance from Guard audio.
 
 VFX assets, placement and Trail Event values: COMBAT_VFX_RESOURCE_TRACKING.md. Audio clips/mixes and sound Event values: COMBAT_SFX_RESOURCE_TRACKING.md. Guard timing, reaction and shared soft-recovery parameters: GUARD_REACTION_DESIGN.md. These are configuration/design references; actual code/assets still take precedence.
 
-Enemy future state and consequence plans are in ENEMY_COMBAT_AGENT_DESIGN.md. EnemyHitReceiver and EnemyHitPresentation are now implemented; the proposed Enemy coarse state owner, HitReaction, retained-corpse Death, Strong Combo and Poise are not.
+Enemy future state and consequence plans are in ENEMY_COMBAT_AGENT_DESIGN.md. The coarse Enemy state owner, reliable EnemyAttack cleanup, ordinary HitReaction/protection, Global Attack Cooldown and start-time range/facing admission are implemented; retained-corpse Death, Strong Combo and Poise are not.

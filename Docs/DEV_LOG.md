@@ -4,6 +4,38 @@ This file records daily progress, learned concepts, problems, and solutions.
 
 ---
 
+## 2026-09-09
+
+### Completed Ordinary Enemy HitReaction; Implemented Cooldown Deadline
+
+- Added minimum post-damage `EnemyHealth.IsAlive` evidence and routed surviving confirmed hits from EnemyHitReceiver to EnemyStateController without coupling damage or independent VFX/SFX to reaction eligibility.
+- Extended the coarse enemy vocabulary with `Staggered`. Only Chase admits ordinary reaction; Attacking and an existing Staggered reject it, so light hits neither interrupt attacks nor reset/extend the active reaction.
+- EnemyStateController owns the scaled HitReaction end deadline and starts a separate Inspector-tunable reaction-cooldown deadline when returning to Chase. Hits during cooldown still apply damage and feedback without restarting the deadline.
+- Connected EnemyAnimator's presentation-only HitReaction Trigger to the local GetHitSwordShield state. The accepted saved tuning is Speed `1.4`, Any State transition duration `0.03`, no Exit Time/self-transition, and GetHit-to-Idle Exit Time `0.9` with duration `0.05`.
+- Learner runtime checks passed immediate repeated GetHit during a fixed gameplay deadline, post-reaction protection, Attacking exclusion, natural movement recovery, and a final clean Console. `Can Transition To Self` is enabled only for the HitReaction transition so presentation can restart without extending gameplay Staggered.
+
+### Completed Start-Time Range and Facing Attack Admission
+
+- Extracted rotation-only `EnemyMovement.Turn(Vector3)` while preserving Move as turn plus CharacterController displacement, so EnemyMovement remains the sole enemy movement/facing writer.
+- Added Inspector-tunable `maximumAttackFacingAngle = 15f`. EnemyAI now requires both distance and horizontal facing angle before requesting Startup; when only distance passes it stops translation and turns toward the player.
+- Actual-file review caught an initially misplaced displacement inside Turn and one leftover unconditional attack request after the angle branch; the learner corrected both before runtime acceptance.
+- Play Mode verified an in-range facing-away enemy turns in place without early telegraph/attack and begins only after reaching the angle threshold. Temporary attack range/rotation-speed test values restored and Console remained clean.
+
+### Completed Minimum Global Attack Cooldown and Locomotion Follow-up
+
+- EnemyStateController now owns `globalAttackCooldownDuration` and the scaled absolute next-attack deadline. TryStartAttack requires the deadline to be ready in addition to Chase; the timer continues independently through HitReaction.
+- EnemyAttack captures whether cleanup began from an active phase before resetting to Ready. One effective natural/cancel cleanup starts Global Attack Cooldown; repeated Ready cleanup does not extend it, and coarse destination authority remains outside the executor.
+- The learner accepted the combined loop at saved HitReactionDuration `0.3s`, HitReactionCooldown `0.2s`, and Global Attack Cooldown `2s`: repeated hits restart GetHit presentation without extending gameplay reaction, a ready legal counterattack begins after protection, and Attacking rejects ordinary interruption.
+- A new cooldown-chase test exposed Idle-to-Run foot sliding. Actual Animator inspection found `Has Exit Time = true` on the `Speed > 0.1` transition; disabling it removed the observed slide, and the non-Play saved Controller was verified with Exit Time disabled.
+- Full-speed pursuit outside attack range during Global Attack Cooldown remains the current simple Chase behavior. Lower pursuit pressure is deferred to Approach/Retreat/Strafe/Wait decision pacing.
+
+### Next Direction
+
+- Begin retained-corpse terminal Death with explicit Dead authority, lethal ordering, attack/threat/movement cleanup, Death presentation and target/hit exclusion while preserving independently spawned lethal feedback.
+- Keep Perfect Guard forced Stagger, multi-attack selection, hit-time Miss validation and Strong Combo as later slices. Reduce cooldown-time pursuit pressure only in the later spacing/decision stage.
+
+---
+
 ## 2026-09-08
 
 ### Completed Confirmed Player Attack Receiving and Hit Feedback
@@ -15,11 +47,20 @@ This file records daily progress, learned concepts, problems, and solutions.
 - The learner reported the receiving chain, current VFX/SFX and both prototype targets normal in Play Mode. The final Unity Console contained zero errors and zero warnings.
 - Main-Editor inspection found all nine copied SwordShield Goblin FBX files recognized as Generic Clips using Copy From Other Avatar and the valid shared `SK_GoblinAvatar`. Loop Time/Loop Pose and Root Transform locks are currently false for all; preview and final import-setting approval remain required before Animator integration.
 
+### Completed Enemy Attack Cleanup and Minimum Coarse State Authority
+
+- Added idempotent `EnemyAttack.CancelAttack()`: it removes the saved outgoing threat before clearing the target, restores the internal phase/timer, clears the delayed-animation flag and pending Attack Trigger, and closes the telegraph. `OnDisable()` uses the same cleanup.
+- Natural Recovery now shares execution cleanup and then notifies `EnemyStateController.FinishAttack()`. Direct cancellation does not select a coarse destination, preventing future Staggered/Dead exits from being overwritten by cleanup.
+- Added the learner-authored `EnemyState` minimum vocabulary (`Chase`, `Attacking`) and `EnemyStateController` as the single coarse owner. Attack admission changes coarse state only after EnemyAttack accepts the request.
+- Migrated EnemyAI from direct EnemyAttackPhase inspection/executor calls to EnemyStateController observation and attack requests. Only NearTarget is an AI enemy and received the three same-root references; FarTarget remains a non-AI hit-test target.
+- Compilation repeatedly passed with zero warnings and zero errors. Play Mode checks passed the natural Chase/Attacking loop, cancellation during Startup/HitWindow/Recovery, repeated cancellation, no delayed extra damage or stale threat-facing, and a clean Console.
+
 ### Next Direction
 
-- Begin Enemy Combat Agent stage 2 with one concept: define and verify an idempotent `EnemyAttack` cancellation/cleanup boundary that removes saved threats and clears execution-owned target, timing, delayed-animation and telegraph state.
-- Then add the minimum coarse Enemy state owner and coordinate natural attack finish/cancellation while keeping `EnemyAttackPhase` as the internal execution lifecycle.
-- Keep HitReaction, retained-corpse Death, Perfect Guard Stagger, multiple attacks/cooldowns, hit-time Miss validation, Strong Combo and Goblin Animator integration outside the first slice.
+- Begin stage 3 with health-result precedence for ordinary hit consequences: damage first, no ordinary reaction on lethal damage, one short reaction only from an eligible surviving coarse state, and no ordinary interruption while Attacking.
+- Expose only the minimum post-damage alive evidence before adding Staggered timing/cooldown. Preview and approve GetHit before Animator integration.
+- Recorded a separate start-time Attack Admission gap: current distance-only admission can begin an attack while facing away. After Ordinary HitReaction, require distance plus facing and turn in place when only distance passes; keep HitWindow-time distance/direction/target revalidation in its later dedicated stage.
+- Keep retained-corpse Death, Perfect Guard Stagger, multiple attacks/cooldowns, hit-time Miss validation and Strong Combo outside the first reaction slice.
 
 ### Saved and Synchronized the Confirmed-Hit Checkpoint
 

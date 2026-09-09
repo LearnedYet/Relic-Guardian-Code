@@ -23,7 +23,7 @@ public class EnemyMovement : MonoBehaviour
         characterController = GetComponent<CharacterController>();
     }
 
-    public void Move(Vector3 direction)
+    public void Turn(Vector3 direction)
     {
         direction.y = 0f;
 
@@ -34,6 +34,19 @@ public class EnemyMovement : MonoBehaviour
 
         Quaternion targetRotation = Quaternion.LookRotation(direction);
         transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, rotationSpeed * Time.deltaTime);
+    }
+
+    public void Move(Vector3 direction)
+    {
+        direction.y = 0f;
+
+        if (direction == Vector3.zero)
+        {
+            return;
+        }
+
+        Turn(direction);
+
         Vector3 movement = direction.normalized * moveSpeed * Time.deltaTime;
         characterController.Move(movement);
     }

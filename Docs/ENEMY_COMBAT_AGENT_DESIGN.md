@@ -1,38 +1,41 @@
 # Enemy Combat Agent Design
 
-Status: approved future direction, consolidated 2026-09-05. This document does not claim implementation or runtime verification of the proposed Enemy systems.
+Status: approved direction, consolidated 2026-09-05; receiving/feedback, minimum state/cancel, ordinary HitReaction/protection, Global Attack Cooldown and start-time range/facing admission are runtime-verified through 2026-09-09. Remaining stages are proposed until actual code and runtime evidence confirm them.
 
 ## Authority and Immediate Scope
 
 Actual code/assets and Git state, then CURRENT_STATE.md and ARCHITECTURE.md, remain implementation authority. This document supersedes earlier Enemy direction and conflicting future-order notes in Guard/presentation plans. HANDOFF.md remains the recent checkpoint and exact next-step handoff.
 
-The immediate feature is **minimum EnemyHitReceiver plus confirmed Player Attack Hit VFX/SFX**. Implement receiving, VFX, and SFX as separately reviewed and tested learning slices. Attack Hitstop, Enemy reaction, FSM, and Strong Combo are later work. The learner remains author of key gameplay and presentation code; explain identifiers, responsibility, lifetime and call chains before each actual edit, then inspect the saved file.
+The immediate feature is now **retained-corpse terminal Death**. Receiving/confirmed feedback, the coarse state/cancel boundary, ordinary HitReaction/protection, Global Attack Cooldown and start-time range/facing admission are completed checkpoints. Repeated hits during Staggered restart GetHit presentation without extending the gameplay deadline; a ready attack can begin after reaction under state/range/facing/cooldown admission and ordinary light hits cannot interrupt Attacking. Current saved timing is HitReactionDuration `0.3s`, HitReactionCooldown `0.2s`, and Global Attack Cooldown `2s`. Attack Hitstop, Perfect Guard Stagger, multi-attack selection and Strong Combo remain later work. The learner remains author of key gameplay and presentation code; explain identifiers, responsibility, lifetime and call chains before each actual edit, then inspect the saved file.
 
 Verified baseline from current source inspection:
 
-- PlayerCombat.OpenHitWindow(int) validates the current attack step and confirms the saved target is in range, then directly calls EnemyHealth.TakeDamage(int).
+- PlayerCombat.OpenHitWindow(int) validates the current attack step and confirms the saved target is in range, then submits HitContext through EnemyHitReceiver to EnemyHealth and independent EnemyHitPresentation.
 - HitContext already carries DamageAmount, Source and normalized IncomingDirection. PlayerHitReceiver.ReceiveHit(HitContext) currently returns void; GuardResult remains an internal Guard classification.
-- EnemyAI chooses chase/attack using distance and EnemyAttackPhase. There is no Enemy coarse FSM or general cancellation boundary.
-- EnemyAttack owns Ready/Startup/HitWindow/Recovery, a saved player receiver, timed damage and Startup threats. Its impact currently does not revalidate target range/direction.
-- EnemyMovement owns CharacterController displacement and facing; its current Move(direction) uses the same direction for both.
+- EnemyAI chooses chase/attack using range, a `15°` horizontal facing threshold and EnemyStateController `Chase / Attacking / Staggered` authority. In-range invalid facing stops translation and turns through EnemyMovement without requesting attack. EnemyAttackPhase remains internal to the executor.
+- EnemyAttack owns Ready/Startup/HitWindow/Recovery, a saved player receiver, timed damage and Startup threats. Natural finish and cancellation share idempotent cleanup, including OnDisable; impact still does not revalidate target range/direction.
+- EnemyMovement owns CharacterController displacement and Transform facing; Turn(direction) rotates only and Move(direction) reuses it before displacement.
 - EnemyHealth currently disables its GameObject at zero health. PlayerTargeting drops inactive targets but has no retained-corpse eligibility rule.
-- Attack1-4 Trail/Whoosh, Perfect-only Hitstop, and Ordinary Guard Movement Lock/player reaction are completed checkpoints; selected enemy hit resources are not connected.
+- Confirmed Enemy hit Blood VFX and independent two-layer SFX are connected and runtime-verified. GetHit is connected through EnemyAnimator at saved state Speed `1.4`; ordinary surviving-hit entry, non-extension, Attacking exclusion, post-reaction cooldown and movement recovery are runtime-verified. Death remains unconnected.
 
 ## Ordered Development Stages
 
-All entries below are future work. Complete one concept and its runtime checks before continuing.
+Stages 1-5 are completed checkpoints; later entries remain future work. Complete one concept and its runtime checks before continuing.
 
 1. Minimum EnemyHitReceiver, then confirmed Hit VFX, then Hit SFX. Preserve the existing Player Attack confirmation and damage semantics.
 2. Minimum Enemy coarse state authority plus reliable EnemyAttack.Cancel() and natural-finish coordination. Introduce states only as their consumers become real.
-3. Ordinary HitReaction, post-reaction HitReactionCooldown, then Death with retained corpse and target/hit exclusion.
-4. Minimal incoming HitResult return; Perfect Guard cancels EnemyAttack and causes stronger Enemy Stagger.
-5. Ordinary multi-attack selection and Global Attack Cooldown, separately verified.
-6. Enemy hit-time distance/direction/target validation, establishing an actual Miss path.
-7. Strong Attack / Strong Combo as an independent feature. Required preceding sub-stages: functional Player HitStun, Dodge with explicit defensive rules, and a compatible player death/invalid-target exit. Then add PerfectOnly, telegraph, first-hit commit and multi-step execution.
-8. Combat spacing, independent move/facing directions, Strafe/Retreat/Approach/Wait and distance/cooldown-based decisions.
-9. Integrated first SwordShield Goblin Combat Agent acceptance.
+3. Ordinary HitReaction and post-reaction HitReactionCooldown.
+4. Small start-time Attack Admission repair: require both distance and facing; rotate in place without attacking when only distance passes.
+5. Minimum Global Attack Cooldown on natural finish/cancel, counting independently through HitReaction and checked by attack admission before multi-attack selection.
+6. Death with retained corpse and target/hit exclusion.
+7. Minimal incoming HitResult return; Perfect Guard cancels EnemyAttack and causes stronger Enemy Stagger.
+8. Ordinary multi-attack selection using the established Global Attack Cooldown.
+9. Enemy hit-time distance/direction/target validation, establishing an actual Miss path independently of start-time admission.
+10. Strong Attack / Strong Combo as an independent feature. Required preceding sub-stages: functional Player HitStun, Dodge with explicit defensive rules, and a compatible player death/invalid-target exit. Then add PerfectOnly, telegraph, first-hit commit and multi-step execution.
+11. Combat spacing, independent move/facing directions, Strafe/Retreat/Approach/Wait and distance/cooldown-based decisions.
+12. Integrated first SwordShield Goblin Combat Agent acceptance.
 
-Attack Hitstop remains a separate optional tuning checkpoint after confirmed feedback is stable; it is not silently included in stage 1. A guaranteed three-hit capture is a further pairing/position-correction sub-stage within Strong Combo, not an automatic consequence of stage 7 commit.
+Attack Hitstop remains a separate optional tuning checkpoint after confirmed feedback is stable; it is not silently included in stage 1. A guaranteed three-hit capture is a further pairing/position-correction sub-stage within Strong Combo, not an automatic consequence of stage 9 commit.
 
 ## Receiving and Confirmed Feedback
 
@@ -71,7 +74,7 @@ Initial script scope:
 
 ## Enemy State and Ability Ownership
 
-Target coarse vocabulary: Idle, Chase, Combat, Attacking, Staggered, Dead. One enemy state owner decides entry, exit and gameplay permissions. EnemyAI supplies decisions; execution remains in components. The exact new state-owner class name is chosen during stage 2.
+Target coarse vocabulary: Idle, Chase, Combat, Attacking, Staggered, Dead. EnemyStateController is the single coarse owner deciding entry, exit and gameplay permissions. EnemyAI supplies decisions; execution remains in components. Only Chase and Attacking exist in the current minimum implementation; add later values only with real consumers.
 
 EnemyAttackPhase remains Ready, Startup, HitWindow, Recovery. While the coarse state is Attacking, EnemyAttack advances the attack's internal phases. Ready means the attack executor is idle, not that AI must attack next frame. Cancellation may reset the executor to Ready while the coarse owner remains Staggered or Dead; this never grants attack permission.
 
@@ -92,6 +95,12 @@ Cancel must be safe when repeated and reachable from Stagger, Death, disable/des
 
 Natural finish and Cancel share cleanup where appropriate, but ending semantics, cooldown bookkeeping and destination differ. Neither path can require the final animation Event to run. Verify cancel in Startup, HitWindow and Recovery, then again inside each Strong Combo step when introduced.
 
+## Start-Time Attack Admission
+
+Implemented on 2026-09-09: EnemyAI begins Startup only when both range and the Inspector-tunable maximum horizontal facing angle pass. If range passes but facing does not, it stops translational movement and calls EnemyMovement.Turn(direction) without requesting an attack. The learner runtime-verified facing-away turn-in-place, no early telegraph/attack, admission at the saved `15°` threshold and a clean Console.
+
+This check answers whether Startup may begin. It does not prove that the later impact is valid. HitWindow-time target identity, active/alive status, distance and authored direction checks remain deferred to the dedicated Hit-Time Validation stage.
+
 ## Ordinary HitReaction and Cooldown
 
 Health and accepted hit VFX/SFX apply independently of ordinary reaction eligibility. Resolve lethal damage first; Dead wins over reaction.
@@ -106,11 +115,13 @@ Health and accepted hit VFX/SFX apply independently of ordinary reaction eligibi
 
 The short HitReaction may use Staggered with a short duration and an entry reason; Perfect Guard uses a stronger reason/duration. Do not add a separate coarse state merely because the animation differs. GetHit is presentation; the gameplay state owns the finish and permission boundary.
 
-HitReactionCooldown is Inspector-tunable and begins when the short HitReaction ends, guaranteeing a subsequent action interval. Track it in the reaction/state gameplay owner with a scaled game-time deadline. Damage during cooldown does not restart the cooldown or suppress feedback. Ordinary hits during Staggered do not reset its timer. Perfect Guard ignores ordinary HitReactionCooldown. Unexpected exit from short reaction must have a deliberate cooldown rule; a surviving exit starts the cooldown, while Death never returns to reaction eligibility.
+HitReactionCooldown is Inspector-tunable and begins when the short HitReaction ends, guaranteeing a subsequent action interval. It is implemented as a scaled deadline in EnemyStateController. Damage during cooldown does not restart the cooldown or suppress feedback. Ordinary hits during Staggered restart only GetHit presentation without resetting the gameplay timer, and Attacking rejects ordinary reaction. Perfect Guard will ignore ordinary HitReactionCooldown. Unexpected exit from short reaction still needs a deliberate rule when Death/forced Stagger becomes real; a surviving exit starts the cooldown, while Death never returns to reaction eligibility.
+
+The learner's 2026-09-09 accepted baseline uses fixed HitReaction gameplay time while each hit during Staggered may restart GetHit presentation. Global Attack Cooldown counts independently during Staggered and ordinary hits do not reset it. The combined rhythm passed at saved values HitReactionDuration `0.3s`, HitReactionCooldown `0.2s`, and Global Attack Cooldown `2s`; a counterattack still requires state, range and facing to pass and is never remote or unconditional. During Global Attack Cooldown the current baseline continues full-speed Chase outside attack range; lower pursuit pressure belongs to the later spacing/decision stage.
 
 ## Perfect Guard Result and Stagger
 
-At stage 4, add only the minimum attacker-visible result from PlayerHitReceiver. Candidate HitResult values are Damaged, OrdinaryGuard and PerfectGuard. Keep GuardResult scoped to Guard resolution. Damaged must describe an accepted damage result, not merely a method call; when Dodge/Dead/rejected-hit cases become real, represent those outcomes truthfully with the smallest necessary extension.
+At stage 6, add only the minimum attacker-visible result from PlayerHitReceiver. Candidate HitResult values are Damaged, OrdinaryGuard and PerfectGuard. Keep GuardResult scoped to Guard resolution. Damaged must describe an accepted damage result, not merely a method call; when Dodge/Dead/rejected-hit cases become real, represent those outcomes truthfully with the smallest necessary extension.
 
 Miss from failed attacker geometry validation is handled by the attacker before ReceiveHit. A Dodge invulnerability check performed inside the receiver requires a distinguishable non-damaged response when Dodge is implemented; it cannot return Damaged by default.
 
@@ -132,7 +143,7 @@ Ordinary attacks will use Attack1/2/3 content with a small per-attack configurat
 - Global Attack Cooldown is the wait before the AI may request another attack. Set it on natural finish or cancellation, including Miss and Perfect Guard interruption. A state change cannot erase it or shorten an existing later deadline.
 - Strong Attack Cooldown is a separate longer restriction, consumed on accepted Strong Attack start. Failed admission does not consume it; Miss, Perfect Guard or later cancellation does not refund it. Strong Attack is eligible only when both global and strong cooldowns permit it.
 
-Cooldown expiry grants decision eligibility, not an immediate mandatory attack. During cooldown, the eventual Combat behavior may Approach/Retreat/Strafe/Wait; the stage-5 baseline may wait until spacing is implemented. Tune the first Goblin toward moderately aggressive: approach actively, briefly adjust/observe, attack, pause visibly, then pressure again. No separate Aggression framework is needed.
+Cooldown expiry grants decision eligibility, not an immediate mandatory attack. During cooldown, the eventual Combat behavior may Approach/Retreat/Strafe/Wait; the stage-7 baseline may wait until spacing is implemented. Tune the first Goblin toward moderately aggressive: approach actively, briefly adjust/observe, attack, pause visibly, then pressure again. No separate Aggression framework is needed.
 
 ## Hit-Time Validation
 
