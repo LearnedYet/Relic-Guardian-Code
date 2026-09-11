@@ -19,6 +19,15 @@ This file records daily progress, learned concepts, problems, and solutions.
 
 - Continue only Attack1 hit-time validation. Confirm first-test range/half-angle, add the minimal EnemyAttackData values, and validate the saved target against the attacker's committed forward direction immediately before ReceiveHit. A Miss skips damage/confirmed feedback but keeps the existing HitWindow, Recovery and Global Attack Cooldown flow.
 
+### Saved and synchronized the current combat and Attack1Forward checkpoint
+
+- Rebuilt `Assembly-CSharp.csproj` after restoring its generated NuGet assets; the final build completed with zero warnings and zero errors. Existing learner runtime acceptance and final clean Unity Console evidence remain the gameplay verification.
+- Created local full-project feature checkpoint `c8cfacf Add Attack1 Forward footwork and tracking` from an explicit 12-file allowlist: three project-owned Enemy scripts, eight maintained documents and one archived Handoff.
+- Kept the mixed SampleScene, player Animator/Prefab, whitespace-only PlayerActionController change, PlayerHealth status and every ignored `Assets/LocalLicensed/` resource outside the local commit.
+- Read the active Windows proxy `127.0.0.1:7897`, applied it only to individual Git commands, and ran `git fetch origin --prune`. Remote `main` remained at `10e7c36`; no remote-only commit required integration.
+- Reused the clean mirror worktree but created `codex/attack1-forward-sync-20260911` from current `origin/main`. Copied an explicit 26-file flattened allowlist: fourteen current C# files covering the locally saved combat work since the previous mirror plus twelve maintained/archived documents. No Scene, Prefab, Controller, Unity `.meta`, licensed asset, README, UnityConfig or unrelated remote-only file was included.
+- Created mirror feature checkpoint `62702f7 Sync enemy combat through Attack1 Forward footwork`, pushed normally without force, and verified GitHub `refs/heads/main` at `62702f7a4d33ffe2d63754d860313261bf3491ca`. A record-only documentation follow-up carries these checkpoint references.
+
 ---
 
 ## 2026-09-10

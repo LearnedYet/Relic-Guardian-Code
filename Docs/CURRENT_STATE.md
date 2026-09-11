@@ -62,7 +62,8 @@ Continue only Attack1 hit-time validation before Attack2/3. The next bounded con
 
 ## Git and Protected Local State
 
-- Latest prior local feature checkpoint: 2af364c (Death, Perfect Guard Stagger, Attack Hitstop, paused Block fix and recoil). Current Handoff save includes Attack1 data migration and documents only; inspect git log for its commit. Scene/Prefab/player controller/PlayerHealth and the whitespace-only PlayerActionController change remain unstaged. No remote operation authorized.
+- Local Attack1Forward footwork/tracking feature checkpoint: `c8cfacf Add Attack1 Forward footwork and tracking`. It contains only the three project-owned Enemy scripts, maintained documentation and the archived prior Handoff. Scene/Prefab/player controller/PlayerHealth and the whitespace-only PlayerActionController change remain unstaged.
+- GitHub code/document mirror checkpoint: `62702f7 Sync enemy combat through Attack1 Forward footwork`; the 2026-09-11 push was verified with `git ls-remote` at `62702f7a4d33ffe2d63754d860313261bf3491ca`.
 
 - Local confirmed-hit receiving/feedback feature checkpoint: be75058. The preceding Guard reaction/attack-motion documentation follow-up remains 9c225c8.
 - GitHub confirmed-hit receiving/feedback feature mirror: 7e6e18b. The 2026-09-08 push was verified with `git ls-remote` at `7e6e18b547a02b33ba84f8c01c32f867a9e2accd`.
@@ -73,6 +74,7 @@ Continue only Attack1 hit-time validation before Attack2/3. The next bounded con
 - PlayerCombat.cs, EnemyHitReceiver.cs/meta, EnemyHitPresentation.cs/meta and the project-owned EnemyHitAudioPlayer Prefab/folder metadata are included in local checkpoint be75058. The flattened GitHub mirror includes the project-owned C# and maintained documentation; Scene wiring and the Prefab remain outside that mirror boundary.
 - ENEMY_COMBAT_AGENT_DESIGN.md, ENEMY_COMBAT_RESOURCE_TRACKING.md and the related maintained planning/context updates are included in the same checkpoint synchronization.
 - EnemyAI, EnemyAnimator, EnemyAttack, EnemyHealth, EnemyHitReceiver, EnemyMovement, EnemyState/meta, EnemyStateController/meta, maintained documentation and the prior Handoff archive are included in local checkpoint `9da9b25`. The flattened GitHub mirror includes the eight C# files without Unity `.meta` plus the maintained documents at `f1fe243`.
+- The 2026-09-11 mirror advances from the preceding GitHub checkpoint through Death, HitResult/Perfect Guard Stagger, Attack Hitstop, paused movement handling, recoil, EnemyAttackData migration and Attack1Forward footwork/tracking. It includes fourteen current C# files and twelve maintained/archived documents, but no Unity `.meta`, Scene, Prefab, Controller, licensed asset, README, UnityConfig or unrelated remote-only file.
 - NearTarget's state/reaction wiring and current Inspector timing values remain saved inside the protected mixed SampleScene.unity and outside the focused code/document commits.
 - Assets/LocalLicensed/ and its .meta boundary remain ignored and never uploaded. Licensed models, Clips/import Events, VFX/SFX and local wiring remain outside the focused code/document checkpoint.
 

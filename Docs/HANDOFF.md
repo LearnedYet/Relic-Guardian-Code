@@ -31,6 +31,10 @@ Follow AGENTS.md and relic-guardian-context bootstrap; CURRENT_STATE.md owns the
 
 ## Git synchronization
 
-The learner explicitly authorized saving the current verified progress locally and synchronizing the code/document mirror to GitHub. Use explicit allowlists only, keep full Unity history separate from the flattened mirror, fetch before push, preserve remote-only files, and verify `refs/heads/main` after the push. Fill exact checkpoint hashes into CURRENT_STATE/HANDOFF after both feature commits exist.
+- Local full-project feature checkpoint: `c8cfacf Add Attack1 Forward footwork and tracking`.
+- Flattened GitHub feature checkpoint: `62702f7 Sync enemy combat through Attack1 Forward footwork`.
+- The normal 2026-09-11 feature push was verified with `git ls-remote`: `refs/heads/main` reached `62702f7a4d33ffe2d63754d860313261bf3491ca` before the record-only documentation follow-up.
+- The local commit used an explicit 12-file allowlist: three Enemy scripts, eight maintained documents and one archived Handoff. The mirror used an explicit 26-file allowlist to bring the public code/document branch forward through all locally saved combat work since its prior checkpoint.
+- Full Unity history and the flattened mirror remain separate. Scene, Prefab, Controller, Unity `.meta`, licensed assets and unrelated remote-only files were excluded.
 
 The preceding Handoff is archived at `Docs/Archive/HANDOFF_2026-09-10_ATTACK1_DATA_MIGRATION.md`.
