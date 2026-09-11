@@ -2,6 +2,26 @@
 
 This document tracks programming understanding separately from feature completion. It is a learning aid, not an evaluation.
 
+## 2026-09-11 Attack1 Forward footwork and limited tracking
+
+Learner created animation-relative movement fields/properties, the `EnemyMovement.MoveDuringAttack` execution boundary, progress-delta footwork in `EnemyAttack`, and a separate first-frame tracking request after identifier/scope/lifetime guidance and small-batch review. They caught the intended timing relationship in Play Mode: displacement follows frames 1-10, tracking is allowed only during frame 1, later airborne frames retain the committed facing, and landing has no reported slide. Keep **Practising**: normalized cumulative progress versus per-frame distance, animation-relative time versus phase time, and tracking versus hit validation remain distinct concepts. Hit-time distance/direction validation is not implemented yet.
+
+## 2026-09-10 Death learning checkpoint
+
+Learner explained that death must cancel attack and take highest priority, then authored the terminal entry, receiver routing, shared live-target eligibility and Death presentation from supplied scaffolds. Basic Play Mode checks plus HitWindow/Recovery lethal interruption passed. Learner requested closure with precision boundary tests deferred; retain **Practising**, not independent mastery. Review a complete small function/module as one batch; explain new identifiers before edits without requiring a question after each edit. Exact same-frame arbitration remains unresolved.
+
+## Perfect Guard presentation follow-up
+
+Learner implemented result returns and fixed-duration stronger Stagger from scaffolds, requested slow GetHit during the reward window, and runtime-confirmed the 0.1-second exit cross-fade removes the observed jump. Keep Practising: distinguish presentation playback time from gameplay permission deadlines; slow state playback is not a local time system.
+
+## Hitstop input diagnosis (2026-09-10)
+
+Learner extended Hitstop temporarily to 2 seconds and supplied same-frame input/admission logs, exposing grounded=False rejection during pause. Implemented movement guards, verified the fix and removed logs. Keep Practising: distinguish input delivery, request consumption, admission and frozen presentation; retain action arbitration while skipping paused displacement. Temporary Play Mode tuning is not a saved-value correction request.
+
+## Decelerating recoil (2026-09-10)
+
+Learner implemented recoil execution and receiving/state connections from scaffolds; review corrected the missing square and whole-difference multiplication parentheses. Integrated runtime test reported normal after fixing an empty Inspector reference. Keep Practising: cumulative eased position differs from per-frame displacement; total distance multiplies the difference of new and old eased progress. State authority decides eligibility, movement owns execution and death clears remaining displacement.
+
 ## How to Read This File
 
 - **Understood**: Can explain the basic purpose in their own words.
@@ -171,3 +191,7 @@ A topic moves from **Practising** to **Understood** only after more than one sui
 ## Learning Rhythm
 
 Each small topic follows: short recall, small explanation, small practice, Unity verification when applicable, spaced review, and an observable-progress record. Limit one check to one or two concepts. The goal is practical use and explanation, not reciting definitions.
+
+## Attack1 data and movement checkpoint
+
+Learner created a serializable configuration class, corrected template MonoBehaviour inheritance, migrated executor reads/animation selection, then added animation-relative footwork and a separate limited tracking window through the existing movement owner. Single-attack migration, footwork and tracking runtime checks were reported normal. Keep Practising: configuration object lifetime differs from component behavior and per-execution timers; phase time, animation time, cumulative movement progress and per-frame displacement must remain distinct. Next separate hit-time validation from tracking.

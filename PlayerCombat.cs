@@ -245,7 +245,7 @@ public class PlayerCombat : MonoBehaviour
     {
         playerActionController.ResolveActionRequests();
 
-        if (isAttackFacingActive && currentAttackTarget != null)
+        if (isAttackFacingActive && EnemyHitReceiver.IsValidTarget(currentAttackTarget))
         {
             Vector3 directionToTarget = currentAttackTarget.bounds.center - transform.position;
             directionToTarget.y = 0f;
@@ -320,7 +320,7 @@ public class PlayerCombat : MonoBehaviour
 
     private bool IsCurrentAttackTargetInRange()
     {
-        if (currentAttackTarget == null)
+        if (!EnemyHitReceiver.IsValidTarget(currentAttackTarget))
         {
             return false;
         }
@@ -345,6 +345,11 @@ public class PlayerCombat : MonoBehaviour
 
         foreach (Collider candidate in candidates)
         {
+            if (!EnemyHitReceiver.IsValidTarget(candidate))
+            {
+                continue;
+            }
+
             Vector3 directionToCandidate = candidate.bounds.center - transform.position;
             directionToCandidate.y = 0f;
             float distanceToCandidate = directionToCandidate.magnitude;

@@ -5,8 +5,10 @@ public class EnemyStateController : MonoBehaviour
     [SerializeField] private EnemyAttack enemyAttack;
     [SerializeField] private EnemyAnimator enemyAnimator;
     [SerializeField] private float hitReactionDuration = 0.3f;
+    [SerializeField] private float perfectGuardStaggerDuration = 0.9f;
     [SerializeField] private float hitReactionCooldown = 0.3f;
     [SerializeField] private float globalAttackCooldownDuration = 1f;
+    [SerializeField] private EnemyMovement enemyMovement;
 
     private EnemyState currentState = EnemyState.Chase;
     public EnemyState CurrentState => currentState;
@@ -18,6 +20,7 @@ public class EnemyStateController : MonoBehaviour
     {
         if (currentState == EnemyState.Staggered && Time.time >= hitReactionEndTime)
         {
+            enemyAnimator.FinishPerfectGuardStagger();
             currentState = EnemyState.Chase;
             nextHitReactionAllowedTime = Time.time + hitReactionCooldown;
         }
@@ -30,7 +33,7 @@ public class EnemyStateController : MonoBehaviour
 
     public bool TryStartAttack(PlayerHitReceiver target)
     {
-        if (currentState != EnemyState.Chase || Time.time < nextAttackAllowedTime)
+        if (currentState != EnemyState.Chase || Time.time < nextAttackAllowedTime || enemyMovement.IsRecoiling)
         {
             return false;
         }
@@ -52,10 +55,39 @@ public class EnemyStateController : MonoBehaviour
         }
     }
 
-    public bool TryStartHitReaction()
+    public void EnterDead()
+    {
+        if (currentState == EnemyState.Dead)
+        {
+            return;
+        }
+
+        currentState = EnemyState.Dead;
+        enemyMovement.CancelRecoil();
+        enemyAttack.CancelAttack();
+        enemyAnimator.PlayDeath();
+    }
+
+    public bool TryStartPerfectGuardStagger()
+    {
+        if (currentState != EnemyState.Attacking)
+        {
+            return false;
+        }
+
+        currentState = EnemyState.Staggered;
+        hitReactionEndTime = Time.time + perfectGuardStaggerDuration;
+
+        enemyAttack.CancelAttack();
+        enemyAnimator.PlayPerfectGuardStagger();
+        return true;
+    }
+
+    public bool TryStartHitReaction(Vector3 incomingDirection)
     {
         if (currentState == EnemyState.Staggered)
         {
+            enemyMovement.BeginRecoil(incomingDirection);
             enemyAnimator.PlayHitReaction();
             return false;
         }
@@ -67,6 +99,8 @@ public class EnemyStateController : MonoBehaviour
 
         currentState = EnemyState.Staggered;
         hitReactionEndTime = Time.time + hitReactionDuration;
+
+        enemyMovement.BeginRecoil(incomingDirection);
         enemyAnimator.PlayHitReaction();
         return true;
     }

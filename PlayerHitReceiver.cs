@@ -67,7 +67,7 @@ public class PlayerHitReceiver : MonoBehaviour
         return foundThreat;
     }
 
-    public void ReceiveHit(HitContext hitContext)
+    public HitResult ReceiveHit(HitContext hitContext)
     {
         playerActionController.ResolveActionRequests();
 
@@ -78,10 +78,17 @@ public class PlayerHitReceiver : MonoBehaviour
             if (guardResult != GuardResult.Unhandled)
             {
                 playerGuardPresentation.PresentGuardResult(guardResult, hitContext.IncomingDirection);
-                return;
+
+                if (guardResult == GuardResult.Perfect)
+                {
+                    return HitResult.PerfectGuard;
+                }
+
+                return HitResult.OrdinaryGuard;
             }
         }
 
         playerHealth.TakeDamage(hitContext.DamageAmount);
+        return HitResult.Damaged;
     }
 }

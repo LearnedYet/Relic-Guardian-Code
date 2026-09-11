@@ -9,11 +9,19 @@ public class EnemyHitPresentation : MonoBehaviour
     [SerializeField] private CombatAudioPlayer hitAudioPlayerPrefab;
     [SerializeField] private CombatAudioData hitAudioData = new CombatAudioData();
     [SerializeField] private float hitAudioLifetime = 2.5f;
+    [SerializeField] private HitstopController hitstopController;
+    [SerializeField] private float hitstopDuration = 0.035f;
+
 
     public void PresentHit()
     {
         PlayHitImpact();
         PlayHitAudio();
+
+        if (hitstopController != null)
+        {
+            hitstopController.RequestHitstop(hitstopDuration);
+        }
     }
 
     private void PlayHitImpact()

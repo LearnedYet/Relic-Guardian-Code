@@ -2,18 +2,16 @@ using UnityEngine;
 
 public class EnemyAttack : MonoBehaviour
 {
-    [SerializeField] private int attackDamage = 1;
-    [SerializeField] private float startupDuration = 0.5f;
-    [SerializeField] private float hitWindowDuration = 0.2f;
-    [SerializeField] private float recoveryDuration = 0.4f;
+    [SerializeField] private EnemyAttackData attackData = new EnemyAttackData();
     [SerializeField] private GameObject startupTelegraph;
-    [SerializeField] private float attackAnimationLeadTime = 0.15f;
     [SerializeField] private Animator animator;
+    [SerializeField] private EnemyMovement enemyMovement;
     [SerializeField] private EnemyStateController enemyStateController;
 
     private EnemyAttackPhase currentPhase;
     private PlayerHitReceiver currentAttackTarget;
     private float phaseElapsedTime;
+    private float attackAnimationElapsedTime;
     private bool hasAttackAnimationStarted;
 
     public EnemyAttackPhase CurrentPhase => currentPhase;
@@ -28,24 +26,70 @@ public class EnemyAttack : MonoBehaviour
 
         if (currentPhase == EnemyAttackPhase.Startup
             && !hasAttackAnimationStarted
-            && phaseElapsedTime >= startupDuration - attackAnimationLeadTime)
+            && phaseElapsedTime >= attackData.StartupDuration - attackData.AnimationLeadTime)
         {
             hasAttackAnimationStarted = true;
-            animator.SetTrigger("Attack");
+            animator.Play(attackData.AnimationStateName, 0,0f);
         }
 
-        if (currentPhase == EnemyAttackPhase.Startup && phaseElapsedTime >= startupDuration)
+        UpdateAttackTracking();
+        UpdateAttackMovement();
+
+        if (currentPhase == EnemyAttackPhase.Startup && phaseElapsedTime >= attackData.StartupDuration)
         {
             OpenHitWindow();
         }
-        else if (currentPhase == EnemyAttackPhase.HitWindow && phaseElapsedTime >= hitWindowDuration)
+        else if (currentPhase == EnemyAttackPhase.HitWindow && phaseElapsedTime >= attackData.HitWindowDuration)
         {
             CloseHitWindow();
         }
-        else if (currentPhase == EnemyAttackPhase.Recovery && phaseElapsedTime >= recoveryDuration)
+        else if (currentPhase == EnemyAttackPhase.Recovery && phaseElapsedTime >= attackData.RecoveryDuration)
         {
             FinishRecovery();
         }
+    }
+
+    private void UpdateAttackTracking()
+    {
+        if (!hasAttackAnimationStarted
+            || attackAnimationElapsedTime < attackData.MovementStartTime
+            || attackAnimationElapsedTime >= attackData.TrackingEndTime
+            || currentAttackTarget == null
+            || !currentAttackTarget.isActiveAndEnabled)
+        {
+            return;
+        }
+
+        Vector3 directionToTarget =
+            currentAttackTarget.transform.position - transform.position;
+
+        enemyMovement.Turn(directionToTarget);
+    }
+
+    private void UpdateAttackMovement()
+    {
+        if (!hasAttackAnimationStarted
+            || attackData.MovementEndTime <= attackData.MovementStartTime
+            || attackData.MovementDistance <= 0f)
+        {
+            return;
+        }
+
+        float previousProgress = Mathf.InverseLerp(
+            attackData.MovementStartTime,
+            attackData.MovementEndTime,
+            attackAnimationElapsedTime);
+
+        attackAnimationElapsedTime += Time.deltaTime;
+
+        float currentProgress = Mathf.InverseLerp(
+            attackData.MovementStartTime,
+            attackData.MovementEndTime,
+            attackAnimationElapsedTime);
+
+        float frameDistance = attackData.MovementDistance * (currentProgress - previousProgress);
+
+        enemyMovement.MoveDuringAttack(transform.forward, frameDistance);
     }
 
     public bool TryStartAttack(PlayerHitReceiver target)
@@ -56,9 +100,10 @@ public class EnemyAttack : MonoBehaviour
             currentPhase = EnemyAttackPhase.Startup;
             phaseElapsedTime = 0f;
             hasAttackAnimationStarted = false;
+            attackAnimationElapsedTime = 0f;
 
             Vector3 incomingDirection = target.transform.position - transform.position;
-            float expectedImpactTime = Time.time + startupDuration;
+            float expectedImpactTime = Time.time + attackData.StartupDuration;
 
             AttackThreatContext attackThreatContext = new AttackThreatContext(transform, incomingDirection, expectedImpactTime);
 
@@ -88,6 +133,12 @@ public class EnemyAttack : MonoBehaviour
             }
 
             ApplyDamage(currentAttackTarget);
+
+            if (currentPhase != EnemyAttackPhase.HitWindow)
+            {
+                return;
+            }
+
             startupTelegraph.SetActive(false);
         }
     }
@@ -123,6 +174,7 @@ public class EnemyAttack : MonoBehaviour
         currentPhase = EnemyAttackPhase.Ready;
         phaseElapsedTime = 0f;
         hasAttackAnimationStarted = false;
+        attackAnimationElapsedTime = 0f;
         animator.ResetTrigger("Attack");
         startupTelegraph.SetActive(false);
 
@@ -141,8 +193,18 @@ public class EnemyAttack : MonoBehaviour
 
         Vector3 incomingDirection = target.transform.position - transform.position;
 
-        HitContext hitContext = new HitContext(attackDamage, transform, incomingDirection);
+        HitContext hitContext = new HitContext(attackData.Damage, transform, incomingDirection);
 
-        target.ReceiveHit(hitContext);
+        HitResult hitResult = target.ReceiveHit(hitContext);
+
+        if (currentPhase != EnemyAttackPhase.HitWindow || enemyStateController.CurrentState != EnemyState.Attacking)
+        {
+            return;
+        }
+
+        if (hitResult == HitResult.PerfectGuard)
+        {
+            enemyStateController.TryStartPerfectGuardStagger();
+        }
     }
 }

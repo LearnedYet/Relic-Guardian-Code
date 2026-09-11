@@ -11,12 +11,12 @@ public class PlayerTargeting : MonoBehaviour
 
     public Collider CurrentTarget
     {
-        get { return currentTarget; }
+        get { return IsLockedOn ? currentTarget : null; }
     }
 
     public bool IsLockedOn
     {
-        get { return currentTarget != null; }
+        get { return EnemyHitReceiver.IsValidTarget(currentTarget); }
     }
 
     public void CancelLockOn()
@@ -31,7 +31,7 @@ public class PlayerTargeting : MonoBehaviour
 
     private void Update()
     {
-        if (IsLockedOn && !currentTarget.gameObject.activeInHierarchy)
+        if (!EnemyHitReceiver.IsValidTarget(currentTarget))
         {
             currentTarget = null;
         }
@@ -74,6 +74,11 @@ public class PlayerTargeting : MonoBehaviour
 
         foreach (Collider candidate in candidates)
         {
+            if (!EnemyHitReceiver.IsValidTarget(candidate))
+            {
+                continue;
+            }
+
             float distanceToCandidate = Vector3.Distance(transform.position, candidate.bounds.center);
 
             if (distanceToCandidate < nearestDistance)

@@ -4,6 +4,60 @@ This file records daily progress, learned concepts, problems, and solutions.
 
 ---
 
+## 2026-09-11
+
+### Completed Attack1Forward footwork and first-frame tracking
+
+- Migrated the local ignored Goblin Animator state's Motion from the prototype Attack1 Clip to `Attack1ForwardSwordShield` while retaining state path `Base Layer.Attack1SwordShield`, and set state Speed to `1`. The selected non-looping Clip is 30 FPS, frames 0-20, about `0.666667s`; Apply Root Motion remains off.
+- Saved NearTarget's nested EnemyAttackData with animation lead `0.1667s`, movement start `0.033s`, tracking end `0.067s`, movement end `0.333s`, and total movement distance `0.6m`. The mixed SampleScene and licensed controller remain protected local-only assets.
+- Learner added `EnemyMovement.MoveDuringAttack(Vector3 direction, float distance)` so the movement owner applies an exact incremental horizontal distance through `CharacterController` without multiplying by `Time.deltaTime` again or changing facing.
+- Learner added an animation-relative execution timer to EnemyAttack. Successive `Mathf.InverseLerp` progress samples produce one frame's share of the configured total distance; cancellation/start reset the timer. Tracking is a separate request that runs before movement only from movement start through the first-frame cutoff and uses the saved accepted target.
+- Actual-file review corrected formatting only and identified one initially omitted Update call; the learner added the behavior call. The learner then separately reported the frames 1-10 footwork and frame-1-only tracking tests normal, with no reported airborne turn or post-landing slide. Post-test Unity Console checks contained zero errors and zero warnings.
+- Hit-time live-target, range and direction validation remains unimplemented, so the scheduled saved-target damage route can still produce a remote hit after the tracking cutoff. No Attack2/3 selection, Strong Combo, Root Motion, general priority system or deferred Death precision test was added.
+
+### Next
+
+- Continue only Attack1 hit-time validation. Confirm first-test range/half-angle, add the minimal EnemyAttackData values, and validate the saved target against the attacker's committed forward direction immediately before ReceiveHit. A Miss skips damage/confirmed feedback but keeps the existing HitWindow, Recovery and Global Attack Cooldown flow.
+
+---
+
+## 2026-09-10
+
+### Attack1 data migration and conversation handoff
+
+- Local feature checkpoint 2af364c saved combat feedback/recoil. Learner then created EnemyAttackData, removed accidental MonoBehaviour inheritance, and migrated EnemyAttack scalar configuration and animation selection to it. Compile/Console clean; learner accepted the single-attack runtime check.
+- User wants Attack1 first with footwork displacement/tracking. Forward Clip inspected at 30 FPS, frames 0-20. Report: 开始 1 命中5 1落地10. Provisional 1/5/10 markers; confirm extra 1 before locking timing. Movement/tracking and impact geometry remain pending. Current prototype state/data retained.
+- User requested Handoff save and new-chat opening. Protected local assets remain untouched; no push.
+
+
+### Small decelerating recoil integration
+
+- Learner authored EnemyMovement recoil state, BeginRecoil/CancelRecoil, LateUpdate incremental ease-out displacement and disable cleanup; corrected missing square and outer parentheses through review. Ordinary Move/Turn/Stop reject recoil and paused movement.
+- EnemyStateController now passes accepted/repeated Staggered hits to recoil, rejects attack admission while recoil is active, and cancels recoil on Death. EnemyHitReceiver passes HitContext.IncomingDirection. Existing Attacking/protection rejection remains; Perfect Guard alone does not request displacement.
+- NearTarget movement reference was initially empty, then learner connected it and reported testing normal. Live and saved reference point to the same NearTarget EnemyMovement; distance 0.15 m and duration 0.12 s. Console zero errors/warnings. Treat as learner-reported integrated acceptance, not an exhaustive obstacle/frame-rate/disable test suite.
+- Saved reaction cooldown is now 0.06 seconds and global attack cooldown 2 seconds; no automatic tuning changes made. No commit/push.
+
+### Attack Hitstop and pause-time Block rejection fix
+
+- EnemyHitPresentation now requests shared Hitstop after VFX/SFX. Both targets reference the player's existing independent controller; learner accepted ordinary/lethal recovery, including FarTarget disable. Saved durations later inspected at 0.035 and 0.04 seconds; do not overwrite as an assumed mismatch.
+- Learner temporarily set Hitstop to 2 seconds in Play Mode. Screenshot: same frame 1616 Block input received, then admission timeScale=0, grounded=False, state=Attacking. This identified admission rejection rather than absent input. Hypothesis was paused zero-displacement CharacterController.Move updating contact evidence.
+- Learner added deltaTime <= 0 early return after PlayerMovement action arbitration, plus deltaTime <= 0 or distance <= 0 guard in MoveDuringAttack. Learner reported success and removed both diagnostic logs. Actual saved guards/log removal checked; Console zero errors/warnings. No general input buffer or slow-time workaround was added. Recoil remains unimplemented.
+
+### Perfect Guard Stagger and slow GetHit exit
+
+- Learner authored HitResult return mapping, EnemyAttack result routing and post-call validity checks, TryStartPerfectGuardStagger with 0.9-second deadline, attack cancellation and slow presentation. Separate PerfectGuardStagger Animator state reuses the 0.633-second GetHit Clip at Speed 0.7; normal GetHit remains Speed 1.4.
+- Repeated hits replay slow GetHit without extending gameplay time. Natural finish clears the presentation flag; Death clears it and directly plays Death at its own state speed.
+- Learner observed an exit pose jump. Replaced direct Idle Play with CrossFadeInFixedTime to Idle over 0.1 seconds, preserving gameplay deadline. Learner reported it resolved; saved call verified and final queried Console had zero errors/warnings. Other unreported proposed regression cases remain unverified.
+- Learner requested enemy recoil next; ordinary-hit and Perfect-Guard recoil contracts still need definition. No gameplay code authored by Codex beyond previously reported cosmetic/typo fixes; no commit/push.
+
+### Retained-corpse Death: implementation and basic runtime acceptance
+
+- Learner authored Dead, EnterDead, lethal routing, CanReceiveHit/IsValidTarget, shared PlayerCombat/PlayerTargeting eligibility and PlayDeath. EnemyHealth now only subtracts damage; the state-less FarTarget disable fallback lives in EnemyHitReceiver.
+- EnterDead sets Dead before cancellation and direct Death animation playback. Existing coarse-state guards prevent ordinary timers/finish callbacks returning Dead to Chase. Pending Attack/HitReaction triggers are cleared. Licensed DeathSwordShield state is local-only, Speed 1, no exits, non-looping Clip about 1.87 seconds.
+- Learner reported all requested Play Mode checks normal: locked NearTarget kill/lock release, retained stable corpse/no resumed action after at least 5 seconds, no corpse retarget/lunge/new hit feedback, Startup lethal cancellation without delayed damage, Staggered lethal override, FarTarget disable and lethal VFX/SFX. Final queried Console had zero errors/warnings.
+- Follow-up learner Play Mode tests passed Death during HitWindow and Recovery: no additional damage or resumed action. The learner then requested closure and deferred precision tests. Codex entered/paused Play Mode but no test injection executed before interruption; final stop request confirmed Editor already stopped. Repeated death/late callback injection and exact same-frame damage arbitration remain unverified/unresolved. No commit/push performed; protected mixed local assets preserved.
+- Learner explicitly requested review/testing after a small function/module, not after every line or identifier. Key code and configuration remain learner-authored. Correct explanation: death should cancel attack and has highest priority; keep skill status Practising because full code scaffolds were supplied.
+
 ## 2026-09-09
 
 ### Completed Ordinary Enemy HitReaction; Implemented Cooldown Deadline

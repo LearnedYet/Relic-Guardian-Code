@@ -1,12 +1,12 @@
 # Enemy Combat Agent Design
 
-Status: approved direction, consolidated 2026-09-05; receiving/feedback, minimum state/cancel, ordinary HitReaction/protection, Global Attack Cooldown and start-time range/facing admission are runtime-verified through 2026-09-09. Remaining stages are proposed until actual code and runtime evidence confirm them.
+Status: approved direction, consolidated 2026-09-05; receiving/feedback, minimum state/cancel, ordinary HitReaction/protection, Global Attack Cooldown, start-time range/facing admission, terminal Death, Perfect Guard Stagger, hit feedback/recoil, and Attack1 Forward footwork/limited tracking are runtime-verified through 2026-09-11. Remaining stages are proposed until actual code and runtime evidence confirm them.
 
 ## Authority and Immediate Scope
 
 Actual code/assets and Git state, then CURRENT_STATE.md and ARCHITECTURE.md, remain implementation authority. This document supersedes earlier Enemy direction and conflicting future-order notes in Guard/presentation plans. HANDOFF.md remains the recent checkpoint and exact next-step handoff.
 
-The immediate feature is now **retained-corpse terminal Death**. Receiving/confirmed feedback, the coarse state/cancel boundary, ordinary HitReaction/protection, Global Attack Cooldown and start-time range/facing admission are completed checkpoints. Repeated hits during Staggered restart GetHit presentation without extending the gameplay deadline; a ready attack can begin after reaction under state/range/facing/cooldown admission and ordinary light hits cannot interrupt Attacking. Current saved timing is HitReactionDuration `0.3s`, HitReactionCooldown `0.2s`, and Global Attack Cooldown `2s`. Attack Hitstop, Perfect Guard Stagger, multi-attack selection and Strong Combo remain later work. The learner remains author of key gameplay and presentation code; explain identifiers, responsibility, lifetime and call chains before each actual edit, then inspect the saved file.
+The immediate feature is ordinary multi-attack selection. Death, HitResult/Perfect Guard Stagger, Attack Hitstop and small hit recoil are implemented; CURRENT_STATE.md records exact learner verification and deferred boundaries. Keep key code learner-authored and review one small module per batch. Historical descriptions below must be read against current source and ARCHITECTURE.md.
 
 Verified baseline from current source inspection:
 
@@ -20,7 +20,7 @@ Verified baseline from current source inspection:
 
 ## Ordered Development Stages
 
-Stages 1-5 are completed checkpoints; later entries remain future work. Complete one concept and its runtime checks before continuing.
+Stages 1-7 are implemented; see CURRENT_STATE.md for acceptance limits. Stage 8 is next. Complete one concept and its runtime checks before continuing.
 
 1. Minimum EnemyHitReceiver, then confirmed Hit VFX, then Hit SFX. Preserve the existing Player Attack confirmation and damage semantics.
 2. Minimum Enemy coarse state authority plus reliable EnemyAttack.Cancel() and natural-finish coordination. Introduce states only as their consumers become real.
@@ -74,7 +74,7 @@ Initial script scope:
 
 ## Enemy State and Ability Ownership
 
-Target coarse vocabulary: Idle, Chase, Combat, Attacking, Staggered, Dead. EnemyStateController is the single coarse owner deciding entry, exit and gameplay permissions. EnemyAI supplies decisions; execution remains in components. Only Chase and Attacking exist in the current minimum implementation; add later values only with real consumers.
+Target coarse vocabulary: Idle, Chase, Combat, Attacking, Staggered, Dead. EnemyStateController is the single coarse owner deciding entry, exit and gameplay permissions. EnemyAI supplies decisions; execution remains in components. Current implemented values are Chase, Attacking, Staggered and Dead; add other values only with real consumers.
 
 EnemyAttackPhase remains Ready, Startup, HitWindow, Recovery. While the coarse state is Attacking, EnemyAttack advances the attack's internal phases. Ready means the attack executor is idle, not that AI must attack next frame. Cancellation may reset the executor to Ready while the coarse owner remains Staggered or Dead; this never grants attack permission.
 
@@ -146,6 +146,8 @@ Ordinary attacks will use Attack1/2/3 content with a small per-attack configurat
 Cooldown expiry grants decision eligibility, not an immediate mandatory attack. During cooldown, the eventual Combat behavior may Approach/Retreat/Strafe/Wait; the stage-7 baseline may wait until spacing is implemented. Tune the first Goblin toward moderately aggressive: approach actively, briefly adjust/observe, attack, pause visibly, then pressure again. No separate Aggression framework is needed.
 
 ## Hit-Time Validation
+
+The 2026-09-11 Attack1Forward slice adds code-driven `0.6m` footwork over animation frames 1-10 and target tracking only during frame 1. It intentionally does not count as impact validation: after the cutoff, the saved facing and trajectory stay committed, but the current HitWindow still delivers to the saved target without checking its impact-time geometry.
 
 Before each enemy damage delivery, validate target identity, existence, active/alive/receivable status, current distance and authored attack direction/coverage. Use the attack's actual impact-time range/facing convention, not a fresh direction pointed at a distant target that makes every hit automatically valid. A failed test causes Miss, no ReceiveHit and no confirmed-hit feedback. Preserve the existing start-time eligibility check as a separate concern.
 

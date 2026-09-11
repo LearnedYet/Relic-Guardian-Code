@@ -253,8 +253,8 @@ Approved future direction: `Docs/ENEMY_COMBAT_AGENT_DESIGN.md` (2026-09-05). The
 3. [x] Ordinary surviving-hit reaction only from Chase, fixed gameplay deadline, immediate repeated GetHit presentation during Staggered, post-reaction protection, Attacking exclusion and clean Console learner-runtime-verified 2026-09-09.
 4. [x] Start-time Attack Admission now requires distance plus a `15°` horizontal facing threshold; valid distance with invalid facing stops translation and turns toward the player without attacking. Learner-runtime-verified 2026-09-09.
 5. [x] Minimum Global Attack Cooldown begins once on effective natural-finish/cancel cleanup, counts independently through HitReaction, and joins state/range/facing admission. Combined repeated-hit/counterattack rhythm learner-runtime-verified 2026-09-09.
-6. [ ] Terminal Death with retained corpse and hit/target exclusion.
-7. [ ] Minimal HitResult return and Perfect Guard forced attack cancellation/Stagger, independent of ordinary reaction cooldown.
+6. [x] Terminal Death with retained corpse and hit/target exclusion: learner accepted retention, feedback, target exclusion and Startup/HitWindow/Recovery/Staggered lethal interruption on 2026-09-10. Slice closed at learner request; explicit repeated-death/late-callback tests and exact same-frame arbitration are deferred limitations, not certified guarantees.
+7. [x] Minimal HitResult return and Perfect Guard forced attack cancellation/Stagger, independent of ordinary reaction cooldown; separate slow GetHit presentation and fixed gameplay deadline learner-runtime-verified 2026-09-10.
 8. [ ] Ordinary multi-attack selection using the established Global Attack Cooldown.
 9. [ ] Enemy hit-time distance, direction and live-target validation with actual Miss behavior. This remains separate from stage 4 start-time admission.
 10. [ ] Independent Strong Attack / Strong Combo stage: first establish Player HitStun, functional Dodge and death-safe control recovery; then add PerfectOnly, clear telegraph, first-hit commit, per-step hit validation and reliable bilateral cleanup. Strong cooldown is consumed on accepted start. Guaranteed three-hit capture requires a separate lightweight pairing/position-correction sub-stage.
@@ -301,3 +301,11 @@ The ordered stages above define the future attack, state and death work; do not 
 - [ ] GitHub
 - [ ] README
 - [ ] Gameplay Video
+
+## 2026-09-10 Perfect Guard progress
+
+HitResult return, PerfectGuard attack cancellation and stronger Stagger are implemented. Separate slow GetHit and 0.1-second exit blend are connected; learner accepted the exit jump fix. Do not infer unreported regression acceptance. Small decelerating ordinary-hit recoil is now connected and learner-reported normal at 0.15 m / 0.12 s; shared Attack Hitstop is connected, including the paused-grounding Block fix. Next planned feature is ordinary multi-attack selection. CURRENT_STATE.md remains the active next-step record.
+
+## Attack1 first: data migration and Forward footwork
+
+Single EnemyAttackData migration plus Attack1Forward footwork and frame-1-only tracking are implemented and learner-runtime-accepted. The saved local slice moves `0.6m` from animation frame 1 through frame 10, permits tracking only during frame 1, keeps code-driven CharacterController displacement and leaves Apply Root Motion off. Hit-time live-target/distance/direction validation is the next bounded slice before Attack2/3 selection. See CURRENT_STATE for the exact boundary.

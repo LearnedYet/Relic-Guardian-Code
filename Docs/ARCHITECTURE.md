@@ -1,6 +1,6 @@
 # Relic Guardian Implemented Architecture
 
-Documentation updated against inspected source and saved Scene: 2026-09-08. Runtime acceptance is recorded in CURRENT_STATE.md.
+Documentation updated against inspected source and saved Scene: 2026-09-11. Runtime acceptance is recorded in CURRENT_STATE.md.
 
 This file is the compact architecture map for behavior that is currently implemented. Actual code, Unity assets, current Editor state, and Git status remain authoritative. Approved but unimplemented feature designs belong in their feature-design documents and must not be treated as runtime facts.
 
@@ -132,7 +132,7 @@ Startup and Hold can handle hits inside the adjustable horizontal Guard Coverage
 
 ## Lock-On and Camera
 
-`PlayerTargeting` searches the configured layer inside `lockOnRange`, keeps one `CurrentTarget`, and clears it when cancelled, inactive, or beyond `lockOnBreakRange`. Sprint plus movement while locked cancels Lock-On only when Sprint is permitted.
+`PlayerTargeting` searches the configured layer inside `lockOnRange`, keeps one `CurrentTarget`, and clears it when cancelled, ineligible through EnemyHitReceiver.IsValidTarget, or beyond `lockOnBreakRange`. Sprint plus movement while locked cancels Lock-On only when Sprint is permitted.
 
 `PlayerCameraController` treats Lock-On as a camera/targeting mode. It switches Cinemachine priorities and input-axis ownership and updates a weighted look target between player and enemy. It does not create a second action system.
 
@@ -145,12 +145,12 @@ Soft recovery is presentation state inside `PlayerAnimator`, not a coarse gamepl
 | Component | Implemented responsibility |
 | --- | --- |
 | `EnemyAI` | Supplies Chase movement and attack decisions from coarse state, range and horizontal facing angle; in range but outside the angle threshold it stops translation and requests turn-in-place. It no longer reads EnemyAttackPhase or starts EnemyAttack directly. |
-| `EnemyStateController` | Owns coarse `Chase / Attacking / Staggered`, admits attack requests, accepts natural-finish notification, and owns ordinary surviving-hit duration, post-reaction protection and Global Attack Cooldown deadlines without exposing direct state writes. |
-| `EnemyMovement` | Applies enemy Transform facing and `CharacterController` movement. `Turn(direction)` rotates only; `Move(direction)` reuses that facing and then displaces. |
-| `EnemyAttack` | Owns internal `Ready -> Startup -> HitWindow -> Recovery -> Ready`, telegraph/Animator triggering, a saved `PlayerHitReceiver` target, one Startup `AttackThreatContext`, one scheduled hit-time `HitContext` delivery, and shared idempotent finish/cancel cleanup. One effective cleanup notifies the coarse owner to begin Global Attack Cooldown; repeated Ready cleanup does not extend it. |
-| `EnemyAnimator` | Writes enemy movement speed and exposes the presentation-only HitReaction Trigger request. Repeated hits during Staggered may restart GetHit without extending gameplay reaction time. |
-| `EnemyHealth` | Subtracts integer damage, exposes the minimum post-damage `IsAlive` evidence, and disables the GameObject at zero or below. |
-| `EnemyHitReceiver` | Single current entry for confirmed Player Attack hits; applies health first, requests optional victim-side presentation independently, then asks the coarse owner for ordinary reaction only while the victim survives. |
+| `EnemyStateController` | Owns coarse `Chase / Attacking / Staggered / Dead`, admits attack requests, accepts natural-finish notification, and owns ordinary surviving-hit duration, post-reaction protection and Global Attack Cooldown deadlines without exposing direct state writes. |
+| `EnemyMovement` | Applies enemy Transform facing and `CharacterController` movement. `Turn(direction)` rotates only; `Move(direction)` reuses that facing and then displaces. `MoveDuringAttack(direction, distance)` applies one already-calculated incremental attack distance without adding a second time multiplier or changing facing. |
+| `EnemyAttack` | Owns internal `Ready -> Startup -> HitWindow -> Recovery -> Ready`, telegraph/Animator triggering, a saved `PlayerHitReceiver` target, one Startup `AttackThreatContext`, animation-relative Attack1 early tracking and footwork requests, one scheduled hit-time `HitContext` delivery, and shared idempotent finish/cancel cleanup. One effective cleanup notifies the coarse owner to begin Global Attack Cooldown; repeated Ready cleanup does not extend it. |
+| `EnemyAnimator` | Writes enemy movement speed and exposes presentation-only HitReaction and PlayDeath requests. PlayDeath clears Attack/HitReaction triggers and directly plays Base Layer.DeathSwordShield from time zero. Repeated hits during Staggered may restart GetHit without extending gameplay reaction time. |
+| `EnemyHealth` | Subtracts integer damage and exposes IsAlive; object lifetime is no longer changed here. |
+| `EnemyHitReceiver` | Rejects ineligible hits through CanReceiveHit; applies health, routes lethal damage to EnterDead (or disables state-less FarTarget), presents the accepted hit, then requests surviving reaction. Static IsValidTarget is shared by PlayerCombat and PlayerTargeting. |
 | `EnemyHitPresentation` | Owns confirmed-hit VFX/SFX references, anchor placement, per-instance scale and cleanup. It spawns an independent Blood effect and a temporary CombatAudioPlayer Prefab so lethal deactivation does not own the feedback lifetime. |
 
 Current enemy damage flow is:
@@ -177,6 +177,19 @@ EnemyAttack.FinishRecovery()
 ```
 
 EnemyAttack.OnDisable also invokes the same execution cleanup without choosing a coarse destination. This lets future Staggered/Dead transitions retain destination authority instead of cleanup forcing Chase.
+
+Current Attack1 animation-relative movement flow is:
+
+```text
+EnemyAttack starts Base Layer.Attack1SwordShield
+-> during [MovementStartTime, TrackingEndTime), ask EnemyMovement.Turn(saved target direction)
+-> calculate previous/current normalized movement progress over [MovementStartTime, MovementEndTime]
+-> movementDistance * progress delta
+-> EnemyMovement.MoveDuringAttack(transform.forward, frameDistance)
+-> CharacterController.Move(normalized direction * exact incremental distance)
+```
+
+Tracking runs before displacement and ends after the selected first animation-frame window. Later footwork retains the last applied facing. Cancellation resets the animation-relative timer, so it cannot resume stale displacement.
 
 Current confirmed Player Attack hit flow is:
 
@@ -240,4 +253,28 @@ Attack motion audio uses a separate CombatAudioPlayer instance from Guard audio.
 
 VFX assets, placement and Trail Event values: COMBAT_VFX_RESOURCE_TRACKING.md. Audio clips/mixes and sound Event values: COMBAT_SFX_RESOURCE_TRACKING.md. Guard timing, reaction and shared soft-recovery parameters: GUARD_REACTION_DESIGN.md. These are configuration/design references; actual code/assets still take precedence.
 
-Enemy future state and consequence plans are in ENEMY_COMBAT_AGENT_DESIGN.md. The coarse Enemy state owner, reliable EnemyAttack cleanup, ordinary HitReaction/protection, Global Attack Cooldown and start-time range/facing admission are implemented; retained-corpse Death, Strong Combo and Poise are not.
+Enemy future state and consequence plans are in ENEMY_COMBAT_AGENT_DESIGN.md. The coarse Enemy state owner, reliable EnemyAttack cleanup, ordinary HitReaction/protection, Global Attack Cooldown and start-time range/facing admission are implemented; retained-corpse Death is implemented with basic runtime acceptance; Strong Combo and Poise are not. See CURRENT_STATE.md for remaining Death boundary tests.
+
+## Retained-corpse Death boundary
+
+EnemyHitReceiver checks eligibility before damage, then immediately calls EnterDead on lethal damage when a state controller exists. EnterDead sets Dead, cancels EnemyAttack and calls EnemyAnimator.PlayDeath. EnemyAI stops decisions/movement outside Chase; existing reaction/finish guards cannot restore Dead to Chase. Accepted lethal hit presentation still runs independently. FarTarget has no state controller and retains a receiver-owned disable fallback.
+
+CanReceiveHit checks enabled/active receiver, initialized health, positive health and optional non-Dead state. IsValidTarget also requires an enabled Collider with a receiver on the same object. Both candidate searches, attack range confirmation and facing/lunge use it. Lock-On getters compute live eligibility before Update clears the backing reference. Corpse physical collision is unchanged. Exact same-frame lethal/impact precedence is not implemented as a separate arbitration boundary.
+
+## Perfect Guard Stagger implementation (2026-09-10)
+
+PlayerHitReceiver.ReceiveHit returns HitResult.Damaged, OrdinaryGuard or PerfectGuard after its existing resolution/presentation path. EnemyAttack consumes PerfectGuard only while still HitWindow/Attacking, then requests EnemyStateController.TryStartPerfectGuardStagger. The controller enters Staggered, sets the existing end deadline using perfectGuardStaggerDuration, cancels attack and starts slow presentation. It bypasses ordinary reaction cooldown, but requires Attacking. Existing timed exit returns to Chase and starts reaction protection; global attack cooldown continues independently.
+
+EnemyAnimator owns only isPlayingPerfectGuardStagger presentation state: entry/repeated surviving hits directly play Base Layer.PerfectGuardStagger; gameplay expiry calls FinishPerfectGuardStagger, clears the flag and blends to Idle over 0.1 seconds. Death clears the flag and directly selects Death. Separate state Speed 0.7 does not change global or per-enemy time. Gameplay duration and animation speed are separately tuned.
+
+## Attack Hitstop and paused movement (2026-09-10)
+
+EnemyHitPresentation.PresentHit requests the existing shared HitstopController after spawning VFX/SFX; victim deactivation does not own time restoration. PlayerMovement.Update still resolves action requests during pause, then skips movement processing when deltaTime <= 0. MoveDuringAttack rejects zero-time/nonpositive-distance moves. This preserves grounding evidence during Hitstop without removing grounded Block admission or adding input buffering.
+
+## Hit recoil implementation (2026-09-10)
+
+EnemyMovement owns configurable distance/duration, direction, elapsed time and active flag. LateUpdate requests the difference of successive 2t-t*t positions through CharacterController.Move. BeginRecoil replaces remaining motion; CancelRecoil and OnDisable clear it. Normal Move/Turn/Stop skip during recoil or zero deltaTime. EnemyStateController.TryStartHitReaction(Vector3) requests recoil only on admitted ordinary reaction or existing Staggered; deadlines are unchanged by repeated hits. TryStartAttack rejects IsRecoiling, and EnterDead cancels it immediately. HitContext direction is passed unchanged by EnemyHitReceiver; recoil flattens and normalizes it. No global/local time writer or root motion is added.
+
+## Single enemy attack data migration
+
+EnemyAttack holds one serialized EnemyAttackData object with read-only accessors for damage, startup/hit-window/recovery timing, animation lead time, Animator state name, movement start/end, tracking cutoff and total movement distance. Execution still uses existing phase/target runtime fields and cancellation. Animator.Play selects the configured state. Attack1 Forward displacement and limited early tracking are implemented; impact geometry and multi-attack selection remain pending.

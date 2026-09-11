@@ -1,6 +1,6 @@
 # Enemy Combat Resource Tracking
 
-Last audited: 2026-09-08. This document records licensed resource selection and import status; it does not prove gameplay integration or runtime verification.
+Last audited: 2026-09-11. This document records licensed resource selection and import status; it does not prove gameplay integration or runtime verification unless a dated integration note says otherwise.
 
 ## Boundary
 
@@ -20,7 +20,7 @@ Last audited: 2026-09-08. This document records licensed resource selection and 
 | Combat retreat | `Goblin@WalkBackwardsSwordShield.FBX` | `81ff775d44a6d2c43a3ac146691be121` | Imported 2026-09-08; GUID preserved; integration/runtime pending |
 | Combat strafe left | `Goblin@StrafeLeftSwordShield.FBX` | `62a0eaca43f5fa24bbab674e0865aef4` | Imported 2026-09-08; GUID preserved; integration/runtime pending |
 | Combat strafe right | `Goblin@StrafeRightSwordShield.FBX` | `670c36f4c9a731348b6b224515b6a8c4` | Imported 2026-09-08; GUID preserved; integration/runtime pending |
-| Ordinary Attack 1 | `Goblin@Attack1ForwardSwordShield.FBX` | `ad72501e97f58b54a8d99792909cf33b` | Imported 2026-09-08; GUID preserved; integration/runtime pending |
+| Ordinary Attack 1 | `Goblin@Attack1ForwardSwordShield.FBX` | `ad72501e97f58b54a8d99792909cf33b` | Imported 2026-09-08; GUID preserved; locally integrated and learner-runtime-accepted 2026-09-11 |
 | Ordinary Attack 2 | `Goblin@Attack2ForwardSwordShield.FBX` | `7f58aef2737b2394c91c3303d97af9e1` | Imported 2026-09-08; GUID preserved; integration/runtime pending |
 | Ordinary Attack 3 | `Goblin@Attack3ForwardSwordShield.FBX` | `29b34a449d42585449b6fae9638900fa` | Imported 2026-09-08; GUID preserved; integration/runtime pending |
 | Ordinary HitReaction | `Goblin@GetHitSwordShield.FBX` | `f1b38bfb8b647ea4abac6df05e771fb2` | Imported 2026-09-08; GUID preserved; integration/runtime pending |
@@ -51,7 +51,7 @@ Unity 6000.3.19f1 recognized all nine copied FBX files and exposed one Animation
 
 The current saved default Clips are WalkForward 0-30, WalkBackwards 0-30, StrafeLeft 0-30, StrafeRight 0-30, Attack1Forward 0-20, Attack2Forward 0-30, Attack3Forward 0-30, GetHit 0-19 and Death 0-56. Loop Time and Loop Pose are currently false for all nine. Root Rotation, Root Position Y and Root Position XZ locks are also false; Keep Original Position Y is true, while Keep Original Orientation and Position XZ are false. These are inspected facts, not approved final settings.
 
-Do not connect these Clips to Animator yet. Before integration, preview pose/displacement and decide the four movement Clips' Loop settings plus the code-driven-displacement Root Transform policy as a focused configuration checkpoint.
+Do not connect the remaining unintegrated Clips to Animator yet. Attack1Forward, GetHit and Death are documented exceptions with dated integration notes. Before integrating the four locomotion Clips, preview pose/displacement and decide their Loop settings plus the code-driven-displacement Root Transform policy as a focused configuration checkpoint.
 
 ## Remaining Resource Gaps
 
@@ -65,3 +65,11 @@ Do not connect these Clips to Animator yet. Before integration, preview pose/dis
 The nine selected `.FBX` files and their original `.meta` files were copied into the main-project Goblin `FBX Files` directory. SHA-256 comparisons matched the AssetLab source for every FBX and meta file, and all test-project GUIDs above were preserved. Existing main-project Idle/Run/prototype Attack1/WalkNormal files were not overwritten. Deferred Block, protected idle, packaged Combo, Dagger/Slingshot and `_RM` variants were not copied.
 
 This is filesystem/GUID verification. Unity asset recognition, Clip settings, visual preview and Console status remain pending until inspected in the main Editor.
+
+## 2026-09-10 Death integration update
+
+Supersedes earlier pending-integration statements for Death only: local GoblinEnemy.controller now has Base Layer.DeathSwordShield, Speed 1, selected Death Clip, no outgoing transitions; Idle remains default. Live Clip inspection found loopTime false and length 1.866667 seconds. Learner reported the integrated retained-pose/grounding checks normal. Other unintegrated Clip previews remain pending. Licensed controller/FBX remain local-only.
+
+## 2026-09-11 Attack1Forward integration update
+
+Supersedes earlier pending-integration statements for Ordinary Attack 1 only. The local ignored GoblinEnemy.controller retains the state name `Attack1SwordShield`, now uses the selected `Attack1ForwardSwordShield` Motion at state Speed `1`, and remains non-Root-Motion. The Clip is 30 FPS, frames 0-20, length about `0.666667s`, and non-looping. Saved Scene data uses animation lead `0.1667s`, movement start `0.033s`, tracking end `0.067s`, movement end `0.333s`, and total code-driven distance `0.6m`. The learner separately reported the footwork and first-frame-only tracking checks normal; the final Console check contained zero errors/warnings. Licensed controller/FBX and the mixed Scene remain local-only and are not part of code/document Git checkpoints.

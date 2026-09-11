@@ -9,10 +9,5 @@ public class EnemyHealth : MonoBehaviour
     public void TakeDamage(int damageAmount)
     {
         currentHealth -= damageAmount;
-
-        if (currentHealth <= 0)
-        {
-            gameObject.SetActive(false);
-        }
     }
 }

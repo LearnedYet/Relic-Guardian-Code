@@ -72,6 +72,11 @@ public class PlayerMovement : MonoBehaviour
     {
         playerActionController.ResolveActionRequests();
 
+        if (Time.deltaTime <= 0f)
+        {
+            return;
+        }
+
         Vector2 input = inputReader.MoveInput;
 
         if (!playerActionController.CanMove)
@@ -156,6 +161,10 @@ public class PlayerMovement : MonoBehaviour
 
     public void MoveDuringAttack(Vector3 direction, float distance)
     {
+        if (Time.deltaTime <= 0f || distance <= 0f)
+        {
+            return;
+        }
         characterController.Move(direction.normalized * distance);
     }
 }
