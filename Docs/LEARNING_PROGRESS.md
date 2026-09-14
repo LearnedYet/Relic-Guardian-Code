@@ -2,6 +2,26 @@
 
 This document tracks programming understanding separately from feature completion. It is a learning aid, not an evaluation.
 
+## 2026-09-11 Minimum legal multi-attack selection
+
+Learner added per-asset `minimumRange` / `maximumRange`, changed EnemyAttack from one serialized asset to an ordered candidate array, and separated that persistent configuration from runtime-only `currentAttackData`. `TryStartAttack` now skips null/inactive targets and null options, uses horizontal distance, chooses the first legal candidate once, and cleanup releases the selected reference. Review caught reversed Inspector order and a three-dimensional distance calculation that treated the enemy/player pivot-height difference as attack spacing; the learner corrected both. Play Mode passed Attack1 at `1.2m`, Attack2 priority at `1.7m`, and Attack2-only selection at `2.1m`, including normal damage/recovery/cooldown and a clean Console. Keep **Practising**: array order is a deterministic tie-breaker, not Weight-based AI, and mutable per-enemy cooldown deadlines must not be stored in shared assets.
+
+## 2026-09-11 Attack2 data transfer and isolated execution
+
+Learner transferred preview evidence into `Goblin_Attack2.asset`, corrected movement start `0.033 -> 0.333`, built `Attack2SwordShield` with the verified Motion/exit settings, and runtime-tested the asset in isolation before adding selection. They distinguished selection range from hit-time `ImpactRange`, and animation-relative tracking/movement markers from phase durations. Keep **Practising**: a longer total lunge does not automatically add its full distance to the pre-impact start range.
+
+## 2026-09-11 Independent tracking and movement windows
+
+While previewing the 30 FPS Attack2Forward Clip, the learner identified tracking commit at frame `9`, movement start at frame `10`, likely contact at frame `11.4`, one-foot plant/forward-travel end around frame `20`, and return to the waiting pose at frame `29`. They distinguished the latter recovery marker from movement end and confirmed tracking should run from animation start through frame 9. Review showed the current lower bound incorrectly reused MovementStartTime, so the learner added a serialized `trackingStartTime` plus read-only accessor and changed only the tracking lower-bound read. They explicitly saved Attack1's original `0.033s` start and runtime-verified unchanged first-frame tracking, forward motion, one damage, Recovery and Global Attack Cooldown with a clean Console. Keep **Practising**: a visually close sub-frame interval is not reliable when Update samples discrete frames, and independent behavior windows should not borrow another behavior's boundary.
+
+## 2026-09-11 Independent melee attack asset
+
+Learner renamed `EnemyAttackData` to the more specific `MeleeAttackData` through symbol rename, converted it from an embedded serializable class to a `ScriptableObject`, removed direct construction from `EnemyAttack`, created `Goblin_Attack1.asset`, restored the accepted values and connected the Scene reference. Actual-file review caught an initially missing reference/folder and a `0.034` versus accepted `0.033` movement-start mismatch; the learner corrected both. Codex added only the requested Inspector headers after explicit takeover. Play Mode then preserved normal Attack1 animation, footwork/tracking, one damage, Recovery and Global Attack Cooldown with a clean Console. Keep **Practising**: shared asset configuration and per-enemy runtime state must remain separate, and copying configuration steps alone does not yet prove independent reconstruction.
+
+## 2026-09-11 Attack1 hit-time validation
+
+Learner added configurable impact range/facing fields and properties, then authored `IsImpactValid(PlayerHitReceiver target)` and replaced the old null-only damage guard. The method distinguishes one call's parameter and local horizontal direction/distance/angle from persistent attack configuration, and evaluates the attacker's committed forward direction rather than turning again at impact. Play Mode passed normal hit, distance Miss, direction Miss and disabling the receiver during Startup; Miss skipped damage/confirmed feedback while Recovery/Cooldown continued. Keep **Practising**: start admission, limited tracking and hit-time validation are three different decisions, and `isActiveAndEnabled` is not yet a Player death model.
+
 ## 2026-09-11 Attack1 Forward footwork and limited tracking
 
 Learner created animation-relative movement fields/properties, the `EnemyMovement.MoveDuringAttack` execution boundary, progress-delta footwork in `EnemyAttack`, and a separate first-frame tracking request after identifier/scope/lifetime guidance and small-batch review. They caught the intended timing relationship in Play Mode: displacement follows frames 1-10, tracking is allowed only during frame 1, later airborne frames retain the committed facing, and landing has no reported slide. Keep **Practising**: normalized cumulative progress versus per-frame distance, animation-relative time versus phase time, and tracking versus hit validation remain distinct concepts. Hit-time distance/direction validation is not implemented yet.
@@ -178,7 +198,7 @@ Build enough Unity C# understanding to independently create and explain small ga
 
 ## Next Learning Step
 
-Centralized arbitration, the current Guard feedback chain, and Attack1-4 Motion feedback through independent Trail/Whoosh timing are implemented and runtime-verified for the current enemy. Next connect only selected confirmed-hit VFX/SFX after gameplay confirmation. Camera feedback, enemy reaction, Perfect player reaction, Parry/Counter, Guard Break, Dodge, Projectile, Boss timing, and exact deadline interpolation remain separate concepts.
+Attack1/Attack2 independent assets, horizontal range legality, ordered first-match selection and one-execution data locking are runtime-verified. Next add only per-attack cooldown duration and per-enemy runtime cooldown readiness before introducing Weight/random choice. Ranged execution/data, a complete AI Agent, Strong Combo, spacing and deferred Death precision tests remain separate concepts.
 
 ## Update Rule
 
@@ -194,4 +214,4 @@ Each small topic follows: short recall, small explanation, small practice, Unity
 
 ## Attack1 data and movement checkpoint
 
-Learner created a serializable configuration class, corrected template MonoBehaviour inheritance, migrated executor reads/animation selection, then added animation-relative footwork and a separate limited tracking window through the existing movement owner. Single-attack migration, footwork and tracking runtime checks were reported normal. Keep Practising: configuration object lifetime differs from component behavior and per-execution timers; phase time, animation time, cumulative movement progress and per-frame displacement must remain distinct. Next separate hit-time validation from tracking.
+Learner created the initial serializable configuration class, corrected template MonoBehaviour inheritance, migrated executor reads/animation selection, then added animation-relative footwork, a separate limited tracking window and hit-time validation. The class is now the independent `MeleeAttackData` ScriptableObject and `Goblin_Attack1.asset` is connected. Single-attack migration, asset-reference conversion, footwork, tracking, normal hit and three Miss branches were runtime-verified. Keep Practising: shared asset lifetime differs from component behavior and per-execution timers; phase time, animation time, cumulative movement progress, per-frame displacement, tracking and validation must remain distinct. Next transfer the timing-analysis process to Attack2Forward before changing selection code.

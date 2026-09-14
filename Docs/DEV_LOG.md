@@ -6,6 +6,36 @@ This file records daily progress, learned concepts, problems, and solutions.
 
 ## 2026-09-11
 
+### Completed Attack2 asset and isolated execution
+
+- Learner created `Goblin_Attack2.asset` from the inspected 30 FPS non-looping Attack2Forward Clip and corrected MovementStartTime `0.033 -> 0.333`. Saved values are Startup/HitWindow/Recovery `0.7 / 0.2 / 0.5s`, animation lead `0.380s`, tracking `0..0.300s`, movement `0.333..0.667s` over `1.2m`, damage `1`, and impact limits `2m / 30°`.
+- Learner created local Animator state `Base Layer.Attack2SwordShield` with Motion `Attack2ForwardSwordShield`, Speed `1`, Write Defaults enabled, and an unconditional Exit Time `0.9`, fixed-duration `0.05s` transition to Idle. No inbound Trigger/transition was added because EnemyAttack uses `Animator.Play`.
+- The isolated Attack2 reference passed learner Play Mode verification for presentation, tracking, footwork, one damage, Recovery and Global Attack Cooldown; final Console was clean.
+
+### Completed minimum horizontal-range multi-attack selection
+
+- Learner added `MinimumRange` / `MaximumRange` asset data, configured Attack1 `0..2m` and Attack2 `1.5..2.2m`, replaced EnemyAttack's singular serialized asset with an ordered candidate array, and separated runtime-only `currentAttackData` from shared configuration.
+- `TryStartAttack` rejects null/inactive targets and null arrays, skips null options, computes horizontal target distance, selects the first range-legal option once, then retains that asset throughout Startup/HitWindow/Recovery. Cleanup clears the selected reference.
+- Actual review caught reversed Inspector order and the initial use of three-dimensional `Vector3.Distance`, which was distorted by different enemy/player pivot heights. Learner corrected both; EnemyAI now uses the same horizontal distance definition and retains only a common outer `Attack Range = 2.2` plus its existing facing gate.
+- NearTarget saves Attack2 before Attack1. Learner Play Mode checks passed Attack1 at `1.2m`, Attack2 priority in the `1.7m` overlap, and Attack2-only selection at `2.1m`; both attacks dealt one damage and completed Recovery/Global Attack Cooldown normally. Final Scene values were restored/saved and Console contained zero errors/warnings.
+- Codex directly corrected only unambiguous indentation/blank-line defects after learner edits. Per-attack cooldown readiness, Weight/random choice, Attack3, Strong Combo, spacing behavior and a complete AI Agent were not added.
+
+### Converted Attack1 configuration to an independent melee attack asset
+
+- Learner used symbol rename to change the broad `EnemyAttackData` type to `MeleeAttackData`; the renamed script retained its original Unity GUID. They then changed the type to `ScriptableObject`, added its Project Create menu, removed `new MeleeAttackData()` from `EnemyAttack` and kept execution target/phase/timers on the component.
+- Codex added the explicitly requested Inspector-only `Phase Timing`, `Animation`, `Motion` and `Impact` headers without changing fields, defaults, accessors or gameplay logic.
+- Learner created `Assets/RelicGuardian/Enemy/Data/Attacks/Goblin_Attack1.asset`, restored the accepted Attack1 parameters and assigned it to NearTarget's `EnemyAttack`. Review caught and the learner corrected an initial missing asset reference/folder plus movement start `0.034s` versus the accepted `0.033s`.
+- Learner reported the connected Play Mode regression normal: Startup/animation, footwork/tracking, one damage, Recovery and Global Attack Cooldown all remained correct. The post-test Unity Console contained zero errors.
+- This establishes reusable Project-owned melee attack configuration, not multi-attack selection. Future ranged attacks remain a separate execution/data family; no universal ability framework or large enemy-data asset was added.
+
+### Separated tracking start from movement start for Attack2
+
+- Unity inspection confirmed `Attack2ForwardSwordShield` is a non-looping 30 FPS, 1.0-second Clip. Learner preview markers are tracking cutoff frame `9`, movement start frame `10`, likely contact frame `11.4`, one-foot plant/visible forward-travel end around frame `20`, and return to waiting pose at frame `29`; they confirmed tracking should begin at animation frame 0.
+- The observed frame-9 direction commit before frame-10 movement proved the old MovementStartTime lower bound could not represent Attack2. A proposed `10..10.1` tracking interval was rejected because its `0.0033s` duration can be skipped by ordinary Update sampling.
+- After explicit identifier/scope/lifetime guidance, learner added `trackingStartTime` and `TrackingStartTime` to `MeleeAttackData` and changed only `EnemyAttack.UpdateAttackTracking` to read that independent lower bound. Movement continues to use MovementStartTime/MovementEndTime and the same per-execution animation timer.
+- `Goblin_Attack1.asset` explicitly saves tracking start `0.033s` and end `0.067s`, preserving its verified first-frame window. Learner reported Attack1 tracking, forward motion, one damage, Recovery and Global Attack Cooldown unchanged; post-test Console contained zero errors.
+- Attack2's derived tracking/movement/contact times are `0..0.300s`, `0.333..0.667s` and `0.380s`; `0.967s` marks visual recovery to the waiting pose rather than displacement. Total code-driven movement distance and remaining phase/impact tuning are the next separate decision before creating and connecting `Goblin_Attack2.asset`.
+
 ### Completed Attack1Forward footwork and first-frame tracking
 
 - Migrated the local ignored Goblin Animator state's Motion from the prototype Attack1 Clip to `Attack1ForwardSwordShield` while retaining state path `Base Layer.Attack1SwordShield`, and set state Speed to `1`. The selected non-looping Clip is 30 FPS, frames 0-20, about `0.666667s`; Apply Root Motion remains off.
@@ -13,11 +43,19 @@ This file records daily progress, learned concepts, problems, and solutions.
 - Learner added `EnemyMovement.MoveDuringAttack(Vector3 direction, float distance)` so the movement owner applies an exact incremental horizontal distance through `CharacterController` without multiplying by `Time.deltaTime` again or changing facing.
 - Learner added an animation-relative execution timer to EnemyAttack. Successive `Mathf.InverseLerp` progress samples produce one frame's share of the configured total distance; cancellation/start reset the timer. Tracking is a separate request that runs before movement only from movement start through the first-frame cutoff and uses the saved accepted target.
 - Actual-file review corrected formatting only and identified one initially omitted Update call; the learner added the behavior call. The learner then separately reported the frames 1-10 footwork and frame-1-only tracking tests normal, with no reported airborne turn or post-landing slide. Post-test Unity Console checks contained zero errors and zero warnings.
-- Hit-time live-target, range and direction validation remains unimplemented, so the scheduled saved-target damage route can still produce a remote hit after the tracking cutoff. No Attack2/3 selection, Strong Combo, Root Motion, general priority system or deferred Death precision test was added.
+- This footwork batch did not yet include hit-time live-target, range or direction validation. No Attack2/3 selection, Strong Combo, Root Motion, general priority system or deferred Death precision test was added in that batch.
+
+### Completed Attack1 hit-time validation and real Miss paths
+
+- Learner added EnemyAttackData defaults/read-only accessors `ImpactRange = 2m` and `MaximumImpactFacingAngle = 30°`. Because these values already equal the accepted code defaults, the learner chose not to perform a no-op Inspector nudge; the current Scene will serialize an override only when real per-instance tuning occurs.
+- Learner authored `EnemyAttack.IsImpactValid(PlayerHitReceiver target)`. It rejects null/disabled receivers, flattens target direction to the horizontal plane, computes current distance and the angle from committed `transform.forward`, and checks both per-attack thresholds before `HitContext` creation or `ReceiveHit`.
+- Replacing the old null-only guard means Miss skips damage and confirmed-hit VFX/SFX without cancelling the attack. Threat removal already occurs at HitWindow entry, and the existing HitWindow, Recovery and Global Attack Cooldown continue unchanged.
+- C# compilation completed with zero warnings and zero errors. Learner runtime checks passed a normal front hit, moving beyond `2m`, moving outside the `30°` half-angle, and disabling `PlayerHitReceiver` during Startup. All three Miss routes produced no damage/confirmed feedback while attack recovery/cooldown remained normal; final Console contained zero errors and zero warnings.
+- This remains target-confirmed combat. Player death eligibility, weapon collision, obstacle/line-of-sight tests and Attack2/3 selection were not added.
 
 ### Next
 
-- Continue only Attack1 hit-time validation. Confirm first-test range/half-angle, add the minimal EnemyAttackData values, and validate the saved target against the attacker's committed forward direction immediately before ReceiveHit. A Miss skips damage/confirmed feedback but keeps the existing HitWindow, Recovery and Global Attack Cooldown flow.
+- Add only per-attack cooldown duration to shared configuration plus per-enemy runtime readiness/deadlines. Preserve the verified distance selector and existing Global Attack Cooldown. Keep Weight/random choice and the complete AI Agent as later concepts.
 
 ### Saved and synchronized the current combat and Attack1Forward checkpoint
 

@@ -1,12 +1,12 @@
 # Enemy Combat Agent Design
 
-Status: approved direction, consolidated 2026-09-05; receiving/feedback, minimum state/cancel, ordinary HitReaction/protection, Global Attack Cooldown, start-time range/facing admission, terminal Death, Perfect Guard Stagger, hit feedback/recoil, and Attack1 Forward footwork/limited tracking are runtime-verified through 2026-09-11. Remaining stages are proposed until actual code and runtime evidence confirm them.
+Status: approved direction, consolidated 2026-09-05; receiving/feedback, minimum state/cancel, ordinary HitReaction/protection, Global Attack Cooldown, start-time range/facing admission, terminal Death, Perfect Guard Stagger, hit feedback/recoil, Attack1/Attack2 data-driven execution, and minimum horizontal-range selection are runtime-verified through 2026-09-11. Per-attack cooldown/Weight selection and remaining stages are proposed until actual code and runtime evidence confirm them.
 
 ## Authority and Immediate Scope
 
 Actual code/assets and Git state, then CURRENT_STATE.md and ARCHITECTURE.md, remain implementation authority. This document supersedes earlier Enemy direction and conflicting future-order notes in Guard/presentation plans. HANDOFF.md remains the recent checkpoint and exact next-step handoff.
 
-The immediate feature is ordinary multi-attack selection. Death, HitResult/Perfect Guard Stagger, Attack Hitstop and small hit recoil are implemented; CURRENT_STATE.md records exact learner verification and deferred boundaries. Keep key code learner-authored and review one small module per batch. Historical descriptions below must be read against current source and ARCHITECTURE.md.
+The immediate feature remains the unfinished portion of ordinary multi-attack selection: per-attack cooldown eligibility, then Weight-based choice. The two-asset horizontal-range filter and deterministic first-legal tie-breaker are implemented; this is not a complete AI Agent. CURRENT_STATE.md records exact learner verification and deferred boundaries. Keep key code learner-authored and review one small module per batch.
 
 Verified baseline from current source inspection:
 
@@ -99,7 +99,7 @@ Natural finish and Cancel share cleanup where appropriate, but ending semantics,
 
 Implemented on 2026-09-09: EnemyAI begins Startup only when both range and the Inspector-tunable maximum horizontal facing angle pass. If range passes but facing does not, it stops translational movement and calls EnemyMovement.Turn(direction) without requesting an attack. The learner runtime-verified facing-away turn-in-place, no early telegraph/attack, admission at the saved `15°` threshold and a clean Console.
 
-This check answers whether Startup may begin. It does not prove that the later impact is valid. HitWindow-time target identity, active/alive status, distance and authored direction checks remain deferred to the dedicated Hit-Time Validation stage.
+This check answers whether Startup may begin; it does not itself prove that the later impact is valid. Attack1 now performs the separate HitWindow-time receiver-active, distance and authored-facing checks recorded below. Player alive/death eligibility remains deferred because that model does not yet exist.
 
 ## Ordinary HitReaction and Cooldown
 
@@ -137,7 +137,11 @@ Remove dead actors from attack candidates and Lock-On acquisition; an existing l
 
 ## Attack Selection and Cooldowns
 
-Ordinary attacks will use Attack1/2/3 content with a small per-attack configuration as needed: MinRange, MaxRange, Cooldown, Weight and Recovery. Selection admits only valid targets, eligible coarse states and ready cooldowns. Build reusable data only as the second/third attack needs it.
+Ordinary melee attacks use independent `MeleeAttackData` ScriptableObject assets. `Goblin_Attack1.asset` and `Goblin_Attack2.asset` store their own range, phase, animation, motion and impact configuration. `EnemyAttack` scans an ordered asset array once at accepted start, rejects invalid targets/null entries, chooses the first horizontally range-legal candidate and keeps that data for the full execution; target, phase, timers and selected reference remain per-component runtime state. This deterministic minimum is runtime-verified. The next additions are shared cooldown duration data and per-enemy readiness state, followed separately by Weight choice among legal ready attacks.
+
+TrackingStartTime/TrackingEndTime and MovementStartTime/MovementEndTime are independent per-attack intervals over the same animation-relative execution timer. This is implemented and Attack1-regression-verified because Attack2 visually commits direction at frame 9 before its frame-10 forward jump. Do not encode a sub-frame tracking workaround or make movement timing own the tracking lifetime.
+
+Future ranged attacks must use a separate ranged data/execution family rather than adding projectile-only fields or `isRanged` branches to `MeleeAttackData`. Share the coarse state, admission/cooldown and result contracts only when the first concrete ranged attack proves those seams. Do not build a universal ability framework or a large enemy-data asset pre-emptively.
 
 - Recovery is a move's internal recovery phase.
 - Global Attack Cooldown is the wait before the AI may request another attack. Set it on natural finish or cancellation, including Miss and Perfect Guard interruption. A state change cannot erase it or shorten an existing later deadline.
@@ -147,9 +151,9 @@ Cooldown expiry grants decision eligibility, not an immediate mandatory attack. 
 
 ## Hit-Time Validation
 
-The 2026-09-11 Attack1Forward slice adds code-driven `0.6m` footwork over animation frames 1-10 and target tracking only during frame 1. It intentionally does not count as impact validation: after the cutoff, the saved facing and trajectory stay committed, but the current HitWindow still delivers to the saved target without checking its impact-time geometry.
+Implemented for Attack1 on 2026-09-11: code-driven `0.6m` footwork runs over animation frames 1-10 and target tracking only during frame 1. After the cutoff, the saved facing and trajectory stay committed. Immediately before damage delivery, `IsImpactValid` rejects a null or disabled receiver and compares current horizontal distance plus direction against per-attack `ImpactRange` and `MaximumImpactFacingAngle`; the first defaults are `2m / 30°`. It does not rotate toward the target at impact. A failed test causes Miss, no ReceiveHit and no confirmed-hit feedback, while HitWindow/Recovery/Global Attack Cooldown continue.
 
-Before each enemy damage delivery, validate target identity, existence, active/alive/receivable status, current distance and authored attack direction/coverage. Use the attack's actual impact-time range/facing convention, not a fresh direction pointed at a distant target that makes every hit automatically valid. A failed test causes Miss, no ReceiveHit and no confirmed-hit feedback. Preserve the existing start-time eligibility check as a separate concern.
+Learner runtime verification passed a normal hit, moving out of range, moving outside the facing cone and disabling `PlayerHitReceiver` during Startup. Preserve the separate start-time eligibility check. Player alive/death eligibility, weapon-collider contact, obstacle/line-of-sight confirmation and multi-step deduplication remain future extensions rather than current guarantees.
 
 This remains target-confirmed combat initially; it does not claim weapon collider contact. Obstacle/line-of-sight checks are added only when concrete geometry requires them. Deduplicate per-step hit delivery. Threat timing/clearing must remain aligned with actual Startup and impact, including cancellation. Strong Combo must not be implemented until its miss branch is real.
 

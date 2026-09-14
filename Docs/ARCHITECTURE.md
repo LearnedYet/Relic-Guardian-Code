@@ -144,10 +144,10 @@ Soft recovery is presentation state inside `PlayerAnimator`, not a coarse gamepl
 
 | Component | Implemented responsibility |
 | --- | --- |
-| `EnemyAI` | Supplies Chase movement and attack decisions from coarse state, range and horizontal facing angle; in range but outside the angle threshold it stops translation and requests turn-in-place. It no longer reads EnemyAttackPhase or starts EnemyAttack directly. |
+| `EnemyAI` | Supplies Chase movement and attack requests from coarse state, a common horizontal outer range and horizontal facing angle; in range but outside the angle threshold it stops translation and requests turn-in-place. NearTarget's saved outer range is `2.2m`. It does not inspect the internal EnemyAttackPhase or choose a concrete attack asset. |
 | `EnemyStateController` | Owns coarse `Chase / Attacking / Staggered / Dead`, admits attack requests, accepts natural-finish notification, and owns ordinary surviving-hit duration, post-reaction protection and Global Attack Cooldown deadlines without exposing direct state writes. |
 | `EnemyMovement` | Applies enemy Transform facing and `CharacterController` movement. `Turn(direction)` rotates only; `Move(direction)` reuses that facing and then displaces. `MoveDuringAttack(direction, distance)` applies one already-calculated incremental attack distance without adding a second time multiplier or changing facing. |
-| `EnemyAttack` | Owns internal `Ready -> Startup -> HitWindow -> Recovery -> Ready`, telegraph/Animator triggering, a saved `PlayerHitReceiver` target, one Startup `AttackThreatContext`, animation-relative Attack1 early tracking and footwork requests, one scheduled hit-time `HitContext` delivery, and shared idempotent finish/cancel cleanup. One effective cleanup notifies the coarse owner to begin Global Attack Cooldown; repeated Ready cleanup does not extend it. |
+| `EnemyAttack` | Holds an ordered serialized `MeleeAttackData[] attackOptions`, filters the first horizontal-range-legal non-null asset at accepted start, and locks it in runtime-only `currentAttackData` for the whole execution. It owns internal `Ready -> Startup -> HitWindow -> Recovery -> Ready`, telegraph/Animator triggering, the saved target/threat, animation-relative tracking/footwork, hit-time validation, one `HitContext` delivery and idempotent cleanup. Cleanup clears the selected data and begins Global Attack Cooldown once. Shared asset configuration never owns per-enemy target, phase, timers or selection state. |
 | `EnemyAnimator` | Writes enemy movement speed and exposes presentation-only HitReaction and PlayDeath requests. PlayDeath clears Attack/HitReaction triggers and directly plays Base Layer.DeathSwordShield from time zero. Repeated hits during Staggered may restart GetHit without extending gameplay reaction time. |
 | `EnemyHealth` | Subtracts integer damage and exposes IsAlive; object lifetime is no longer changed here. |
 | `EnemyHitReceiver` | Rejects ineligible hits through CanReceiveHit; applies health, routes lethal damage to EnterDead (or disables state-less FarTarget), presents the accepted hit, then requests surviving reaction. Static IsValidTarget is shared by PlayerCombat and PlayerTargeting. |
@@ -159,8 +159,12 @@ Current enemy damage flow is:
 EnemyAI
 -> EnemyStateController.TryStartAttack(PlayerHitReceiver)
 -> admitted EnemyAttack.TryStartAttack(PlayerHitReceiver)
+-> reject null/inactive target and scan attackOptions in Inspector order
+-> choose first asset whose MinimumRange <= horizontal distance <= MaximumRange
+-> lock that asset as currentAttackData for this execution
 -> timed EnemyAttack.OpenHitWindow()
 -> EnemyAttack.ApplyDamage(PlayerHitReceiver)
+-> EnemyAttack.IsImpactValid(saved target)
 -> construct HitContext(DamageAmount, Source, IncomingDirection)
 -> PlayerHitReceiver.ReceiveHit(HitContext)
    -> handled Blocking coverage success: stop
@@ -182,14 +186,14 @@ Current Attack1 animation-relative movement flow is:
 
 ```text
 EnemyAttack starts Base Layer.Attack1SwordShield
--> during [MovementStartTime, TrackingEndTime), ask EnemyMovement.Turn(saved target direction)
+-> during [TrackingStartTime, TrackingEndTime), ask EnemyMovement.Turn(saved target direction)
 -> calculate previous/current normalized movement progress over [MovementStartTime, MovementEndTime]
 -> movementDistance * progress delta
 -> EnemyMovement.MoveDuringAttack(transform.forward, frameDistance)
 -> CharacterController.Move(normalized direction * exact incremental distance)
 ```
 
-Tracking runs before displacement and ends after the selected first animation-frame window. Later footwork retains the last applied facing. Cancellation resets the animation-relative timer, so it cannot resume stale displacement.
+Tracking runs before displacement and has its own configured start/end interval; it is not required to begin with movement. Attack1 currently uses `0.033..0.067s` for tracking and `0.033..0.333s` for movement. Attack2's observed direction commit at frame 9 before movement frame 10 is the concrete reason for this separation. Later footwork retains the last applied facing. Cancellation resets the shared animation-relative timer, so it cannot resume stale tracking or displacement.
 
 Current confirmed Player Attack hit flow is:
 
@@ -229,7 +233,7 @@ PlayerBlock.ResolveGuardHit(HitContext)
       └─ Perfect -> matching impact/audio + shared Hitstop request
 ```
 
-Range and horizontal facing angle are checked before attack Startup. When only range passes, EnemyAI stops translation and asks EnemyMovement to turn in place. The later Hit Window still damages the saved target without a new overlap, range, direction, active-target, or line-of-sight confirmation, so the current prototype remains a scheduled hit attempt rather than physical hitbox confirmation.
+Range and horizontal facing angle are checked before attack Startup. When only range passes, EnemyAI stops translation and asks EnemyMovement to turn in place. At the later Hit Window, `EnemyAttack.IsImpactValid` rejects a null or disabled saved receiver and requires current horizontal distance within `ImpactRange` plus current direction within `MaximumImpactFacingAngle` of the attacker's committed `transform.forward`. A failed check returns before `HitContext` creation/`ReceiveHit`, while the already-entered HitWindow continues into Recovery and Global Attack Cooldown normally. This remains target-confirmed combat rather than weapon-collider or line-of-sight confirmation; Player death eligibility does not exist yet.
 
 ## Implemented Architecture Invariants
 
@@ -275,6 +279,6 @@ EnemyHitPresentation.PresentHit requests the existing shared HitstopController a
 
 EnemyMovement owns configurable distance/duration, direction, elapsed time and active flag. LateUpdate requests the difference of successive 2t-t*t positions through CharacterController.Move. BeginRecoil replaces remaining motion; CancelRecoil and OnDisable clear it. Normal Move/Turn/Stop skip during recoil or zero deltaTime. EnemyStateController.TryStartHitReaction(Vector3) requests recoil only on admitted ordinary reaction or existing Staggered; deadlines are unchanged by repeated hits. TryStartAttack rejects IsRecoiling, and EnterDead cancels it immediately. HitContext direction is passed unchanged by EnemyHitReceiver; recoil flattens and normalizes it. No global/local time writer or root motion is added.
 
-## Single enemy attack data migration
+## Independent melee attack assets and minimum selection
 
-EnemyAttack holds one serialized EnemyAttackData object with read-only accessors for damage, startup/hit-window/recovery timing, animation lead time, Animator state name, movement start/end, tracking cutoff and total movement distance. Execution still uses existing phase/target runtime fields and cancellation. Animator.Play selects the configured state. Attack1 Forward displacement and limited early tracking are implemented; impact geometry and multi-attack selection remain pending.
+`MeleeAttackData` is a ScriptableObject configuration type with Project creation path `Relic Guardian/Enemy/Melee Attack Data`. `Goblin_Attack1.asset` and `Goblin_Attack2.asset` independently expose Selection, Phase Timing, Animation, Motion and Impact values through read-only accessors. Tracking and movement remain separate intervals over one animation-relative execution timer. `EnemyAttack` owns the ordered candidate array and runtime-selected reference; it chooses once at start and never reselects while Startup/HitWindow/Recovery is active. NearTarget currently gives Attack2 deterministic priority in the `1.5..2m` overlap, while Attack1 alone is legal below `1.5m` and Attack2 alone is legal over `2..2.2m`. This minimum range selector is runtime-verified. Per-attack cooldown readiness and Weight/random choice remain pending; future ranged attacks still require a separate execution/data family.

@@ -256,7 +256,10 @@ Approved future direction: `Docs/ENEMY_COMBAT_AGENT_DESIGN.md` (2026-09-05). The
 6. [x] Terminal Death with retained corpse and hit/target exclusion: learner accepted retention, feedback, target exclusion and Startup/HitWindow/Recovery/Staggered lethal interruption on 2026-09-10. Slice closed at learner request; explicit repeated-death/late-callback tests and exact same-frame arbitration are deferred limitations, not certified guarantees.
 7. [x] Minimal HitResult return and Perfect Guard forced attack cancellation/Stagger, independent of ordinary reaction cooldown; separate slow GetHit presentation and fixed gameplay deadline learner-runtime-verified 2026-09-10.
 8. [ ] Ordinary multi-attack selection using the established Global Attack Cooldown.
-9. [ ] Enemy hit-time distance, direction and live-target validation with actual Miss behavior. This remains separate from stage 4 start-time admission.
+   - [x] Add independent Attack1/Attack2 assets, per-attack minimum/maximum start ranges, ordered first-legal selection and one-execution data locking. Runtime checks passed Attack1 at `1.2m`, Attack2 priority at `1.7m`, and Attack2-only admission at `2.1m` on 2026-09-11.
+   - [ ] Add per-attack cooldown readiness without storing mutable deadlines in shared assets.
+   - [ ] Add Weight/random choice among legal ready attacks; array order is only the current deterministic tie-breaker.
+9. [x] Enemy hit-time receiver-active, horizontal-distance and committed-facing validation with actual Miss behavior. Normal hit, distance Miss, direction Miss, disabled-receiver Miss and unchanged Recovery/Cooldown were learner-runtime-verified 2026-09-11. This remains separate from stage 4 start-time admission; Player death, weapon collision and line of sight do not exist in this slice.
 10. [ ] Independent Strong Attack / Strong Combo stage: first establish Player HitStun, functional Dodge and death-safe control recovery; then add PerfectOnly, clear telegraph, first-hit commit, per-step hit validation and reliable bilateral cleanup. Strong cooldown is consumed on accepted start. Guaranteed three-hit capture requires a separate lightweight pairing/position-correction sub-stage.
 11. [ ] Spacing/Approach/Retreat/Strafe/Wait and decision pacing with separate move/facing directions; reduce the current full-speed Chase pressure during Global Attack Cooldown as part of this stage. EnemyMovement retains execution ownership.
 12. [ ] Integrated moderately aggressive SwordShield Goblin acceptance across discovery, chase, attack selection/cooldowns, reactions, Perfect Guard, Strong Combo and Death.
@@ -290,7 +293,7 @@ The ordered stages above define the future attack, state and death work; do not 
 ## Phase 7 - Optimization
 
 - [ ] Object Pool
-- [ ] ScriptableObject
+- [x] Use an independent `MeleeAttackData` ScriptableObject for reusable Enemy melee-attack configuration; broader data extraction remains demand-driven.
 - [ ] Addressables
 - [ ] Basic Profiling
 
@@ -308,4 +311,4 @@ HitResult return, PerfectGuard attack cancellation and stronger Stagger are impl
 
 ## Attack1 first: data migration and Forward footwork
 
-Single EnemyAttackData migration plus Attack1Forward footwork and frame-1-only tracking are implemented and learner-runtime-accepted. The saved local slice moves `0.6m` from animation frame 1 through frame 10, permits tracking only during frame 1, keeps code-driven CharacterController displacement and leaves Apply Root Motion off. Hit-time live-target/distance/direction validation is the next bounded slice before Attack2/3 selection. See CURRENT_STATE for the exact boundary.
+`MeleeAttackData` now backs independent `Goblin_Attack1.asset` and `Goblin_Attack2.asset` configurations. Both non-Root-Motion attacks preserve their own tracking, movement, phase, animation, impact and start-range values. `EnemyAttack` now chooses the first horizontal-range-legal asset from its ordered array and locks it through the full execution. Learner runtime checks passed Attack1 at `1.2m`, Attack2 priority at `1.7m`, and Attack2-only selection at `2.1m`, with normal damage/recovery/cooldown and a clean Console. This completes only minimum deterministic range selection; per-attack cooldown readiness, Weight/random choice and the complete AI Agent remain pending. See CURRENT_STATE for the exact next boundary.

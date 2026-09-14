@@ -15,11 +15,9 @@ public class EnemyAI : MonoBehaviour
             enemyMovement.Stop();
             return;
         }
-
-        float distanceToTarget = Vector3.Distance(transform.position, attackTarget.transform.position);
-
         Vector3 directionToTarget = attackTarget.transform.position - transform.position;
         directionToTarget.y = 0f;
+        float distanceToTarget = directionToTarget.magnitude;
 
         if (distanceToTarget <= attackRange)
         {
