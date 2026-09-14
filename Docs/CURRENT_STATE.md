@@ -70,6 +70,8 @@ Preserve the runtime-verified two-attack range selector and add only per-attack 
 
 ## Git and Protected Local State
 
+- Local minimum multi-attack feature checkpoint: `1db72b6 Add minimum enemy multi-attack selection`. Its explicit 16-path allowlist contains the project-owned Enemy code, preserved-GUID `MeleeAttackData` rename, Attack1/Attack2 data assets and metadata, and maintained documents; protected mixed Scene/player assets and all licensed resources remain outside it.
+- GitHub flattened code/document mirror checkpoint: `1a69b38 Sync enemy multi-attack range selection`; the push was verified with `git ls-remote` at `1a69b386c3f929703c97b45d1d37e7de30bad98c`. The mirror contains only three root-level Enemy C# changes and six maintained documents, preserving unrelated remote-only files and excluding `.meta`, data assets, Scene, Prefab, Controller and licensed content.
 - Local Attack1Forward footwork/tracking feature checkpoint: `c8cfacf Add Attack1 Forward footwork and tracking`. It contains only the three project-owned Enemy scripts, maintained documentation and the archived prior Handoff. Scene/Prefab/player controller/PlayerHealth and the whitespace-only PlayerActionController change remain unstaged.
 - GitHub code/document mirror checkpoint: `62702f7 Sync enemy combat through Attack1 Forward footwork`; the 2026-09-11 push was verified with `git ls-remote` at `62702f7a4d33ffe2d63754d860313261bf3491ca`.
 

@@ -20,6 +20,16 @@ This file records daily progress, learned concepts, problems, and solutions.
 - NearTarget saves Attack2 before Attack1. Learner Play Mode checks passed Attack1 at `1.2m`, Attack2 priority in the `1.7m` overlap, and Attack2-only selection at `2.1m`; both attacks dealt one damage and completed Recovery/Global Attack Cooldown normally. Final Scene values were restored/saved and Console contained zero errors/warnings.
 - Codex directly corrected only unambiguous indentation/blank-line defects after learner edits. Per-attack cooldown readiness, Weight/random choice, Attack3, Strong Combo, spacing behavior and a complete AI Agent were not added.
 
+### Saved and synchronized the Attack2/minimum-selection checkpoint
+
+- Restored the generated NuGet assets and rebuilt `Assembly-CSharp.csproj` with zero warnings and zero errors. The final learner Play Mode evidence and clean Unity Console remain the runtime verification.
+- Created local full-project feature checkpoint `1db72b6 Add minimum enemy multi-attack selection` from an explicit 16-path allowlist. It includes the Enemy code, preserved-GUID `MeleeAttackData` rename, project-owned Attack1/Attack2 ScriptableObject assets plus metadata, and six maintained documents.
+- Excluded the protected mixed SampleScene, player Animator/Prefab/scripts and every ignored `Assets/LocalLicensed/` resource. No broad staging command was used.
+- The Windows proxy at `127.0.0.1:7897` accepted connections but HTTP CONNECT and direct Git TLS attempts failed; process-local SOCKS5 plus OpenSSL/HTTP 1.1 succeeded. No persistent Git/proxy setting changed.
+- Fetched `origin --prune`, confirmed GitHub `main` at `385c1b1`, and based clean branch `codex/enemy-multi-attack-sync-20260914` on that exact remote state. Remote-only `HANDOFF` content and two unrelated CRLF-only checkout files remained outside the mirror index.
+- Created flattened mirror checkpoint `1a69b38 Sync enemy multi-attack range selection` from three root-level Enemy C# changes and six maintained documents. No Unity `.meta`, data asset, Scene, Prefab, Controller, licensed resource or unrelated remote file was included.
+- Pushed normally without force and verified GitHub `refs/heads/main` at `1a69b386c3f929703c97b45d1d37e7de30bad98c`.
+
 ### Converted Attack1 configuration to an independent melee attack asset
 
 - Learner used symbol rename to change the broad `EnemyAttackData` type to `MeleeAttackData`; the renamed script retained its original Unity GUID. They then changed the type to `ScriptableObject`, added its Project Create menu, removed `new MeleeAttackData()` from `EnemyAttack` and kept execution target/phase/timers on the component.
