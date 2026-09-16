@@ -37,8 +37,9 @@ Keep these files unstaged unless a future task explicitly scopes them:
 ## Git synchronization
 
 - Previous local weighted-selection checkpoint: `5e2e26d Complete weighted enemy attack selection`.
-- Previous verified GitHub `main`: `08bf13941c9fc66d9bc640d479a378efcf8be3d2` (`Record enemy multi-attack checkpoints`).
-- The spacing feature checkpoint and flattened GitHub mirror will be recorded here after the explicitly requested commit/push completes.
+- Local spacing feature checkpoint: `44948c3 Add enemy combat spacing and directional movement`.
+- Flattened GitHub spacing feature checkpoint: `e03ac4e Sync enemy combat spacing and movement`; its normal push was verified at `e03ac4e5aba6a4de2a1b4e40aa2c19e5926a8c27` before the record-only documentation follow-up.
+- Both checkpoints used explicit allowlists. The Unity Scene, local licensed Animator/resources, protected Player files, Unity `.meta`/data assets in the mirror, and the unrelated `NewMonoBehaviourScript.cs` remained excluded according to their respective repository boundaries.
 - Local full-project history and flattened GitHub mirror history remain separate. Never pull or merge the mirror `main` directly into this full Unity workspace.
 
 The preceding Handoff is archived at `Docs/Archive/HANDOFF_2026-09-14_WEIGHTED_ATTACK_SELECTION.md`.
