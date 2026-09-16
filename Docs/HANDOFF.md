@@ -32,14 +32,14 @@ Keep these files unstaged unless a future task explicitly scopes them:
 - `Assets/RelicGuardian/Player/Scripts/PlayerHealth.cs`
 - `Assets/Scenes/SampleScene.unity`
 
-`Assets/LocalLicensed/` and `Assets/LocalLicensed.meta` remain local-only and must never be committed or uploaded. The Scene contains the local `Goblin_Spacing.asset` assignment plus older mixed licensed wiring, so it remains outside focused commits. The pre-existing untracked `Assets/RelicGuardian/Enemy/Data/Move/NewMonoBehaviourScript.cs` and its meta were not part of this feature and remain uncommitted pending an explicit cleanup decision.
+`Assets/LocalLicensed/` and `Assets/LocalLicensed.meta` remain local-only and must never be committed or uploaded. The Scene contains the local `Goblin_Spacing.asset` assignment plus older mixed licensed wiring, so it remains outside focused commits. The earlier unrelated `Assets/RelicGuardian/Enemy/Data/Move/NewMonoBehaviourScript.cs` was never committed and is absent from the final working tree.
 
 ## Git synchronization
 
 - Previous local weighted-selection checkpoint: `5e2e26d Complete weighted enemy attack selection`.
 - Local spacing feature checkpoint: `44948c3 Add enemy combat spacing and directional movement`.
 - Flattened GitHub spacing feature checkpoint: `e03ac4e Sync enemy combat spacing and movement`; its normal push was verified at `e03ac4e5aba6a4de2a1b4e40aa2c19e5926a8c27` before the record-only documentation follow-up.
-- Both checkpoints used explicit allowlists. The Unity Scene, local licensed Animator/resources, protected Player files, Unity `.meta`/data assets in the mirror, and the unrelated `NewMonoBehaviourScript.cs` remained excluded according to their respective repository boundaries.
+- Both checkpoints used explicit allowlists. The Unity Scene, local licensed Animator/resources, protected Player files and Unity `.meta`/data assets in the mirror remained excluded according to their respective repository boundaries; the earlier unrelated template script was never included.
 - Local full-project history and flattened GitHub mirror history remain separate. Never pull or merge the mirror `main` directly into this full Unity workspace.
 
 The preceding Handoff is archived at `Docs/Archive/HANDOFF_2026-09-14_WEIGHTED_ATTACK_SELECTION.md`.

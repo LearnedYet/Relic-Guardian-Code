@@ -34,7 +34,7 @@ This file records daily progress, learned concepts, problems, and solutions.
 
 - Rebuilt the solution with zero warnings and zero errors and confirmed the final Unity Console contained zero errors/warnings.
 - Created local full-project checkpoint `44948c3 Add enemy combat spacing and directional movement` from an explicit 17-path allowlist. It includes project-owned Enemy code, `EnemySpacingData` metadata/asset, maintained documents and the archived preceding Handoff.
-- Kept the mixed SampleScene, protected Player files, ignored licensed resources and unrelated `Data/Move/NewMonoBehaviourScript.cs` outside the local commit.
+- Kept the mixed SampleScene, protected Player files and ignored licensed resources outside the local commit. The unrelated `Data/Move/NewMonoBehaviourScript.cs` was never committed and was absent by the final audit.
 - Read the active Windows proxy `127.0.0.1:7897`, applied SOCKS5/OpenSSL/HTTP 1.1 only to the relevant Git processes, and fetched `origin --prune`. Remote `main` remained at `08bf139` with no remote-only work to integrate.
 - Created clean mirror branch `codex/enemy-spacing-sync-20260916` from current `origin/main`, copied an explicit 13-file flattened allowlist and kept two unrelated CRLF checkout changes unstaged.
 - Created mirror feature checkpoint `e03ac4e Sync enemy combat spacing and movement`, pushed normally without force, and verified `refs/heads/main` at `e03ac4e5aba6a4de2a1b4e40aa2c19e5926a8c27`.
