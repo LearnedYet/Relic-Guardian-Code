@@ -1,12 +1,12 @@
 # Enemy Combat Agent Design
 
-Status: approved direction, consolidated 2026-09-05; receiving/feedback, minimum state/cancel, ordinary HitReaction/protection, Global Attack Cooldown, start-time range/facing admission, terminal Death, Perfect Guard Stagger, hit feedback/recoil, Attack1/Attack2 data-driven execution, and minimum horizontal-range selection are runtime-verified through 2026-09-11. Per-attack cooldown/Weight selection and remaining stages are proposed until actual code and runtime evidence confirm them.
+Status: approved direction, consolidated 2026-09-05; receiving/feedback, minimum state/cancel, ordinary HitReaction/protection, Global Attack Cooldown, start-time range/facing admission, terminal Death, Perfect Guard Stagger, hit feedback/recoil, Attack1/Attack2 data-driven execution, horizontal-range selection, per-attack cooldown and contextual Weight choice are runtime-verified through 2026-09-14. Remaining stages are proposed until actual code and runtime evidence confirm them.
 
 ## Authority and Immediate Scope
 
 Actual code/assets and Git state, then CURRENT_STATE.md and ARCHITECTURE.md, remain implementation authority. This document supersedes earlier Enemy direction and conflicting future-order notes in Guard/presentation plans. HANDOFF.md remains the recent checkpoint and exact next-step handoff.
 
-The immediate feature remains the unfinished portion of ordinary multi-attack selection: per-attack cooldown eligibility, then Weight-based choice. The two-asset horizontal-range filter and deterministic first-legal tie-breaker are implemented; this is not a complete AI Agent. CURRENT_STATE.md records exact learner verification and deferred boundaries. Keep key code learner-authored and review one small module per batch.
+Ordinary two-attack selection is complete: horizontal range and per-enemy cooldown establish eligibility, then per-enemy list-entry Weight resolves simultaneous legal candidates. This is not a complete AI Agent. Before implementation resumes, select the next independent slice through CURRENT_STATE.md; keep key code learner-authored and review one small module per batch.
 
 Verified baseline from current source inspection:
 
@@ -20,7 +20,7 @@ Verified baseline from current source inspection:
 
 ## Ordered Development Stages
 
-Stages 1-7 are implemented; see CURRENT_STATE.md for acceptance limits. Stage 8 is next. Complete one concept and its runtime checks before continuing.
+Stages 1-9 and the deliberately reordered first spacing slice in stage 11 are implemented; see CURRENT_STATE.md for acceptance limits. Stage 10 remains pending and still requires separate Player HitStun, Dodge and death-safe recovery prerequisites. Complete one concept and its runtime checks before continuing.
 
 1. Minimum EnemyHitReceiver, then confirmed Hit VFX, then Hit SFX. Preserve the existing Player Attack confirmation and damage semantics.
 2. Minimum Enemy coarse state authority plus reliable EnemyAttack.Cancel() and natural-finish coordination. Introduce states only as their consumers become real.
@@ -32,7 +32,7 @@ Stages 1-7 are implemented; see CURRENT_STATE.md for acceptance limits. Stage 8 
 8. Ordinary multi-attack selection using the established Global Attack Cooldown.
 9. Enemy hit-time distance/direction/target validation, establishing an actual Miss path independently of start-time admission.
 10. Strong Attack / Strong Combo as an independent feature. Required preceding sub-stages: functional Player HitStun, Dodge with explicit defensive rules, and a compatible player death/invalid-target exit. Then add PerfectOnly, telegraph, first-hit commit and multi-step execution.
-11. Combat spacing, independent move/facing directions, Strafe/Retreat/Approach/Wait and distance/cooldown-based decisions.
+11. Combat spacing, independent move/facing directions, Strafe/Retreat/Approach/Wait and distance/cooldown-based decisions. The first always-engaged-target slice is implemented and runtime-accepted; detection, target loss and navigation remain later extensions.
 12. Integrated first SwordShield Goblin Combat Agent acceptance.
 
 Attack Hitstop remains a separate optional tuning checkpoint after confirmed feedback is stable; it is not silently included in stage 1. A guaranteed three-hit capture is a further pairing/position-correction sub-stage within Strong Combo, not an automatic consequence of stage 9 commit.
@@ -137,7 +137,7 @@ Remove dead actors from attack candidates and Lock-On acquisition; an existing l
 
 ## Attack Selection and Cooldowns
 
-Ordinary melee attacks use independent `MeleeAttackData` ScriptableObject assets. `Goblin_Attack1.asset` and `Goblin_Attack2.asset` store their own range, phase, animation, motion and impact configuration. `EnemyAttack` scans an ordered asset array once at accepted start, rejects invalid targets/null entries, chooses the first horizontally range-legal candidate and keeps that data for the full execution; target, phase, timers and selected reference remain per-component runtime state. This deterministic minimum is runtime-verified. The next additions are shared cooldown duration data and per-enemy readiness state, followed separately by Weight choice among legal ready attacks.
+Ordinary melee attacks use independent `MeleeAttackData` ScriptableObject assets. `Goblin_Attack1.asset` and `Goblin_Attack2.asset` store their own range, cooldown duration, phase, animation, motion and impact configuration. Each enemy's serialized `MeleeAttackOption` entries pair those shared assets with contextual Weight. `EnemyAttack` rejects invalid targets and filters non-null, positive-Weight, horizontally range-legal Ready entries, then uses a two-pass weighted roll and keeps the selected data for the full execution. Target, phase, timers, selected reference and asset-to-deadline Dictionary remain per-component runtime state. Accepted start consumes per-attack cooldown; later failure or interruption does not refund it. This ordinary two-attack selection is runtime-verified.
 
 TrackingStartTime/TrackingEndTime and MovementStartTime/MovementEndTime are independent per-attack intervals over the same animation-relative execution timer. This is implemented and Attack1-regression-verified because Attack2 visually commits direction at frame 9 before its frame-10 forward jump. Do not encode a sub-frame tracking workaround or make movement timing own the tracking lifetime.
 
@@ -183,9 +183,9 @@ Both participants must release this execution's control/position commitment on n
 
 ## Spacing, Detection and Animation Resources
 
-Planned behavior: Idle -> detect player -> Chase -> Combat. Define target loss and detection/engagement ranges when that slice arrives. Inside Combat: far -> Approach/WalkForward; farther -> Chase/Run; ideal distance -> Strafe/Wait; too close -> Retreat; legal opportunity -> Attacking. Use distinct enter/exit distance thresholds or equivalent bounded decisions to avoid oscillating at a boundary. Cooldown and distance do not bypass state permission.
+Implemented first spacing slice: the existing always-engaged target remains in coarse Chase while `EnemyAI` internally chooses Run, Approach, Retreat, Strafe or Wait. A legal Ready attack is attempted before fallback spacing, so movement timing never becomes a second attack gate. Retreat uses separate enter/exit thresholds and enters Wait when complete; Strafe chooses a random side once, uses a fixed duration and alternates with randomized Wait. Detection, target loss and engagement boundaries are not implemented yet.
 
-At spacing implementation, separate MoveDirection from FacingDirection. Retreat moves away while facing the player; Strafe moves tangentially while facing the player. EnemyMovement keeps both actual displacement and facing execution. Normal locomotion stays non-Root-Motion with CharacterController. Special attack Root Motion may be tested later in its own explicit movement contract without adding a competing writer for normal AI motion.
+MoveDirection and FacingDirection are separate requests. Retreat moves away while facing the player; Strafe moves tangentially while facing the player. `EnemyMovement` keeps both actual displacement and facing execution, and `EnemyAnimator` consumes actual local velocity with visual-only damping. Normal locomotion remains non-Root-Motion through CharacterController. Shared tuning lives in `EnemySpacingData`; current behavior, deadline and strafe side remain per-enemy runtime state.
 
 The first-version selected set is `IdleSwordShield`, `RunSwordShield`, non-Root-Motion `WalkForward/WalkBackwards/StrafeLeft/StrafeRightSwordShield`, three independent non-Root-Motion `Attack1/2/3ForwardSwordShield` Clips, `GetHitSwordShield`, and `DeathSwordShield`. Strong Combo will use the three independent Forward Attacks rather than the packaged `2HitComboSwordShield` or `3HitComboSwordShield` as formal Gameplay Clips. `BlockSwordShield`, `IdleProtectedSwordShield`, `WalkNormalSwordShield`, Dagger and Slingshot families are outside the first version. Perfect Guard Stagger may initially reuse `GetHitSwordShield`; no dedicated Stagger Clip is selected. Exact test paths, GUIDs and main-project import status are maintained in `ENEMY_COMBAT_RESOURCE_TRACKING.md`.
 

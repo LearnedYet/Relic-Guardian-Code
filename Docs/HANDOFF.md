@@ -1,40 +1,44 @@
 # Relic Guardian Current Handoff
 
-Updated: 2026-09-11. Attack1Forward footwork and frame-1-only tracking are complete; hit-time validation is next.
+Updated: 2026-09-16. The first enemy combat-spacing, directional-locomotion and shared-data slice is runtime-verified and ready for a focused checkpoint.
 
 ## Resume
 
-Follow AGENTS.md and relic-guardian-context bootstrap; CURRENT_STATE.md owns the Exact Next Step. Continue only Attack1 impact-time live-target/distance/direction validation before Attack2/3. Learner remains the author of key code and Editor configuration. Give exact file/class/method anchors, explain each new identifier first, and review one small functional batch after the learner edits it.
+Follow `AGENTS.md` and the `relic-guardian-context` bootstrap; `CURRENT_STATE.md` owns the Exact Next Step. The learner remains the author of key gameplay and presentation code unless they explicitly request takeover for a bounded scope. Unity MCP is connected to `My project@f22d513a32eb5447`, but the instance hash may change after restart.
+
+Do not extend this checkpoint from a generic `继续`. First choose one independent next slice: detection/target-loss and obstacle expectations, a concrete locomotion issue observed in the real camera, or the approved Strong Attack prerequisites beginning with Player HitStun, functional Dodge and death-safe recovery. Do not bundle these paths.
 
 ## Current implementation
 
-- EnemyAttack holds one nested `EnemyAttackData` object and reads damage, Startup/HitWindow/Recovery timing, animation lead/state name, movement start/end, tracking cutoff and total movement distance through read-only properties.
-- Local `Base Layer.Attack1SwordShield` now uses the selected `Attack1ForwardSwordShield` Motion at Speed `1`; state name remains unchanged. Apply Root Motion is off.
-- NearTarget's saved local data is damage `1`, Startup `0.5`, HitWindow `0.2`, Recovery `0.4`, animation lead `0.1667`, movement start `0.033`, tracking end `0.067`, movement end `0.333`, and distance `0.6`.
-- `EnemyAttack` tracks only while animation elapsed time is within `[MovementStartTime, TrackingEndTime)`, before applying movement. Later frames retain the last facing. It computes movement from successive normalized progress samples so total configured distance is distributed across the window.
-- `EnemyMovement.MoveDuringAttack` applies the already-calculated incremental horizontal distance through `CharacterController`; it does not add another time multiplier or turn the enemy.
-- Attack start/cancel reset the animation-relative timer. Existing Death/Perfect Guard cancellation and Global Attack Cooldown boundaries remain unchanged.
+- `EnemyAI` keeps coarse-state checks and internal `Run / Approach / Retreat / Strafe / Wait` decisions. Inside attack range it checks facing and requests a legal attack before fallback spacing, so Wait/Retreat timing never becomes another attack gate.
+- `EnemyMovement.Move(moveDirection, facingDirection, speedMultiplier)` owns normal facing/displacement. Retreat moves away while facing the player; Strafe moves tangentially while facing the player. Apply Root Motion remains disabled.
+- `EnemyMovement.CurrentLocalHorizontalVelocity` supplies real movement evidence. `EnemyAnimator` damps `Speed / MoveX / MoveZ` with `locomotionDampTime = 0.12s`; the local licensed Goblin controller uses a directional Blend Tree.
+- `EnemySpacingData` owns categorized shared Attack Admission, Distance Bands, Behavior Timing and Speed Multipliers. `Goblin_Spacing.asset` saves range/angle `2.2m / 15°`, Retreat `1.0m / 1.6m`, fixed Strafe `1.75s`, Wait `1.5..2.0s`, speed multipliers `1 / 0.5 / 0.25 / 0.35`, and Approach/Run thresholds `1.5m / 5m`.
+- Per-enemy mutable state remains on `EnemyAI`: current behavior, behavior-end deadline and strafe side. The asset stores no target, phase, timer or execution state.
 
-## Runtime evidence and remaining gap
+## Runtime evidence and limits
 
-- Learner separately runtime-verified the frame-1-to-frame-10 footwork and the frame-1-only tracking behavior. No issue, airborne turning or post-landing slide was reported. Post-test Console checks contained zero errors and zero warnings.
-- The current HitWindow still sends the scheduled hit to the saved target without current live/active, distance or direction validation. Limited tracking is not hit validation and does not yet create a Miss.
-- First-test impact tuning was proposed but not accepted: range `2m`, maximum facing half-angle `30°`. Confirm it before adding fields. Validate against the attacker's committed `transform.forward`, not by rotating toward the target at impact. A failed test should skip ReceiveHit/confirmed feedback while HitWindow, Recovery and Global Attack Cooldown continue.
-- No Attack2/3 selection, Strong Combo, Root Motion or deferred Death precision test was added.
+- Learner checks passed Run/Approach, Retreat, left/right Strafe, Wait pacing, directional presentation, attack-first interruption and the final ScriptableObject migration regression.
+- Independent solution build and final Unity Console checks ended with zero errors and zero warnings.
+- Detection/target loss, patrol, obstacle-aware navigation and integrated Strong Combo remain unimplemented. The accepted test covers the current always-engaged target in the existing Scene, not a complete navigation/agent acceptance suite.
 
 ## Protected local state
 
-- `SampleScene.unity` is a large mixed dirty file containing the accepted NearTarget references/tuning plus older protected local work; keep it unstaged.
-- `RelicGuardianPlayer.controller`, `RelicGuardianPlayer.prefab`, `PlayerHealth.cs`, and the whitespace-only `PlayerActionController.cs` change remain protected and unstaged.
-- The local Goblin Animator Controller and all licensed FBX resources remain ignored under `Assets/LocalLicensed/`; record their configuration but never upload them.
-- Code/document Git checkpoints intentionally cannot reproduce local Scene/Animator wiring by themselves. Inspect actual saved local assets before trusting serialized values.
+Keep these files unstaged unless a future task explicitly scopes them:
+
+- `Assets/RelicGuardian/Player/Animator/RelicGuardianPlayer.controller`
+- `Assets/RelicGuardian/Player/RelicGuardianPlayer.prefab`
+- `Assets/RelicGuardian/Player/Scripts/PlayerActionController.cs`
+- `Assets/RelicGuardian/Player/Scripts/PlayerHealth.cs`
+- `Assets/Scenes/SampleScene.unity`
+
+`Assets/LocalLicensed/` and `Assets/LocalLicensed.meta` remain local-only and must never be committed or uploaded. The Scene contains the local `Goblin_Spacing.asset` assignment plus older mixed licensed wiring, so it remains outside focused commits. The pre-existing untracked `Assets/RelicGuardian/Enemy/Data/Move/NewMonoBehaviourScript.cs` and its meta were not part of this feature and remain uncommitted pending an explicit cleanup decision.
 
 ## Git synchronization
 
-- Local full-project feature checkpoint: `c8cfacf Add Attack1 Forward footwork and tracking`.
-- Flattened GitHub feature checkpoint: `62702f7 Sync enemy combat through Attack1 Forward footwork`.
-- The normal 2026-09-11 feature push was verified with `git ls-remote`: `refs/heads/main` reached `62702f7a4d33ffe2d63754d860313261bf3491ca` before the record-only documentation follow-up.
-- The local commit used an explicit 12-file allowlist: three Enemy scripts, eight maintained documents and one archived Handoff. The mirror used an explicit 26-file allowlist to bring the public code/document branch forward through all locally saved combat work since its prior checkpoint.
-- Full Unity history and the flattened mirror remain separate. Scene, Prefab, Controller, Unity `.meta`, licensed assets and unrelated remote-only files were excluded.
+- Previous local weighted-selection checkpoint: `5e2e26d Complete weighted enemy attack selection`.
+- Previous verified GitHub `main`: `08bf13941c9fc66d9bc640d479a378efcf8be3d2` (`Record enemy multi-attack checkpoints`).
+- The spacing feature checkpoint and flattened GitHub mirror will be recorded here after the explicitly requested commit/push completes.
+- Local full-project history and flattened GitHub mirror history remain separate. Never pull or merge the mirror `main` directly into this full Unity workspace.
 
-The preceding Handoff is archived at `Docs/Archive/HANDOFF_2026-09-10_ATTACK1_DATA_MIGRATION.md`.
+The preceding Handoff is archived at `Docs/Archive/HANDOFF_2026-09-14_WEIGHTED_ATTACK_SELECTION.md`.

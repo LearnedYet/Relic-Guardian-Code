@@ -4,6 +4,65 @@ This file records daily progress, learned concepts, problems, and solutions.
 
 ---
 
+## 2026-09-16
+
+### Completed first enemy combat-spacing and directional-locomotion slice
+
+- Added internal `Run / Approach / Retreat / Strafe / Wait` behavior selection without expanding the coarse `EnemyState` enum. Far distance runs, the approach band walks, very close distance retreats with enter/exit hysteresis, and the in-range fallback alternates Strafe with timed Wait.
+- `EnemyMovement.Move` now receives separate movement and facing directions plus a speed multiplier. Retreat moves away while facing the player; Strafe moves tangentially while facing the player. CharacterController remains the sole displacement boundary and Apply Root Motion remains off.
+- In-range attack admission now runs before fallback spacing. A legal Ready attack can interrupt Retreat or Wait; movement timing adds no independent attack permission gate. Retreat ends through `EnterWait`, while turn-in-place and accepted attack no longer assign a fake Wait without a deadline.
+- `EnemyMovement` exposes actual local horizontal velocity. `EnemyAnimator` damps `Speed / MoveX / MoveZ` over `0.12s`, and the local ignored Goblin controller uses a directional locomotion Blend Tree for Idle, WalkForward, Run, WalkBackwards, StrafeLeft and StrafeRight.
+- Final accepted local tuning is attack range/angle `2.2m / 15°`, retreat enter/exit `1.0m / 1.6m`, fixed Strafe `1.75s`, Wait `1.5..2.0s`, Run/Approach/Retreat/Strafe multipliers `1 / 0.5 / 0.25 / 0.35`, and Approach/Run thresholds `1.5m / 5m`.
+
+### Migrated spacing configuration to shared data
+
+- Added categorized `EnemySpacingData` and project-owned `Goblin_Spacing.asset`. `EnemyAI` now reads attack-admission, distance-band, timing and speed configuration from that asset.
+- Preserved per-enemy runtime ownership of current behavior, absolute behavior-end time and strafe side. Consolidated the previous `1.5..2.0s` random Strafe duration to the explicitly requested fixed `1.75s` average; Wait remains randomized.
+- Codex performed the final migration and Scene reference assignment after explicit learner takeover. The mixed SampleScene and ignored licensed Animator remain local-only and outside commit scope.
+- Learner reported the final Play Mode behavior and post-migration regression normal. Independent build and Unity Console checks completed with zero errors and zero warnings.
+
+### Learning evidence
+
+- Learner questioned enum choice, method responsibility, AI-versus-movement ownership, state-transition nesting and when reusable configuration justifies a ScriptableObject.
+- They correctly identified that Wait must not become an attack gate and that a return inside the old Retreat branch prevented later attack checks. They still needed substantial scaffolding for the final priority refactor and explicit Codex takeover for the safe data migration, so the topic remains Practising.
+
+### Next
+
+- Select one independent slice after this checkpoint: detection/target loss and obstacle expectations, a concrete camera-visible locomotion issue, or the Strong Attack prerequisites beginning with Player HitStun/Dodge/death-safe recovery. Do not bundle them.
+
+---
+
+## 2026-09-14
+
+### Completed per-attack cooldown eligibility
+
+- Learner added shared `CooldownDuration` configuration to `MeleeAttackData` while keeping mutable state out of the ScriptableObject assets.
+- Each `EnemyAttack` instance now owns `Dictionary<MeleeAttackData, float> nextAttackAllowedTimes`. A missing entry is Ready; an existing entry is Ready only after scaled `Time.time` reaches its absolute deadline.
+- Ordered selection now requires each candidate to be non-null, horizontally range-legal and individually Ready. An accepted selection records `Time.time + CooldownDuration` before Startup, so Miss, Perfect Guard interruption and later cancellation do not refund the per-attack cooldown. Existing Global Attack Cooldown remains separate and still begins during effective cleanup.
+- Initial `6 / 6s` testing passed `Attack2 -> Attack1 -> Attack2` fallback in the overlap, no-ready waiting at `1.2m`, and Perfect Guard non-refund. Final saved values are Attack1 `0s` and Attack2 `4s`; the learner verified normal Attack1 Global-Cooldown pacing at `1.2m`, `Attack2 -> Attack1` in a maintained `1.7m` overlap, unchanged damage/Recovery and a clean Console.
+- Learner initially described `MeleeAttackData` as a stack-stored value type, then corrected the model: it is a shared referenced ScriptableObject asset. Shared duration rules and per-enemy mutable deadlines therefore have different owners. Dictionary identity also avoids coupling runtime state to parallel-array indices.
+- Codex directly corrected only one unambiguous double-space formatting defect. No protected Scene/Player asset, Git index, commit or remote state was changed.
+
+### Completed contextual weighted attack selection
+
+- Learner identified that Weight resolves overlapping legal attack ranges rather than deciding whether or when the whole agent attacks. Weight belongs to each enemy's serialized list entry so a Goblin and Boss may prefer the same shared move differently.
+- Learner created serializable `MeleeAttackOption` with `AttackData` and Weight, migrated EnemyAttack's list type and rebuilt NearTarget's two Inspector entries. An accidental broad type replacement temporarily made the original data file declare a second `MeleeAttackOption`; Codex restored the `MeleeAttackData` definition and the data/execution/cooldown types, then Unity and independent project compilation passed with zero errors/warnings.
+- `IsAttackOptionEligible` centralizes non-null option/data, positive Weight, horizontal range and per-attack readiness. `TryStartAttack` first sums eligible Weight, rejects zero total, then rolls and subtracts eligible shares until one `MeleeAttackData` is selected and locked. Cooldown consumption and the existing execution lifecycle remain unchanged.
+- Learner runtime checks passed Attack2 Weight `0` / Attack1 Weight `1`, the reversed deterministic case, and repeated positive-Weight overlap sampling where both attacks appeared. Final saved NearTarget entries are Attack2 Weight `3` first and Attack1 Weight `1` second; the protected mixed Scene is saved and Console remains clean.
+- This completes ordinary two-attack selection only. It does not add attack timing decisions, Combat/spacing behavior, a complete Agent, Attack3 or Strong Combo.
+
+### Saved the local weighted-selection checkpoint
+
+- Rebuilt `Assembly-CSharp.csproj` with zero warnings and zero errors and confirmed the final Unity Console contained zero errors/warnings.
+- Created local feature checkpoint `5e2e26d Complete weighted enemy attack selection` from an explicit 15-path allowlist containing project-owned Enemy code/data, the new `MeleeAttackOption` script/meta, maintained documents and two Handoff archives.
+- Kept the protected mixed SampleScene, Player Animator/Prefab/scripts and all ignored licensed resources outside the commit. No remote operation was performed.
+
+### Next
+
+- Before changing behavior, select the next independent feature slice. Approved Strong Attack work requires Player HitStun, functional Dodge and death-safe recovery first; spacing/movement is separate and should be deliberately chosen if reordered.
+
+---
+
 ## 2026-09-11
 
 ### Completed Attack2 asset and isolated execution

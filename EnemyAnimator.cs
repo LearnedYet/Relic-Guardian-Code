@@ -4,12 +4,18 @@ public class EnemyAnimator : MonoBehaviour
 {
     [SerializeField] private Animator animator;
     [SerializeField] private EnemyMovement enemyMovement;
+    [SerializeField, Min(0f)] private float locomotionDampTime = 0.12f;
 
     private bool isPlayingPerfectGuardStagger;
 
     private void Update()
     {
-        animator.SetFloat("Speed", enemyMovement.CurrentHorizontalSpeed);
+        Vector3 localHorizontalVelocity =
+            enemyMovement.CurrentLocalHorizontalVelocity;
+
+        animator.SetFloat("Speed", localHorizontalVelocity.magnitude, locomotionDampTime, Time.deltaTime);
+        animator.SetFloat("MoveX", localHorizontalVelocity.x, locomotionDampTime, Time.deltaTime);
+        animator.SetFloat("MoveZ", localHorizontalVelocity.z, locomotionDampTime, Time.deltaTime);
     }
 
     public void PlayHitReaction()

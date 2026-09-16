@@ -1,6 +1,6 @@
 # Relic Guardian Implemented Architecture
 
-Documentation updated against inspected source and saved Scene: 2026-09-11. Runtime acceptance is recorded in CURRENT_STATE.md.
+Documentation updated against inspected source and saved assets: 2026-09-16. Runtime acceptance is recorded in CURRENT_STATE.md.
 
 This file is the compact architecture map for behavior that is currently implemented. Actual code, Unity assets, current Editor state, and Git status remain authoritative. Approved but unimplemented feature designs belong in their feature-design documents and must not be treated as runtime facts.
 
@@ -144,14 +144,31 @@ Soft recovery is presentation state inside `PlayerAnimator`, not a coarse gamepl
 
 | Component | Implemented responsibility |
 | --- | --- |
-| `EnemyAI` | Supplies Chase movement and attack requests from coarse state, a common horizontal outer range and horizontal facing angle; in range but outside the angle threshold it stops translation and requests turn-in-place. NearTarget's saved outer range is `2.2m`. It does not inspect the internal EnemyAttackPhase or choose a concrete attack asset. |
+| `EnemyAI` | While the coarse state is Chase, calculates horizontal target direction/distance, gives legal attack admission priority, and otherwise selects internal `Run / Approach / Retreat / Strafe / Wait` spacing behavior. It supplies separate movement and facing directions but never applies Transform movement itself. |
 | `EnemyStateController` | Owns coarse `Chase / Attacking / Staggered / Dead`, admits attack requests, accepts natural-finish notification, and owns ordinary surviving-hit duration, post-reaction protection and Global Attack Cooldown deadlines without exposing direct state writes. |
-| `EnemyMovement` | Applies enemy Transform facing and `CharacterController` movement. `Turn(direction)` rotates only; `Move(direction)` reuses that facing and then displaces. `MoveDuringAttack(direction, distance)` applies one already-calculated incremental attack distance without adding a second time multiplier or changing facing. |
-| `EnemyAttack` | Holds an ordered serialized `MeleeAttackData[] attackOptions`, filters the first horizontal-range-legal non-null asset at accepted start, and locks it in runtime-only `currentAttackData` for the whole execution. It owns internal `Ready -> Startup -> HitWindow -> Recovery -> Ready`, telegraph/Animator triggering, the saved target/threat, animation-relative tracking/footwork, hit-time validation, one `HitContext` delivery and idempotent cleanup. Cleanup clears the selected data and begins Global Attack Cooldown once. Shared asset configuration never owns per-enemy target, phase, timers or selection state. |
-| `EnemyAnimator` | Writes enemy movement speed and exposes presentation-only HitReaction and PlayDeath requests. PlayDeath clears Attack/HitReaction triggers and directly plays Base Layer.DeathSwordShield from time zero. Repeated hits during Staggered may restart GetHit without extending gameplay reaction time. |
+| `EnemyMovement` | Sole normal enemy Transform-facing and `CharacterController` displacement writer. `Move(moveDirection, facingDirection, speedMultiplier)` separates travel from facing, enabling retreat/strafe while looking at the target. It exposes actual local horizontal velocity for presentation and retains exact-distance attack movement plus recoil boundaries. |
+| `EnemyAttack` | Holds serialized `MeleeAttackOption[] attackOptions`. Each entry pairs shared `MeleeAttackData` with this enemy's Weight. Two-pass selection first sums entries that are non-null, positive-Weight, horizontally range-legal and individually Ready, then rolls/subtracts Weight to choose one asset and lock it in runtime-only `currentAttackData` for the whole execution. A per-component Dictionary maps attack assets to scaled absolute ready times; accepted start consumes the selected attack's cooldown before Startup, while later Miss/cancel/Perfect Guard does not refund it. It owns internal `Ready -> Startup -> HitWindow -> Recovery -> Ready`, telegraph/Animator triggering, the saved target/threat, animation-relative tracking/footwork, hit-time validation, one `HitContext` delivery and idempotent cleanup. Cleanup clears the selected data and begins Global Attack Cooldown once. Shared asset configuration never owns per-enemy target, Weight, phase, timers or selection state. |
+| `EnemyAnimator` | Converts actual local horizontal velocity into damped `Speed / MoveX / MoveZ` Animator parameters and exposes presentation-only HitReaction/Death requests. Damping changes visual response only; it grants no gameplay permission. |
+| `EnemySpacingData` | Shared ScriptableObject configuration for attack-admission boundary, distance bands, behavior timing and movement-speed multipliers. It contains no current behavior, timer deadline, strafe side, target or attack state. |
 | `EnemyHealth` | Subtracts integer damage and exposes IsAlive; object lifetime is no longer changed here. |
 | `EnemyHitReceiver` | Rejects ineligible hits through CanReceiveHit; applies health, routes lethal damage to EnterDead (or disables state-less FarTarget), presents the accepted hit, then requests surviving reaction. Static IsValidTarget is shared by PlayerCombat and PlayerTargeting. |
 | `EnemyHitPresentation` | Owns confirmed-hit VFX/SFX references, anchor placement, per-instance scale and cleanup. It spawns an independent Blood effect and a temporary CombatAudioPlayer Prefab so lethal deactivation does not own the feedback lifetime. |
+
+Current spacing flow is:
+
+```text
+EnemyAI while Chase
+-> compute horizontal direction and distance
+-> inside outer attack range: face gate, then TryStartAttack first
+   -> accepted: stop ordinary movement; EnemyStateController enters Attacking
+   -> rejected: close-range Retreat or Strafe/Wait fallback
+-> outside outer attack range: Run/Approach distance-band decision
+-> EnemyMovement.Move(moveDirection, facingDirection, multiplier)
+-> CharacterController displacement plus movement-owned facing
+-> EnemyAnimator reads actual local velocity and damps directional parameters
+```
+
+`Retreat` begins only inside its enter distance, continues until its larger exit distance, then calls the same timed Wait entry used by the fallback cycle. `Strafe` chooses a side once per entry, runs for one fixed configured duration and alternates with a randomized Wait. Because attack admission is checked before these fallback behaviors, their timers affect movement rhythm only and never add an independent attack cooldown.
 
 Current enemy damage flow is:
 
@@ -279,6 +296,8 @@ EnemyHitPresentation.PresentHit requests the existing shared HitstopController a
 
 EnemyMovement owns configurable distance/duration, direction, elapsed time and active flag. LateUpdate requests the difference of successive 2t-t*t positions through CharacterController.Move. BeginRecoil replaces remaining motion; CancelRecoil and OnDisable clear it. Normal Move/Turn/Stop skip during recoil or zero deltaTime. EnemyStateController.TryStartHitReaction(Vector3) requests recoil only on admitted ordinary reaction or existing Staggered; deadlines are unchanged by repeated hits. TryStartAttack rejects IsRecoiling, and EnterDead cancels it immediately. HitContext direction is passed unchanged by EnemyHitReceiver; recoil flattens and normalizes it. No global/local time writer or root motion is added.
 
-## Independent melee attack assets and minimum selection
+## Independent melee attack assets, range selection and cooldowns
 
-`MeleeAttackData` is a ScriptableObject configuration type with Project creation path `Relic Guardian/Enemy/Melee Attack Data`. `Goblin_Attack1.asset` and `Goblin_Attack2.asset` independently expose Selection, Phase Timing, Animation, Motion and Impact values through read-only accessors. Tracking and movement remain separate intervals over one animation-relative execution timer. `EnemyAttack` owns the ordered candidate array and runtime-selected reference; it chooses once at start and never reselects while Startup/HitWindow/Recovery is active. NearTarget currently gives Attack2 deterministic priority in the `1.5..2m` overlap, while Attack1 alone is legal below `1.5m` and Attack2 alone is legal over `2..2.2m`. This minimum range selector is runtime-verified. Per-attack cooldown readiness and Weight/random choice remain pending; future ranged attacks still require a separate execution/data family.
+`MeleeAttackData` is a ScriptableObject configuration type with Project creation path `Relic Guardian/Enemy/Melee Attack Data`. `Goblin_Attack1.asset` and `Goblin_Attack2.asset` independently expose Selection, Cooldown, Phase Timing, Animation, Motion and Impact values through read-only accessors. Tracking and movement remain separate intervals over one animation-relative execution timer. Shared assets store immutable-per-execution move configuration only; mutable ready-time deadlines remain in a Dictionary owned by each `EnemyAttack` component. `MeleeAttackOption` is a serializable per-owner list entry, not another asset or executor; it pairs one shared data reference with contextual Weight.
+
+`EnemyAttack` treats an attack with no deadline entry as Ready, otherwise requires `Time.time` to reach the saved deadline. Eligibility also requires a non-null option/data reference, positive Weight and horizontal range legality. The first pass sums eligible Weight; zero total rejects admission. The second pass rolls `Random.Range(0f, totalWeight)`, subtracts eligible shares and locks the first asset that reaches zero or below. Accepted start writes `Time.time + CooldownDuration` before Startup; later Miss, Perfect Guard interruption and cancellation do not refund it. The selected data is never changed while Startup/HitWindow/Recovery is active. NearTarget saves Attack2/Attack1 Weights `3 / 1` and cooldowns `4s / 0s`. Range, per-attack cooldown and weighted selection are runtime-verified. Future ranged attacks still require a separate execution/data family.

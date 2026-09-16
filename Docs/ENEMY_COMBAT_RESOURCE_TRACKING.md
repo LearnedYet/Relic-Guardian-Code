@@ -1,6 +1,6 @@
 # Enemy Combat Resource Tracking
 
-Last audited: 2026-09-11. This document records licensed resource selection and import status; it does not prove gameplay integration or runtime verification unless a dated integration note says otherwise.
+Last audited: 2026-09-16. This document records licensed resource selection and import status; it does not prove gameplay integration or runtime verification unless a dated integration note says otherwise.
 
 ## Boundary
 
@@ -16,10 +16,10 @@ Last audited: 2026-09-11. This document records licensed resource selection and 
 | --- | --- | --- | --- |
 | Idle | `Goblin@IdleSwordShield.FBX` | `c5fb14a9a8ee85c439efc113375c7f04` | Present; same GUID; currently used |
 | Chase / Run | `Goblin@RunSwordShield.FBX` | `e4a2c97a217f1074ead2d482fb2501f6` | Present as same filename but main GUID is `39d3d79bacf916341aba7adcbbbbfa8e`; currently used. Do not overwrite without a focused source/import comparison |
-| Combat approach | `Goblin@WalkForwardSwordShield.FBX` | `6d7616f4d612f74478c53b90b5535030` | Imported 2026-09-08; GUID preserved; integration/runtime pending |
-| Combat retreat | `Goblin@WalkBackwardsSwordShield.FBX` | `81ff775d44a6d2c43a3ac146691be121` | Imported 2026-09-08; GUID preserved; integration/runtime pending |
-| Combat strafe left | `Goblin@StrafeLeftSwordShield.FBX` | `62a0eaca43f5fa24bbab674e0865aef4` | Imported 2026-09-08; GUID preserved; integration/runtime pending |
-| Combat strafe right | `Goblin@StrafeRightSwordShield.FBX` | `670c36f4c9a731348b6b224515b6a8c4` | Imported 2026-09-08; GUID preserved; integration/runtime pending |
+| Combat approach | `Goblin@WalkForwardSwordShield.FBX` | `6d7616f4d612f74478c53b90b5535030` | Imported 2026-09-08; GUID preserved; locally integrated and learner-runtime-accepted 2026-09-16 |
+| Combat retreat | `Goblin@WalkBackwardsSwordShield.FBX` | `81ff775d44a6d2c43a3ac146691be121` | Imported 2026-09-08; GUID preserved; locally integrated and learner-runtime-accepted 2026-09-16 |
+| Combat strafe left | `Goblin@StrafeLeftSwordShield.FBX` | `62a0eaca43f5fa24bbab674e0865aef4` | Imported 2026-09-08; GUID preserved; locally integrated and learner-runtime-accepted 2026-09-16 |
+| Combat strafe right | `Goblin@StrafeRightSwordShield.FBX` | `670c36f4c9a731348b6b224515b6a8c4` | Imported 2026-09-08; GUID preserved; locally integrated and learner-runtime-accepted 2026-09-16 |
 | Ordinary Attack 1 | `Goblin@Attack1ForwardSwordShield.FBX` | `ad72501e97f58b54a8d99792909cf33b` | Imported 2026-09-08; GUID preserved; locally integrated and learner-runtime-accepted 2026-09-11 |
 | Ordinary Attack 2 | `Goblin@Attack2ForwardSwordShield.FBX` | `7f58aef2737b2394c91c3303d97af9e1` | Imported 2026-09-08; GUID preserved; integration/runtime pending |
 | Ordinary Attack 3 | `Goblin@Attack3ForwardSwordShield.FBX` | `29b34a449d42585449b6fae9638900fa` | Imported 2026-09-08; GUID preserved; integration/runtime pending |
@@ -51,11 +51,10 @@ Unity 6000.3.19f1 recognized all nine copied FBX files and exposed one Animation
 
 The current saved default Clips are WalkForward 0-30, WalkBackwards 0-30, StrafeLeft 0-30, StrafeRight 0-30, Attack1Forward 0-20, Attack2Forward 0-30, Attack3Forward 0-30, GetHit 0-19 and Death 0-56. Loop Time and Loop Pose are currently false for all nine. Root Rotation, Root Position Y and Root Position XZ locks are also false; Keep Original Position Y is true, while Keep Original Orientation and Position XZ are false. These are inspected facts, not approved final settings.
 
-Do not connect the remaining unintegrated Clips to Animator yet. Attack1Forward, GetHit and Death are documented exceptions with dated integration notes. Before integrating the four locomotion Clips, preview pose/displacement and decide their Loop settings plus the code-driven-displacement Root Transform policy as a focused configuration checkpoint.
+Do not connect remaining unintegrated attack Clips to Animator without their focused execution contract. Attack1Forward, GetHit, Death and the four locomotion Clips have dated integration notes; their licensed Animator/FBX configuration remains local-only.
 
 ## Remaining Resource Gaps
 
-- Preview all nine Clips and approve the four movement Clips' Loop settings and the code-driven-displacement Root Transform policy before gameplay integration.
 - Choose or author the Strong Attack telegraph VFX/SFX before the Strong Combo stage.
 - Confirm Player Dodge and HitStun animation resources before Strong Combo control work.
 - Decide whether Perfect Guard Stagger continues using GetHit or receives a dedicated Clip after the first stagger test.
@@ -73,3 +72,7 @@ Supersedes earlier pending-integration statements for Death only: local GoblinEn
 ## 2026-09-11 Attack1Forward integration update
 
 Supersedes earlier pending-integration statements for Ordinary Attack 1 only. The local ignored GoblinEnemy.controller retains the state name `Attack1SwordShield`, now uses the selected `Attack1ForwardSwordShield` Motion at state Speed `1`, and remains non-Root-Motion. The Clip is 30 FPS, frames 0-20, length about `0.666667s`, and non-looping. Saved Scene data uses animation lead `0.1667s`, movement start `0.033s`, tracking end `0.067s`, movement end `0.333s`, and total code-driven distance `0.6m`. The learner separately reported the footwork and first-frame-only tracking checks normal; the final Console check contained zero errors/warnings. Licensed controller/FBX and the mixed Scene remain local-only and are not part of code/document Git checkpoints.
+
+## 2026-09-16 Directional locomotion integration update
+
+The local ignored `GoblinEnemy.controller` now uses a `DirectionalLocomotion` 2D Freeform Directional Blend Tree driven by `MoveX / MoveZ`, with actual speed retained as the Idle/locomotion transition parameter. Idle, WalkForward, Run, WalkBackwards, StrafeLeft and StrafeRight are connected; the four Walk/Strafe Clips loop and Apply Root Motion remains disabled. `EnemyAnimator` damps actual local horizontal velocity into `Speed / MoveX / MoveZ`, while CharacterController displacement remains code-owned. Learner runtime checks passed all directions, Run/Approach, Retreat, Strafe/Wait, attack priority and the final `EnemySpacingData` migration. The licensed controller/FBX and mixed Scene remain local-only.

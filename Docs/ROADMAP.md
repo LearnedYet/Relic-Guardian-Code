@@ -255,20 +255,20 @@ Approved future direction: `Docs/ENEMY_COMBAT_AGENT_DESIGN.md` (2026-09-05). The
 5. [x] Minimum Global Attack Cooldown begins once on effective natural-finish/cancel cleanup, counts independently through HitReaction, and joins state/range/facing admission. Combined repeated-hit/counterattack rhythm learner-runtime-verified 2026-09-09.
 6. [x] Terminal Death with retained corpse and hit/target exclusion: learner accepted retention, feedback, target exclusion and Startup/HitWindow/Recovery/Staggered lethal interruption on 2026-09-10. Slice closed at learner request; explicit repeated-death/late-callback tests and exact same-frame arbitration are deferred limitations, not certified guarantees.
 7. [x] Minimal HitResult return and Perfect Guard forced attack cancellation/Stagger, independent of ordinary reaction cooldown; separate slow GetHit presentation and fixed gameplay deadline learner-runtime-verified 2026-09-10.
-8. [ ] Ordinary multi-attack selection using the established Global Attack Cooldown.
+8. [x] Ordinary multi-attack selection using the established Global Attack Cooldown.
    - [x] Add independent Attack1/Attack2 assets, per-attack minimum/maximum start ranges, ordered first-legal selection and one-execution data locking. Runtime checks passed Attack1 at `1.2m`, Attack2 priority at `1.7m`, and Attack2-only admission at `2.1m` on 2026-09-11.
-   - [ ] Add per-attack cooldown readiness without storing mutable deadlines in shared assets.
-   - [ ] Add Weight/random choice among legal ready attacks; array order is only the current deterministic tie-breaker.
+   - [x] Add per-attack cooldown readiness without storing mutable deadlines in shared assets. Each EnemyAttack owns asset-to-deadline runtime state; accepted start consumes cooldown and interruption does not refund it. Learner checks passed Ready fallback, no-ready rejection, Perfect Guard non-refund and final Attack1 `0s` / Attack2 `4s` tuning on 2026-09-14.
+   - [x] Add per-enemy Weight and weighted random choice among legal Ready attacks. Zero-Weight deterministic exclusions and repeated positive-Weight overlap sampling passed on 2026-09-14; NearTarget saves Attack2/Attack1 Weights `3 / 1`.
 9. [x] Enemy hit-time receiver-active, horizontal-distance and committed-facing validation with actual Miss behavior. Normal hit, distance Miss, direction Miss, disabled-receiver Miss and unchanged Recovery/Cooldown were learner-runtime-verified 2026-09-11. This remains separate from stage 4 start-time admission; Player death, weapon collision and line of sight do not exist in this slice.
 10. [ ] Independent Strong Attack / Strong Combo stage: first establish Player HitStun, functional Dodge and death-safe control recovery; then add PerfectOnly, clear telegraph, first-hit commit, per-step hit validation and reliable bilateral cleanup. Strong cooldown is consumed on accepted start. Guaranteed three-hit capture requires a separate lightweight pairing/position-correction sub-stage.
-11. [ ] Spacing/Approach/Retreat/Strafe/Wait and decision pacing with separate move/facing directions; reduce the current full-speed Chase pressure during Global Attack Cooldown as part of this stage. EnemyMovement retains execution ownership.
+11. [x] First spacing/Approach/Retreat/Strafe/Wait slice with separate move/facing directions, attack-first admission, bounded Retreat exit, Strafe/Wait pacing, directional animation and shared `EnemySpacingData`; learner-runtime-verified 2026-09-16. Detection/target loss and obstacle-aware navigation remain outside this completed slice.
 12. [ ] Integrated moderately aggressive SwordShield Goblin acceptance across discovery, chase, attack selection/cooldowns, reactions, Perfect Guard, Strong Combo and Death.
 
 Attack Hitstop is a separate later feedback tuning checkpoint. Poise, Enemy Block, full Guard Break, BT/Utility/GOAP, advanced navigation and generic combat frameworks remain deferred. Patrol is optional later content, not a blocker for the first agent.
 
 Existing chase foundation (retain its recorded verification):
 
-- [ ] Chase
+- [x] Chase and first combat-spacing slice
   - [x] Import and preview non-Root-Motion sword-and-shield Walk and Run clips; reserve Walk for patrol and Run for chase.
   - [x] Add and manually verify `Speed`-driven `Idle <-> Run` Animator transitions.
   - [x] Add a root `CharacterController` locally and create the reusable tracked `EnemyMovement.Move(Vector3 direction)` displacement boundary.
@@ -276,6 +276,9 @@ Existing chase foundation (retain its recorded verification):
   - [x] Expose actual horizontal speed from `EnemyMovement` for presentation consumers.
   - [x] Synchronize the Goblin Animator `Speed` parameter from actual movement and runtime-verify chase-to-attack behaviour.
   - [x] Add an explicit zero-movement boundary and prevent chase from resuming before the active enemy attack returns to `Ready`.
+  - [x] Split move direction from facing direction and runtime-verify Run, Approach, Retreat and left/right Strafe while normal displacement remains code-driven.
+  - [x] Add internal Run/Approach/Retreat/Strafe/Wait decisions, fixed Strafe/random Wait pacing and attack-first admission so fallback movement never becomes an extra attack gate.
+  - [x] Drive a local directional Blend Tree from damped actual local velocity and migrate reusable tuning to categorized `EnemySpacingData` while retaining per-enemy runtime state.
 
 The ordered stages above define the future attack, state and death work; do not duplicate those as a second competing schedule.
 
@@ -311,4 +314,4 @@ HitResult return, PerfectGuard attack cancellation and stronger Stagger are impl
 
 ## Attack1 first: data migration and Forward footwork
 
-`MeleeAttackData` now backs independent `Goblin_Attack1.asset` and `Goblin_Attack2.asset` configurations. Both non-Root-Motion attacks preserve their own tracking, movement, phase, animation, impact and start-range values. `EnemyAttack` now chooses the first horizontal-range-legal asset from its ordered array and locks it through the full execution. Learner runtime checks passed Attack1 at `1.2m`, Attack2 priority at `1.7m`, and Attack2-only selection at `2.1m`, with normal damage/recovery/cooldown and a clean Console. This completes only minimum deterministic range selection; per-attack cooldown readiness, Weight/random choice and the complete AI Agent remain pending. See CURRENT_STATE for the exact next boundary.
+`MeleeAttackData` now backs independent `Goblin_Attack1.asset` and `Goblin_Attack2.asset` configurations. Both non-Root-Motion attacks preserve their own tracking, movement, phase, animation, impact, start-range and cooldown-duration values. Per-enemy `MeleeAttackOption` entries add contextual Weight without changing shared assets. `EnemyAttack` filters non-null, range-legal, Ready, positive-Weight entries, performs a two-pass weighted roll, locks one data asset through the full execution and stores mutable ready-time deadlines per enemy. Learner runtime checks passed distance selection, cooldown fallback, no-ready rejection, Perfect Guard non-refund, deterministic zero-Weight routing and positive-Weight variety. NearTarget saves cooldowns Attack1/Attack2 `0 / 4s` and Weights Attack1/Attack2 `1 / 3`; damage/recovery and Console remained normal. This completes ordinary multi-attack selection, not a complete AI Agent. See CURRENT_STATE before selecting the next independent stage.

@@ -15,15 +15,17 @@ public class EnemyMovement : MonoBehaviour
 
     private CharacterController characterController;
 
-    public float CurrentHorizontalSpeed
+    public Vector3 CurrentLocalHorizontalVelocity
     {
         get
         {
             Vector3 horizontalVelocity = characterController.velocity;
             horizontalVelocity.y = 0f;
-            return horizontalVelocity.magnitude;
+            return transform.InverseTransformDirection(horizontalVelocity);
         }
     }
+
+    public float CurrentHorizontalSpeed => CurrentLocalHorizontalVelocity.magnitude;
 
     private void Awake()
     {
@@ -95,23 +97,31 @@ public class EnemyMovement : MonoBehaviour
         transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, rotationSpeed * Time.deltaTime);
     }
 
-    public void Move(Vector3 direction)
+    public void Move(
+        Vector3 moveDirection,
+        Vector3 facingDirection,
+        float speedMultiplier)
     {
-         if(isRecoiling || Time.deltaTime <= 0f)
+        if (isRecoiling || Time.deltaTime <= 0f)
         {
             return;
         }
 
-        direction.y = 0f;
+        moveDirection.y = 0f;
+        facingDirection.y = 0f;
 
-        if (direction == Vector3.zero)
+        if (moveDirection == Vector3.zero)
         {
             return;
         }
 
-        Turn(direction);
+        Turn(facingDirection);
 
-        Vector3 movement = direction.normalized * moveSpeed * Time.deltaTime;
+        Vector3 movement =
+            moveDirection.normalized *
+            moveSpeed *
+            Mathf.Max(0f, speedMultiplier) *
+            Time.deltaTime;
         characterController.Move(movement);
     }
 
@@ -134,7 +144,7 @@ public class EnemyMovement : MonoBehaviour
 
     public void Stop()
     {
-         if(isRecoiling || Time.deltaTime <= 0f)
+        if (isRecoiling || Time.deltaTime <= 0f)
         {
             return;
         }
