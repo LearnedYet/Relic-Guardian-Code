@@ -4,6 +4,31 @@ This file records daily progress, learned concepts, problems, and solutions.
 
 ---
 
+## 2026-09-18
+
+### Completed the grounded base Dodge checkpoint
+
+- Added the `<Mouse>/backButton` `Dodge` Button binding and one-use `PlayerInputReader` request. `PlayerActionController` now resolves `Dodge -> Block -> Attack -> Jump` once per frame and owns the added `Dodging` coarse state.
+- Implemented `PlayerDodge` as the owner of one execution's direction snapshot, scaled-time lifetime and progress-based travel request. `PlayerMovement` remains the only `CharacterController` displacement/facing writer; Apply Root Motion stays off. Saved tuning is `0.6s` gameplay duration, `0.6s` movement duration and `3m` distance.
+- Unlocked input Dodge uses camera-relative direction and snaps facing; no-input uses backward current-facing direction. Locked Dodge uses target-forward/target-right and no-input falls away from the target. Direction is captured once.
+- Connected `Dodge_Combat` and `Dodge_Combat_To_Run` eight-direction presentation through local `DodgeX / DodgeZ`; `Dodge_Combat` uses state Speed `1.25`. No-input completion uses interruptible soft visual recovery while input Dodge uses the to-Run presentation.
+- Authored ordinary Basic Attack cancellation into Dodge through the shared attack cleanup boundary. Request priority remains separate from permission, so future Guard/Dodge Counters do not inherit this cancellation rule.
+- Learner reported the current Dodge direction, movement handoff and Attack cancellation usable after timing/transition tuning. I-Frames, Perfect Dodge result/presentation, Slow Motion and Dodge Counter remain unimplemented.
+
+### Saved the current Lock-On camera baseline and deferred Guard twitch
+
+- Saved `SampleScene.unity` with `enemyLookWeight = 0.35`, Rotation Composer Aim Damping `(0.2, 0.2)`, Screen Position `(0, 0)` and Dead Zone `(0, 0)`. Orbital Follow remains `LockToTargetWithWorldUp`, TrackingTarget recentering, horizontal range `-30..25`, no wrap.
+- Rejected and restored earlier follow-target/rotated-follow experiments that caused side composition or visible camera jitter. The original Follow `PlayerCameraRoot` / LookAt `LockOnCameraTarget` structure remains.
+- A brief twitch remains while moving in locked Guard around an enemy. Recalculating local animation direction after facing produced no visible improvement and was reverted. Clip-length/rotation-bake/phase mismatch remains a plausible unproven animation contributor.
+- Learner chose to defer this rare case. Resume it only as a single-variable controlled comparison rather than combining camera, movement-order and Clip-import changes.
+
+### Next
+
+- Select one independent slice before changing behavior. Recommended: add only Dodge I-Frame/Perfect-window timing and the incoming-hit result boundary, verify ordinary avoidance, then consider Perfect presentation, Slow Motion or Counter work separately.
+- No staging, commit, push or remote operation accompanies this documentation checkpoint.
+
+---
+
 ## 2026-09-16
 
 ### Completed first enemy combat-spacing and directional-locomotion slice

@@ -174,7 +174,8 @@ public class PlayerCombat : MonoBehaviour
             return;
         }
 
-        EndAttack();
+        CleanupAttack();
+        playerActionController.FinishAttack();
     }
 
     public bool TryCancelAttack()
@@ -184,11 +185,11 @@ public class PlayerCombat : MonoBehaviour
             return false;
         }
 
-        EndAttack();
+        CleanupAttack();
         return true;
     }
 
-    private void EndAttack()
+    private void CleanupAttack()
     {
         playerAttackPresentation.CloseWeaponTrail();
 
@@ -203,7 +204,6 @@ public class PlayerCombat : MonoBehaviour
         isBasicAttackLungeActive = false;
         basicAttackLungeDistanceTraveled = 0f;
         currentAttackIndex = 0;
-        playerActionController.FinishAttack();
         playerAnimator.BeginSoftRecovery();
     }
 

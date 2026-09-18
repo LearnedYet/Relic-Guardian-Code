@@ -8,6 +8,8 @@ public class PlayerAnimator : MonoBehaviour
     [SerializeField] private float blockExitCrossFadeDuration = 0.45f;
     [SerializeField] private float softRecoveryInterruptCrossFadeDuration = 0.05f;
     [SerializeField] private float guardReactionCrossFadeDuration = 0.03f;
+    [SerializeField] private float dodgeCrossFadeDuration = 0.05f;
+    [SerializeField] private float dodgeExitCrossFadeDuration = 0.1f;
     [SerializeField] private float debugBodyYawOffset;
 
     private Animator animator;
@@ -18,6 +20,7 @@ public class PlayerAnimator : MonoBehaviour
     private bool hasSoftRecoveryTransitionStarted;
     private bool isBlockHoldPresentationActive;
     private bool isBlockHoldPresentationLocked;
+    private bool isDodgeToRunActive;
 
     private void Awake()
     {
@@ -68,6 +71,34 @@ public class PlayerAnimator : MonoBehaviour
             "Base Layer.Block_End",
             blockCrossFadeDuration
         );
+    }
+
+    public void PlayDodge(Vector3 worldDirection, bool useToRunAnimation)
+    {
+        isSoftRecoveryActive = false;
+        hasSoftRecoveryTransitionStarted = false;
+        isDodgeToRunActive = useToRunAnimation;
+
+        Vector3 localDirection = transform.InverseTransformDirection(worldDirection).normalized;
+
+        animator.SetFloat("DodgeX", localDirection.x);
+        animator.SetFloat("DodgeZ", localDirection.z);
+
+        string statePath = useToRunAnimation ? "Base Layer.Dodge_Combat_To_Run"
+        : "Base Layer.Dodge_Combat";
+
+        animator.CrossFadeInFixedTime(statePath, dodgeCrossFadeDuration);
+    }
+
+    public void FinishDodge()
+    {
+        if (isDodgeToRunActive)
+        {
+            isDodgeToRunActive = false;
+            return;
+        }
+
+        BeginSoftRecovery();
     }
 
     public void PlayOrdinaryGuardReaction()

@@ -2,5 +2,6 @@ public enum PlayerActionState
 {
     Free,
     Attacking,
-    Blocking
+    Blocking,
+    Dodging
 }

@@ -1,12 +1,15 @@
 using UnityEngine;
+using System.Collections.Generic;
 
 public class EnemyAttack : MonoBehaviour
 {
-    [SerializeField] private MeleeAttackData[] attackOptions;
+    [SerializeField] private MeleeAttackOption[] attackOptions;
     [SerializeField] private GameObject startupTelegraph;
     [SerializeField] private Animator animator;
     [SerializeField] private EnemyMovement enemyMovement;
     [SerializeField] private EnemyStateController enemyStateController;
+
+    private readonly Dictionary<MeleeAttackData, float> nextAttackAllowedTimes = new Dictionary<MeleeAttackData, float>();
 
     private EnemyAttackPhase currentPhase;
     private PlayerHitReceiver currentAttackTarget;
@@ -93,6 +96,28 @@ public class EnemyAttack : MonoBehaviour
         enemyMovement.MoveDuringAttack(transform.forward, frameDistance);
     }
 
+    private bool IsAttackReady(MeleeAttackData attackOption)
+    {
+        if (!nextAttackAllowedTimes.TryGetValue(attackOption, out float nextAllowedTime))
+        {
+            return true;
+        }
+
+        return Time.time >= nextAllowedTime;
+    }
+
+    private bool IsAttackOptionEligible(
+        MeleeAttackOption attackOption,
+        float distanceToTarget)
+    {
+        return attackOption != null
+            && attackOption.AttackData != null
+            && attackOption.Weight > 0f
+            && distanceToTarget >= attackOption.AttackData.MinimumRange
+            && distanceToTarget <= attackOption.AttackData.MaximumRange
+            && IsAttackReady(attackOption.AttackData);
+    }
+
     public bool TryStartAttack(PlayerHitReceiver target)
     {
         if (currentPhase != EnemyAttackPhase.Ready
@@ -108,17 +133,35 @@ public class EnemyAttack : MonoBehaviour
         horizontalOffsetToTarget.y = 0f;
 
         float distanceToTarget = horizontalOffsetToTarget.magnitude;
+        float totalWeight = 0f;
 
+        foreach (MeleeAttackOption attackOption in attackOptions)
+        {
+            if (IsAttackOptionEligible(attackOption, distanceToTarget))
+            {
+                totalWeight += attackOption.Weight;
+            }
+        }
+
+        if (totalWeight <= 0f)
+        {
+            return false;
+        }
+
+        float selectionValue = Random.Range(0f, totalWeight);
         currentAttackData = null;
 
-        foreach (MeleeAttackData attackOption in attackOptions)
+        foreach (MeleeAttackOption attackOption in attackOptions)
         {
-            if (attackOption != null
-                && distanceToTarget >= attackOption.MinimumRange
-                && distanceToTarget <= attackOption.MaximumRange)
+            if (IsAttackOptionEligible(attackOption, distanceToTarget))
             {
-                currentAttackData = attackOption;
-                break;
+                selectionValue -= attackOption.Weight;
+
+                if (selectionValue <= 0f)
+                {
+                    currentAttackData = attackOption.AttackData;
+                    break;
+                }
             }
         }
 
@@ -126,6 +169,8 @@ public class EnemyAttack : MonoBehaviour
         {
             return false;
         }
+
+        nextAttackAllowedTimes[currentAttackData] = Time.time + currentAttackData.CooldownDuration;
 
         currentAttackTarget = target;
         currentPhase = EnemyAttackPhase.Startup;

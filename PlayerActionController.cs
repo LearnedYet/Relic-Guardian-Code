@@ -7,6 +7,7 @@ public class PlayerActionController : MonoBehaviour
     private PlayerCombat playerCombat;
     private PlayerMovement playerMovement;
     private PlayerBlock playerBlock;
+    private PlayerDodge playerDodge;
 
     private int lastResolvedActionRequestFrame = -1;
     private bool wasJumpAcceptedThisFrame;
@@ -23,6 +24,14 @@ public class PlayerActionController : MonoBehaviour
             return currentActionState == PlayerActionState.Free
                 || (currentActionState == PlayerActionState.Blocking
                     && playerBlock.AllowsMovement);
+        }
+    }
+
+    public bool CanFaceLockedTarget
+    {
+        get
+        {
+            return currentActionState == PlayerActionState.Free || currentActionState == PlayerActionState.Blocking || currentActionState == PlayerActionState.Dodging;
         }
     }
 
@@ -47,6 +56,7 @@ public class PlayerActionController : MonoBehaviour
         playerCombat = GetComponent<PlayerCombat>();
         playerMovement = GetComponent<PlayerMovement>();
         playerBlock = GetComponent<PlayerBlock>();
+        playerDodge = GetComponent<PlayerDodge>();
     }
 
     public void ResolveActionRequests()
@@ -59,10 +69,15 @@ public class PlayerActionController : MonoBehaviour
         lastResolvedActionRequestFrame = Time.frameCount;
         wasJumpAcceptedThisFrame = false;
 
+        bool dodgeRequested = playerInputReader.ConsumeDodge();
         bool blockRequested = playerInputReader.ConsumeBlock();
         bool attackRequested = playerInputReader.ConsumeAttack();
         bool jumpRequested = playerInputReader.ConsumeJump();
 
+        if (dodgeRequested && TryStartDodge())
+        {
+            return;
+        }
         if (blockRequested && TryStartBlock())
         {
             return;
@@ -77,6 +92,30 @@ public class PlayerActionController : MonoBehaviour
         {
             wasJumpAcceptedThisFrame = true;
         }
+    }
+
+    private bool TryStartDodge()
+    {
+        if (!playerMovement.IsGrounded)
+        {
+            return false;
+        }
+
+        if (currentActionState == PlayerActionState.Free)
+        {
+            currentActionState = PlayerActionState.Dodging;
+            playerDodge.BeginDodge();
+            return true;
+        }
+
+        if (currentActionState == PlayerActionState.Attacking && playerCombat.TryCancelAttack())
+        {
+            currentActionState = PlayerActionState.Dodging;
+            playerDodge.BeginDodge();
+            return true;
+        }
+
+        return false;
     }
 
     private bool TryStartBlock()
@@ -125,6 +164,14 @@ public class PlayerActionController : MonoBehaviour
     public void FinishBlock()
     {
         if (currentActionState == PlayerActionState.Blocking)
+        {
+            currentActionState = PlayerActionState.Free;
+        }
+    }
+
+    public void FinishDodge()
+    {
+        if (currentActionState == PlayerActionState.Dodging)
         {
             currentActionState = PlayerActionState.Free;
         }

@@ -30,6 +30,9 @@ public class MeleeAttackData : ScriptableObject
     [SerializeField] private float minimumRange = 0f;
     [SerializeField] private float maximumRange = 2f;
 
+    [Header("Cooldown")]
+    [SerializeField] private float cooldownDuration = 0f;
+
     public float MinimumRange => minimumRange;
     public float MaximumRange => maximumRange;
     public int Damage => damage;
@@ -45,4 +48,5 @@ public class MeleeAttackData : ScriptableObject
     public float ImpactRange => impactRange;
     public float MaximumImpactFacingAngle => maximumImpactFacingAngle;
     public string AnimationStateName => animationStateName;
+    public float CooldownDuration => cooldownDuration;
 }

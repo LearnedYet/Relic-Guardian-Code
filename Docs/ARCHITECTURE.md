@@ -1,6 +1,6 @@
 # Relic Guardian Implemented Architecture
 
-Documentation updated against inspected source and saved assets: 2026-09-16. Runtime acceptance is recorded in CURRENT_STATE.md.
+Documentation updated against inspected source and saved assets: 2026-09-18. Runtime acceptance is recorded in CURRENT_STATE.md.
 
 This file is the compact architecture map for behavior that is currently implemented. Actual code, Unity assets, current Editor state, and Git status remain authoritative. Approved but unimplemented feature designs belong in their feature-design documents and must not be treated as runtime facts.
 
@@ -16,10 +16,11 @@ This file is the compact architecture map for behavior that is currently impleme
 
 | Component | Implemented responsibility |
 | --- | --- |
-| `PlayerInputReader` | Records movement/look values, held Sprint/Block state, and one-use Attack/Jump/Lock-On/Block requests. It does not decide whether an action is legal. |
-| `PlayerActionController` | Sole owner of the coarse player action state and deterministic Block/Attack/Jump request arbitration. |
+| `PlayerInputReader` | Records movement/look values, held Sprint/Block state, and one-use Dodge/Attack/Jump/Lock-On/Block requests. It does not decide whether an action is legal. |
+| `PlayerActionController` | Sole owner of the coarse player action state and deterministic Dodge/Block/Attack/Jump request arbitration. |
 | `PlayerCombat` | Owns the four-step Basic Attack sequence, attack targets, windows, queue/restart state, attack facing requests, lunge requests, enemy damage requests, and complete attack cleanup. |
 | `PlayerBlock` | Owns the internal Block `Startup`, `Hold`, and `Release` phases, Ordinary movement-lock deadline and Hold release gate, phase-aware Hold movement permission, directional Guard Coverage decisions, and production of the explicit `GuardResult`. |
+| `PlayerDodge` | Owns one grounded Dodge execution's direction snapshot, scaled-time gameplay/movement deadlines, progress-based distance request and natural finish. It has no hit result, I-Frame or Perfect-window logic yet. |
 | `PlayerMovement` | Sole owner of player `CharacterController` movement and actual player Transform-facing application. Other gameplay components request facing or displacement through it. |
 | `PlayerTargeting` | Owns the current Lock-On target, nearest-target acquisition, toggle/cancel behavior, and break-distance validation. Lock-On is orthogonal to the coarse action state. |
 | `PlayerCameraController` | Selects Free/Lock-On Cinemachine camera priorities, input-axis ownership, and the weighted Lock-On camera target. |
@@ -40,19 +41,24 @@ This file is the compact architecture map for behavior that is currently impleme
 ```text
 Free
 ├─ accepted grounded Attack -> Attacking
-└─ accepted grounded Block  -> Blocking
+├─ accepted grounded Block  -> Blocking
+└─ accepted grounded Dodge  -> Dodging
 
 Attacking
 ├─ natural/cancel cleanup -> Free
-└─ legal Block cancel     -> Blocking
+├─ legal Block cancel     -> Blocking
+└─ legal Dodge cancel     -> Dodging
 
 Blocking
 └─ completed Release -> Free
+
+Dodging
+└─ code-owned deadline -> Free
 ```
 
-Current coarse states are only `Free`, `Attacking`, and `Blocking`. Guard phases are not additional coarse states.
+Current coarse states are `Free`, `Attacking`, `Blocking`, and `Dodging`. Guard phases and Dodge presentation recovery are not additional coarse states.
 
-`ResolveActionRequests()` is the single request-arbitration boundary. Multiple components may call it in one frame, but its `Time.frameCount` gate resolves requests only once. The current fixed order is Block, then Attack, then Jump.
+`ResolveActionRequests()` is the single request-arbitration boundary. Multiple components may call it in one frame, but its `Time.frameCount` gate resolves requests only once. The current fixed order is Dodge, then Block, then Attack, then Jump. This request order is separate from authored cancellation permission: current ordinary Basic Attack admits Block and Dodge replacement through its shared cleanup; Blocking and Dodging do not admit each other.
 
 ## Player Permission Model
 
@@ -63,8 +69,9 @@ Current coarse states are only `Free`, `Attacking`, and `Blocking`. Guard phases
 | Block `Startup` | No | No | No |
 | Block held `Hold` | Only after Ordinary movement-lock expiry | No | No |
 | Block `Release` | No | No | No |
+| `Dodging` | No ordinary movement; only Dodge displacement | No | No |
 
-Attack lunge is an explicit `PlayerCombat` request to `PlayerMovement.MoveDuringAttack()` and does not reopen ordinary movement permission. `CanMove` and `CanSprint` remain separate so movable Guard Hold never enables Sprint or its Lock-On cancellation path.
+Attack lunge and Dodge travel are explicit requests to `PlayerMovement.MoveDuringAttack()` and `MoveDuringDodge()` and do not reopen ordinary movement permission. `CanMove` and `CanSprint` remain separate so movable Guard Hold never enables Sprint or its Lock-On cancellation path.
 
 ## Input and Action Data Flow
 
@@ -72,7 +79,7 @@ Attack lunge is an explicit `PlayerCombat` request to `PlayerMovement.MoveDuring
 Unity Input System
 -> PlayerInputReader records values/requests
 -> PlayerActionController.ResolveActionRequests()
--> accepted action owner (PlayerCombat or PlayerBlock)
+-> accepted action owner (PlayerCombat, PlayerBlock, or PlayerDodge)
 -> PlayerMovement and PlayerAnimator execute their owned runtime/presentation work
 ```
 
@@ -94,7 +101,23 @@ accepted Attack request
 -> coarse state returns to Free and presentation soft recovery begins
 ```
 
-Animation Events include the attack-step index. Events from an outgoing or cancelled step are ignored when the current coarse state or index no longer matches. `EndAttack()` is the shared cleanup boundary for natural finish and Block cancellation.
+Animation Events include the attack-step index. Events from an outgoing or cancelled step are ignored when the current coarse state or index no longer matches. Attack cleanup is shared by natural finish, Block cancellation and Dodge cancellation.
+
+## Base Dodge Flow
+
+```text
+one-use Dodge request
+-> PlayerActionController validates grounded entry/cancellation
+-> PlayerDodge snapshots one world direction
+-> unlocked input may request one immediate facing snap
+-> PlayerAnimator converts direction to DodgeX / DodgeZ and selects presentation
+-> PlayerDodge converts normalized elapsed progress into per-frame distance
+-> PlayerMovement.MoveDuringDodge applies CharacterController displacement
+-> code-owned deadline returns the coarse state to Free
+-> zero-input presentation may continue as interruptible soft recovery
+```
+
+Unlocked direction uses the existing camera-relative basis and falls back to opposite current facing with no input. Locked direction is built from horizontal target-forward/target-right and falls back away from the target with no input. The snapshot does not steer after entry. Gameplay duration and displacement remain independent from Clip length. Current Dodge does not participate in incoming-hit resolution; I-Frames and Perfect Dodge are future behavior.
 
 ## Guard Lifecycle and Presentation
 
@@ -125,10 +148,10 @@ Startup and Hold can handle hits inside the adjustable horizontal Guard Coverage
 3. applies Free/Locked Sprint rules;
 4. derives camera-relative movement;
 5. applies jump/gravity;
-6. applies active Guard Facing Assist, otherwise faces the locked target when movable and locked, otherwise faces non-zero movement;
+6. applies active Guard Facing Assist, otherwise faces the locked target when `CanFaceLockedTarget` and locked, otherwise faces non-zero movement;
 7. moves the `CharacterController`.
 
-`PlayerCombat` requests attack facing through `PlayerMovement.FaceDirection()` and attack lunge through `MoveDuringAttack()`. Active Guard Facing Assist also calls `FaceDirection()` from the explicit Assist -> Locked -> Free Movement branch. `PlayerAnimator` never writes player Transform rotation. Current assist uses the ordinary `rotationSpeed`; exact deadline interpolation is not implemented.
+`PlayerCombat` requests attack facing through `PlayerMovement.FaceDirection()` and attack lunge through `MoveDuringAttack()`. `PlayerDodge` requests unlocked input-facing through `SnapFacing()` and exact incremental travel through `MoveDuringDodge()`. Active Guard Facing Assist still has priority over Locked facing, then Free Movement facing. `PlayerAnimator` never writes player Transform rotation. Current assist uses the ordinary `rotationSpeed`; exact deadline interpolation is not implemented.
 
 ## Lock-On and Camera
 

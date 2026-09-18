@@ -47,16 +47,20 @@ Do not load or modify protected gameplay Scenes/Prefabs merely to inspect a reso
 
 Read:
 
+- `Docs/PLAYER_COMBAT_EXTENSION_DESIGN.md` when the task concerns Dodge, Counter attacks, Sprint Attack, Player HitStun/HitReaction, Player Death, interruption cleanup or the approved implementation order.
 - `Docs/COMBO_ATTACK_ARCHITECTURE.md`
 - `Assets/RelicGuardian/Player/Scripts/PlayerActionState.cs`
 - `Assets/RelicGuardian/Player/Scripts/PlayerActionController.cs`
 - `Assets/RelicGuardian/Player/Scripts/PlayerInputReader.cs`
 - `Assets/RelicGuardian/Player/Scripts/PlayerCombat.cs`
+- `Assets/RelicGuardian/Player/Scripts/PlayerDodge.cs` when the task concerns Dodge lifetime, direction, movement, I-Frames or Perfect Dodge.
 - `Assets/RelicGuardian/Player/Scripts/PlayerAttackData.cs`
 - `Assets/RelicGuardian/Player/Scripts/PlayerAnimator.cs`
 - `Assets/RelicGuardian/Player/Scripts/PlayerMovement.cs`
 
 Inspect animation assets or Animation Events only when the concrete question requires Editor state.
+
+For base Dodge design or implementation, also read `PlayerHitReceiver.cs`, `PlayerHealth.cs` and the current Input Actions/Player Prefab/Scene composition. Treat the extension document as approved future direction, never as proof that any listed feature is implemented.
 
 ## Guard Lifecycle or Guard Presentation
 

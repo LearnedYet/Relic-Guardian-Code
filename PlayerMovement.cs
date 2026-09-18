@@ -96,13 +96,7 @@ public class PlayerMovement : MonoBehaviour
             selectedMoveSpeed = sprintSpeed;
         }
 
-        Vector3 cameraForward = cameraTransform.forward;
-        cameraForward.y = 0f;
-        cameraForward.Normalize();
-        Vector3 cameraRight = cameraTransform.right;
-        cameraRight.y = 0f;
-        cameraRight.Normalize();
-        Vector3 moveDirection = (cameraRight * input.x + cameraForward * input.y);
+        Vector3 moveDirection = GetCameraRelativeDirection(input);
         currentLocalMoveDirection = transform.InverseTransformDirection(moveDirection);
         currentSpeed = moveDirection.magnitude * selectedMoveSpeed;
         currentMovementStrength = currentLocalMoveDirection.magnitude;
@@ -118,7 +112,7 @@ public class PlayerMovement : MonoBehaviour
         {
             FaceDirection(playerBlock.GuardFacingAssistDirection);
         }
-        else if (playerActionController.CanMove && playerTargeting.IsLockedOn)
+        else if (playerActionController.CanFaceLockedTarget && playerTargeting.IsLockedOn)
         {
             Vector3 directionToLockedTarget = playerTargeting.CurrentTarget.bounds.center - transform.position;
 
@@ -146,6 +140,18 @@ public class PlayerMovement : MonoBehaviour
         }
     }
 
+    public Vector3 GetCameraRelativeDirection(Vector2 input)
+    {
+        Vector3 cameraForward = cameraTransform.forward;
+        cameraForward.y = 0f;
+        cameraForward.Normalize();
+        Vector3 cameraRight = cameraTransform.right;
+        cameraRight.y = 0f;
+        cameraRight.Normalize();
+
+        return cameraRight * input.x + cameraForward * input.y;
+    }
+
     public void FaceDirection(Vector3 direction)
     {
         if (direction != Vector3.zero)
@@ -157,6 +163,28 @@ public class PlayerMovement : MonoBehaviour
                 rotationSpeed * Time.deltaTime
             );
         }
+    }
+
+    public void SnapFacing(Vector3 direction)
+    {
+        direction.y = 0f;
+
+        if (direction == Vector3.zero)
+        {
+            return;
+        }
+
+        transform.rotation = Quaternion.LookRotation(direction);
+    }
+
+    public void MoveDuringDodge(Vector3 direction, float distance)
+    {
+        if (Time.deltaTime <= 0f || direction == Vector3.zero || distance <= 0f)
+        {
+            return;
+        }
+
+        characterController.Move(direction.normalized * distance);
     }
 
     public void MoveDuringAttack(Vector3 direction, float distance)

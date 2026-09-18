@@ -11,6 +11,7 @@ public class PlayerInputReader : MonoBehaviour
     private bool isSprintHeld;
     private bool blockRequested;
     private bool isBlockHeld;
+    private bool dodgeRequested;
 
     public Vector2 MoveInput
     {
@@ -64,6 +65,18 @@ public class PlayerInputReader : MonoBehaviour
         bool wasAttackRequested = attackRequested;
         attackRequested = false;
         return wasAttackRequested;
+    }
+
+    public void OnDodge()
+    {
+        dodgeRequested = true;
+    }
+
+    public bool ConsumeDodge()
+    {
+        bool wasDodgeRequested = dodgeRequested;
+        dodgeRequested = false;
+        return wasDodgeRequested;
     }
 
     public void OnJump()

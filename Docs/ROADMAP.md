@@ -80,7 +80,7 @@
 - Basic Attack now uses a code-driven limited-distance startup lunge toward the same target saved at attack start. It does not retarget; if the target escapes the lunge and Hit Window range, the attack misses. `PlayerMovement` remains responsible for `CharacterController` displacement, and opposite in-range/no-target Play Mode tests passed.
 - The active local presentation is now `Attack_4Combo_1_Inplace`, and looping `Idle_ver_B` is the local equipped-weapon Idle override. The learner approved the final attack-to-idle transition after matching Root Transform Rotation; Apply Root Motion remains off.
 - `PlayerAttackData` now provides per-step damage, target range, lunge speed, and lunge distance. The Prefab has two configured prototype entries, and `PlayerCombat` advances through them with reusable indexed initialization.
-- The complete reusable indexed Attack1-4 combo is runtime-verified. Attack1-3 have Combo and Restart windows, all Animation Events carry step identity, all four Hit Windows apply one damage result, invalid timing is rejected, and Attack4 restores movement/Jump with clean final state. The first Guard design is fixed, but Block gameplay, Dodge, and general recovery cancellation remain unimplemented.
+- The complete reusable indexed Attack1-4 combo is runtime-verified. Attack1-3 have Combo and Restart windows, all Animation Events carry step identity, all four Hit Windows apply one damage result, invalid timing is rejected, and Attack4 restores movement/Jump with clean final state. Block and grounded base Dodge are now implemented; broader Counter, HitStun/Death and future-skill cancellation policies remain later work.
 - The first usable lock-on mode is implemented: `V` toggles nearest-target lock, inactive or `12m`-distant targets release automatically, locked movement faces the authoritative target, combat prioritizes it without fallback, and two Cinemachine cameras blend through priorities. The accepted prototype lock camera tracks `PlayerCameraRoot`, looks at a weighted `LockOnCameraTarget`, permits limited manual orbit, and recenters automatically.
 - Locked locomotion now uses the complete non-Root Katana `Jogging_8Way_verB` family through a project-owned 2D Blend Tree and tracked placeholder Clips. Player-local X/Z direction values and `0.1s` Animator damping drive the accepted eight-direction presentation.
 - Free locomotion uses the forward Katana jog for normal travel and `Run_ver_B` for held Sprint. Shift plus movement while locked cancels lock and enters free Sprint; Shift alone preserves lock. Root Motion remains disabled.
@@ -228,8 +228,26 @@
   - [x] Establish and runtime-verify the minimum EnemyHitReceiver / EnemyHitPresentation boundary, then connect confirmed-hit Blood VFX and independent two-layer Hit SFX while preserving target confirmation, damage and lethal-feedback lifetime.
   - [x] Select and import `FX_hit_03_Blood` plus its independent materials as the primary ordinary-Attack confirmed-hit VFX candidate; dependency validation passed with zero missing assets, while gameplay connection and real-camera tuning remain pending.
   - [x] Import eight selected Attack AudioClips with preserved GUIDs; connect and verify the six Attack Motion clips through indexed authored timing, while the two confirmed-hit layers remain pending.
-- [ ] Dodge
+- [x] Grounded base Dodge
+  - [x] Approve the minimum architecture boundary: `PlayerActionController` owns admission/state, an independent future `PlayerDodge` owns execution/windows, and `PlayerMovement` remains the only actual CharacterController/facing writer.
+  - [x] Implement grounded `Free -> Dodging` plus explicitly authored ordinary Basic-Attack-to-Dodge cancellation, fixed same-frame arbitration, one start-direction snapshot and code-owned gameplay lifetime.
+  - [x] Learner approves the direction/control contract: camera-relative Free input, target-relative Lock-On input, backward/away zero-input fallback, one start-direction snapshot, runtime-tunable distance/duration/windows, and code-owned gameplay lifetime.
+  - [x] Import and validate 32 selected local-only grounded Dodge/Dodge-to-Run Humanoid clips with preserved GUIDs and non-looping main-project copies; Air, Fast and FBX duplicates remain deferred.
+  - [x] Add the mouse back-button Dodge input representation and one-use `PlayerInputReader` request.
+  - [x] Implement and learner-runtime-verify `Dodging`, `PlayerDodge`, code-driven movement, unlocked/locked direction snapshots, unlocked facing snap, eight-direction Combat/Combat-to-Run presentation, interruptible zero-input visual recovery and ordinary Basic-Attack cancellation.
+  - [ ] Revisit the deferred locked Guard movement/camera twitch only as its own controlled investigation; the local-direction-after-facing experiment had no visible effect and was reverted.
 - [ ] Perfect Dodge
+  - [x] Approve the final feedback direction: one current-pose origin afterimage, shallow movement trail, subtle distortion, brief centrally-owned Slow Motion, dedicated confirmation SFX and a Dodge Counter opportunity.
+  - [x] Define replaceable Presentation hooks without letting VFX/SFX decide gameplay results or write `Time.timeScale` directly.
+  - [ ] Add the narrower I-Frame/Perfect-window and incoming-hit result slice; verify avoidance before presentation, Slow Motion or Counter work.
+- [ ] Guard Counter
+  - [ ] Let `PlayerBlock` retain the opportunity while `PlayerActionController` admits and shared `PlayerCombat` executes the Counter.
+- [ ] Dodge Counter
+  - [ ] Reuse the same attack-entry/execution path while `PlayerDodge` retains its own opportunity.
+- [ ] Sprint Attack
+  - [ ] Reuse `Attacking` and the shared `PlayerCombat` executor; do not create a parallel attack system.
+- [ ] Player HitStun / HitReaction
+- [ ] Player Death
 - [x] Lock-on (first usable version)
   - [x] Add nearest-target acquisition, `V` toggle, authoritative current target, and automatic break conditions.
   - [x] Add free/locked movement-facing modes while preserving CharacterController movement and Root Motion off.
