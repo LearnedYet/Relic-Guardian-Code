@@ -4,6 +4,51 @@ This file records daily progress, learned concepts, problems, and solutions.
 
 ---
 
+## 2026-09-23
+
+### Accepted current Perfect Dodge Slow Motion and layered audio mix
+
+- The learner extended the existing `HitstopController` to compose unscaled Hitstop and Slow Motion deadlines under one `Time.timeScale` writer, then routed a Perfect-only request through `PlayerDodgePresentation` without moving result classification out of `PlayerDodge`/`PlayerHitReceiver`.
+- The saved `SampleScene` uses Slow Motion duration `0.25s` and scale `0.25`. Its accepted Dodge Start layer saves Volume/Pitch/Delay `0.73 / 0.36 / 0s`; Perfect confirmation layers save `0.34 / 1.01 / 0s` and `0.70 / 0.73 / 0.02s`. Master Volume remains `1` for each cue. The original audition screenshot remains separately recorded in `COMBAT_SFX_RESOURCE_TRACKING.md` and does not override these Scene values.
+- The learner reported separate Ordinary Dodge, Perfect Dodge with confirmation audio/Slow Motion and recovery, and original Hitstop checks normal, and chose to keep the current saved values. Independent C# build passed with zero errors and zero warnings; the Unity Console query returned zero errors/warnings. Simultaneous Hitstop/Slow Motion overlap and disable-recovery are still focused verification gaps, not claimed as runtime-accepted.
+- A brief locked left/right Dodge concern was resolved as visual interpretation; no directional code, Animator or Scene correction was made for it.
+- No Git staging, commit, push, or remote operation accompanies this documentation update.
+
+---
+
+## 2026-09-22
+
+### Completed Perfect Dodge afterimage fade and selected Dodge SFX resources
+
+- The learner created `AfterimageFade`, separated persistent component fields from per-frame local values, initialized each generated part with its independent runtime material and the existing cleanup lifetime, and used normalized elapsed progress to interpolate `_BaseColor` Alpha to zero.
+- `PlayerDodgePresentation.CreateAfterimage()` now adds and initializes one `AfterimageFade` per generated mesh part without moving Perfect classification or resource cleanup ownership. Independent C# build passed with zero errors; the pre-existing unused `PlayerAnimator.dodgeExitCrossFadeDuration` warning remains.
+- A temporary `1.5s` Play Mode inspection verified continuous synchronized player-and-weapon fading, complete generated-object cleanup and a clean Console. Exiting Play Mode restored the saved `0.35s` lifetime.
+- The learner selected one common Dodge Start layer and a bound two-layer Perfect confirmation cue. The three WAV files and original `.meta` files were copied into the ignored `Assets/LocalLicensed/CombatSFX/Selected/Dodge/` boundary with matching hashes and preserved GUIDs; screenshot audition values are recorded separately from the authoritative saved Scene values in `COMBAT_SFX_RESOURCE_TRACKING.md`.
+- The learner authored Dodge Start playback from accepted `PlayerDodge.BeginDodge()` and a bound two-layer confirmation from the actual Perfect result routed by `PlayerHitReceiver`. `PlayerDodgePresentation` reuses `CombatAudioPlayer` with separate Start and Perfect instances; two Scene child players bind one and two 2D channels respectively. Static script/Scene checks and the Unity Console were clean. The learner chose saved volumes `0.8 / 0.52 / 0.63`; runtime listening, overlap and final balance are deferred until Slow Motion is connected and tested.
+- No staging, commit, push or remote operation accompanies this checkpoint.
+
+---
+
+## 2026-09-21
+
+### Completed the Dodge incoming-hit result slice
+
+- Added explicit `DodgeResult.Unhandled / Ordinary / Perfect` classification and distinct `HitResult.OrdinaryDodge / PerfectDodge` outcomes without adding another coarse action state.
+- `PlayerDodge` now owns a saved `0.1..0.45s` I-Frame and nested `0.1..0.2s` Perfect Window, measured from the existing code-owned Dodge start time. The broad I-Frame gate runs before Perfect classification.
+- `PlayerHitReceiver` resolves same-frame requests first, then asks `PlayerDodge` for the active result before Guard or Health routing. Ordinary and Perfect avoid damage; Unhandled continues to health.
+- Runtime isolation temporarily set Dodge distance to zero. Forced Perfect and Ordinary preserved health, while forced Unhandled reduced health by one. Temporary logging was removed and the Scene restored/saved `0.65s / 0.65s / 3m` Dodge tuning plus the accepted window values.
+- Final independent C# compilation passed with zero errors; the existing unused `PlayerAnimator.dodgeExitCrossFadeDuration` warning remains unrelated. No Perfect Dodge VFX/SFX, Slow Motion or Counter opportunity is implemented yet.
+
+### Completed the first Perfect Dodge presentation layer and prepared resource screening
+
+- `PlayerDodgePresentation` now consumes only Perfect results and leaves a static current-pose origin afterimage using `PerfectDodgeAfterimage.mat`. Runtime capture covers every active modular SkinnedMeshRenderer plus rigid MeshRenderer equipment and filters LOD-controlled equipment to LOD0. A face-only first result was diagnosed through runtime Renderer/Mesh bounds and name evidence rather than treated as a bone failure.
+- Learner runtime-verified the complete player-and-weapon silhouette and reported no new Console error or warning. The independent C# build passed with zero errors; the existing unused `PlayerAnimator.dodgeExitCrossFadeDuration` warning remains unrelated.
+- Gradual Alpha fade was explained, including `Material`, `Mesh`, `Color`, `Mathf.Max`, `GetColor()` and `SetColor()`, but `AfterimageFade.cs` was not created and fade is not implemented.
+- Prepare isolated resource screening for one restrained shallow movement Trail. Keep Distortion, dedicated SFX, Slow Motion and Dodge Counter separate, and do not copy licensed candidates into the project until license/dependency validation is complete.
+- No staging, commit, push or remote operation accompanies this checkpoint.
+
+---
+
 ## 2026-09-18
 
 ### Completed the grounded base Dodge checkpoint

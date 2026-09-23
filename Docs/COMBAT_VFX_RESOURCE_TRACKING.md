@@ -119,6 +119,14 @@ The final local composition checkpoint is `Assets/LocalLicensed/CombatVFX/Valida
 
 ## Deferred or Rejected for the Base Pass
 
+### Perfect Dodge presentation checkpoint and next screening role
+
+- Runtime-verified placeholder: project-owned `Assets/RelicGuardian/Player/Materials/PerfectDodgeAfterimage.mat`, used by `PlayerDodgePresentation` for one static current-pose origin silhouette.
+- The snapshot includes active modular SkinnedMeshRenderer parts and rigid MeshRenderer equipment, selecting only LOD0 for LOD-controlled rigid meshes. It is result-driven and replaceable; VFX resources do not decide Dodge classification.
+- Current placeholder: transparent ice-blue with gradual Alpha fade through `AfterimageFade.cs` and timed cleanup at the saved `0.35s` lifetime. HDR emission and Bloom remain unimplemented.
+- Next resource-screening role: one restrained shallow movement Trail along the Dodge direction. Reject large crescents, explosions, teleport rings, long afterimage chains and Perfect-Guard-style collision impacts. Validate candidates in an isolated local scene before any main-Scene connection.
+- Distortion remains a later independent selection pass. Dedicated Dodge Start and Perfect confirmation SFX are connected and tracked in `COMBAT_SFX_RESOURCE_TRACKING.md`; Perfect-only Slow Motion is implemented through the shared time-control owner, with simultaneous Hitstop overlap and disable recovery still awaiting focused runtime checks.
+
 - `Sword slashes PRO 3.0` was not imported into the main project. It is an optional energy-slash layer for later Counter, Skill, or Finisher work.
 - Large crescents, cross slashes, explosions, teleporter rings, and other skill-scale effects are excluded from ordinary Attack1-4.
 - Cartoon FX 4 Ice Cross and comparison-only spark alternatives remain available locally but are not required for the chosen base Guard composition.

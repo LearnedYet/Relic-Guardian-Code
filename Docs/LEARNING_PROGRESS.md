@@ -2,6 +2,22 @@
 
 This document tracks programming understanding separately from feature completion. It is a learning aid, not an evaluation.
 
+## 2026-09-23 Shared time owner and accepted Dodge feedback tuning
+
+The learner extended `HitstopController` with a second unscaled deadline and a single precedence rule for Hitstop versus Slow Motion. Actual-file review corrected first-effect capture, absolute-time expiry, complete disable restoration and strict positive/less-than-one request bounds. They then connected only the real Perfect result through `PlayerDodgePresentation`, leaving `PlayerDodge` as the classifier and the shared controller as the sole global time writer. Separate Ordinary Dodge, Perfect Dodge with confirmation audio/Slow Motion and recovery, and original Hitstop checks were learner-reported normal; the current saved `0.25s / 0.25` Slow Motion and audio mix were accepted. Keep **Practising**: predict and verify simultaneous overlap and disable recovery rather than treating separate tests as proof of composition.
+
+## 2026-09-22 Runtime-owned afterimage fade and time-separated audio cues
+
+Learner created `AfterimageFade`, identified which values must persist as component fields, initialized runtime-only state from `PlayerDodgePresentation`, accumulated `Time.deltaTime`, converted elapsed time into normalized progress and changed only the copied color's Alpha before writing it back to the independent material. Actual-file review caught omitted time accumulation and null protection; the learner corrected both, connected the component and runtime-verified continuous synchronized player/weapon fade plus complete cleanup with a temporary longer lifetime. They also recognized that Dodge Start audio must occur before the game can know whether a later incoming hit produces Perfect, so the selected three-layer Lab mix was correctly separated into a common one-layer Start cue and a bound two-layer Perfect confirmation cue. The learner wrote the two presentation calls and configured independent one-channel/two-channel Scene players, retaining the saved volumes they chose. Keep **Practising**: reconstruct the complete runtime call chain, then listen for Ordinary/Perfect separation and overlapping cue tails in the Slow Motion runtime pass.
+
+## 2026-09-21 Perfect Dodge result consumer and current-pose afterimage
+
+Learner connected the Perfect-only result route to `PlayerDodgePresentation`, then implemented and diagnosed a runtime-baked current-pose afterimage. Initial output contained only `Female_Face_01`; bounds/name logging established that singular `GetComponentInChildren<SkinnedMeshRenderer>()` had selected one modular face Renderer rather than proving a bone or material failure. After explicit takeover, Codex generalized capture to all active modular SkinnedMeshRenderers and then to rigid MeshRenderer equipment while filtering LOD-controlled meshes to LOD0. Learner runtime-verified the complete player-and-weapon silhouette with no new Console issue. Fade ownership and the roles of `Material`, `Mesh`, `Color`, `Mathf.Max`, `GetColor()` and `SetColor()` were introduced, but `AfterimageFade.cs` was not created. Keep **Practising**: distinguish culling bounds from baked geometry, singular from plural component lookup, skinned from rigid mesh capture, runtime resource ownership and abrupt cleanup from per-frame Alpha fade.
+
+## 2026-09-21 Dodge timing, nested classification and receiver routing
+
+Learner distinguished ordinary Dodge immunity from Perfect-only reward, then created `DodgeResult`, code-owned I-Frame/Perfect-window timing and the `PlayerHitReceiver` result route. They understood that the Perfect Window must remain a subset classification inside an already-valid I-Frame rather than independently granting immunity. Actual-file review caught `Ordinday`, a missing indentation and an end/end comparison that reduced Perfect to an almost unreachable single instant; the learner corrected the behavioral condition. Runtime isolation with zero Dodge distance produced the predicted Perfect, Ordinary and Unhandled outcomes, separating timing immunity from physical range escape. Keep **Practising**: the result/presentation ownership boundary still needs to be reconstructed through `PlayerDodgePresentation`, and final feedback resources are not yet selected.
+
 ## 2026-09-18 Grounded Dodge, animation handoff and controlled diagnosis
 
 Learner separated action-request priority from authored cancellation permission and chose ordinary Basic Attack as Dodge-cancellable while reserving future Guard/Dodge Counters from that rule. They built the one-use input, `Dodging` state, `PlayerDodge` lifetime/direction snapshot and code-driven movement path, then iteratively tested unlocked/locked direction presentation, no-input recovery and to-Run handoff. They also rejected a plausible local-direction ordering hypothesis after it produced no visible change and chose to defer the remaining rare locked-Guard movement/camera twitch rather than stacking unproven fixes. Keep **Practising**: the base feature is usable, but I-Frame/Perfect-window result ownership and disciplined one-variable-at-a-time animation/camera diagnosis still need guided implementation.
@@ -206,11 +222,11 @@ Build enough Unity C# understanding to independently create and explain small ga
 
 ## Not Started
 
-- Health clamping, future-skill interruption policies, target stop distance, Dodge I-Frames/Perfect result/presentation, multi-target switching, lock UI, camera occlusion, enemy target search/patrol, production player death presentation, Boss logic, Counter, and exact deadline-synchronized Guard turning.
+- Health clamping, future-skill interruption policies, target stop distance, remaining Perfect Dodge Trail/Distortion/Counter presentation, multi-target switching, lock UI, camera occlusion, enemy target search/patrol, production player death presentation, Boss logic, and exact deadline-synchronized Guard turning. Focused simultaneous Slow Motion/Hitstop overlap and disable recovery remain unverified.
 
 ## Next Learning Step
 
-Grounded base Dodge and its animation handoff are usable; the remaining locked-Guard movement/camera twitch is deliberately deferred. Before the next behavior change, select one independent slice. The recommended learning step is the smallest Dodge incoming-hit result boundary: identify the timing fields and ownership for I-Frames and the Perfect Window, route one hit through `PlayerHitReceiver`, and verify ordinary avoidance before adding feedback, Slow Motion or a Counter. Ranged execution/data, a complete AI Agent and deferred Death precision tests remain separate concepts.
+Grounded Dodge, its I-Frame/Perfect result boundary, fading current-pose afterimage, separate Start/Perfect audio and brief Perfect-only Slow Motion are connected. The learner accepted the current Scene mix and Slow Motion tuning after separate Ordinary, Perfect and original-Hitstop checks on 2026-09-23. The next single verification concept is composition when Slow Motion and Hitstop overlap, plus owner-disable recovery; do not infer those cases from the separate checks. The shallow Trail experiment remains paused; Distortion and Dodge Counter remain separate steps.
 
 ## Update Rule
 

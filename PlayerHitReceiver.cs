@@ -6,6 +6,8 @@ public class PlayerHitReceiver : MonoBehaviour
     private PlayerActionController playerActionController;
     private PlayerHealth playerHealth;
     private PlayerBlock playerBlock;
+    private PlayerDodge playerDodge;
+    private PlayerDodgePresentation playerDodgePresentation;
     private PlayerGuardPresentation playerGuardPresentation;
     private readonly Dictionary<Transform, AttackThreatContext> activeAttackThreats = new Dictionary<Transform, AttackThreatContext>();
 
@@ -15,6 +17,8 @@ public class PlayerHitReceiver : MonoBehaviour
         playerActionController = GetComponent<PlayerActionController>();
         playerHealth = GetComponent<PlayerHealth>();
         playerGuardPresentation = GetComponent<PlayerGuardPresentation>();
+        playerDodge = GetComponent<PlayerDodge>();
+        playerDodgePresentation = GetComponent<PlayerDodgePresentation>();
     }
 
     public void ReceiveAttackThreat(AttackThreatContext attackThreatContext)
@@ -70,6 +74,25 @@ public class PlayerHitReceiver : MonoBehaviour
     public HitResult ReceiveHit(HitContext hitContext)
     {
         playerActionController.ResolveActionRequests();
+
+        if (playerActionController.CurrentActionState == PlayerActionState.Dodging)
+        {
+            DodgeResult dodgeResult = playerDodge.ResolveDodgeHit();
+
+            if (dodgeResult == DodgeResult.Perfect)
+            {
+                if (playerDodgePresentation != null)
+                {
+                    playerDodgePresentation.PresentPerfectDodge();
+                }
+                return HitResult.PerfectDodge;
+            }
+
+            if (dodgeResult == DodgeResult.Ordinary)
+            {
+                return HitResult.OrdinaryDodge;
+            }
+        }
 
         if (playerActionController.CurrentActionState == PlayerActionState.Blocking)
         {

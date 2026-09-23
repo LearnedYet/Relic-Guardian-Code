@@ -5,6 +5,10 @@ public class PlayerDodge : MonoBehaviour
     [SerializeField] private float dodgeDuration = 0.6f;
     [SerializeField] private float dodgeMovementDuration = 0.6f;
     [SerializeField] private float dodgeDistance = 3f;
+    [SerializeField] private float invulnerabilityStartTime = 0.1f;
+    [SerializeField] private float invulnerabilityEndTime = 0.45f;
+    [SerializeField] private float perfectDodgeStartTime = 0.1f;
+    [SerializeField] private float perfectDodgeEndTime = 0.2f;
 
     private float dodgeEndTime;
     private float dodgeMovementEndTime;
@@ -13,11 +17,16 @@ public class PlayerDodge : MonoBehaviour
     private PlayerMovement playerMovement;
     private PlayerTargeting playerTargeting;
     private PlayerAnimator playerAnimator;
+    private PlayerDodgePresentation playerDodgePresentation;
     private Vector3 dodgeDirection;
+    private Vector3 dodgeStartPosition;
+    private Quaternion dodgeStartRotation;
     private float dodgeStartTime;
     private float previousDodgeProgress;
 
     public Vector3 DodgeDirection => dodgeDirection;
+    public Vector3 DodgeStartPosition => dodgeStartPosition;
+    public Quaternion DodgeStartRotation => dodgeStartRotation;
 
     private void Awake()
     {
@@ -26,6 +35,7 @@ public class PlayerDodge : MonoBehaviour
         playerMovement = GetComponent<PlayerMovement>();
         playerTargeting = GetComponent<PlayerTargeting>();
         playerAnimator = GetComponent<PlayerAnimator>();
+        playerDodgePresentation = GetComponent<PlayerDodgePresentation>();
     }
 
     private void Update()
@@ -58,11 +68,42 @@ public class PlayerDodge : MonoBehaviour
             playerMovement.SnapFacing(dodgeDirection);
         }
 
+        dodgeStartPosition = transform.position;
+        dodgeStartRotation = transform.rotation;
+
         playerAnimator.PlayDodge(dodgeDirection, hasMoveInput);
+
+        if (playerDodgePresentation != null)
+        {
+            playerDodgePresentation.PresentDodgeStart();
+        }
+
         dodgeStartTime = Time.time;
         dodgeEndTime = dodgeStartTime + Mathf.Max(dodgeDuration, 0.01f);
         dodgeMovementEndTime = Mathf.Min(dodgeStartTime + Mathf.Max(dodgeMovementDuration, 0.01f), dodgeEndTime);
         previousDodgeProgress = 0f;
+    }
+
+    public DodgeResult ResolveDodgeHit()
+    {
+        if (playerActionController.CurrentActionState != PlayerActionState.Dodging)
+        {
+            return DodgeResult.Unhandled;
+        }
+
+        float elapsedDodgeTime = Time.time - dodgeStartTime;
+
+        if (elapsedDodgeTime < invulnerabilityStartTime || elapsedDodgeTime > invulnerabilityEndTime)
+        {
+            return DodgeResult.Unhandled;
+        }
+
+        if (elapsedDodgeTime >= perfectDodgeStartTime && elapsedDodgeTime <= perfectDodgeEndTime)
+        {
+            return DodgeResult.Perfect;
+        }
+
+        return DodgeResult.Ordinary;
     }
 
     private Vector3 GetDodgeDirection()

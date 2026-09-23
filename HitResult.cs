@@ -4,5 +4,7 @@ public enum HitResult
 {
     Damaged,
     OrdinaryGuard,
-    PerfectGuard
+    PerfectGuard,
+    OrdinaryDodge,
+    PerfectDodge
 }

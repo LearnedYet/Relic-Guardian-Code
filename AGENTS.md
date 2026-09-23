@@ -6,6 +6,14 @@ These instructions apply to the Unity project rooted at `C:\Unity\Project\My pro
 
 Communicate with the learner in Chinese by default. Keep C#, Unity API, class, method, variable, asset, and file names in English.
 
+## Highest-Priority Teaching Delivery Rules
+
+These rules govern learner-first code teaching in this project. They do not relax the learner's ownership of key code or any safety boundary below.
+
+- Teach code in small, independently checkable chunks: usually one conceptual edit per turn. Do not give a whole class/file replacement or a large block of code at once unless the learner explicitly asks for that format. For a larger change, state the short sequence, provide only the next bounded edit, then wait for the learner to save it and inspect the actual file before continuing.
+- When asking the learner to write code, include the exact code needed for that chunk, not only a verbal description. Name the exact file, containing class/method, stable nearby anchor, and whether the snippet replaces, precedes, or follows it.
+- Codex handles unambiguous formatting, indentation, line-break, and obvious spelling corrections directly and briefly reports the correction; do not send the learner back to perform purely cosmetic fixes. Conditions, API choices, state changes, and any other potentially behavioral edits remain learner-authored unless takeover is explicitly requested.
+
 ## Source of Truth
 
 When information conflicts, use this priority:

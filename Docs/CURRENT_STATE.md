@@ -1,6 +1,6 @@
 # Relic Guardian Current State
 
-Documentation updated: 2026-09-18. This is the sole maintained active Exact Next Step record. Actual code, saved Unity assets, current Editor state and Git status remain authoritative.
+Documentation updated: 2026-09-23. This is the sole maintained active Exact Next Step record. Actual code, saved Unity assets, current Editor state and Git status remain authoritative.
 
 ## Project Environment
 
@@ -39,7 +39,8 @@ Component ownership and implemented call chains live in ARCHITECTURE.md. Exact r
 
 - Attack2Forward is now connected through `Goblin_Attack2.asset` and local state `Base Layer.Attack2SwordShield`; Apply Root Motion remains off. Saved values are Startup/HitWindow/Recovery `0.7 / 0.2 / 0.5s`, animation lead `0.380s`, tracking `0..0.300s`, movement `0.333..0.667s` over `1.2m`, selection range `1.5..2.2m`, damage `1`, and impact limits `2m / 30°`. Its isolated execution passed before selection was added.
 
-- Grounded base Dodge is implemented. The mouse back button records a one-use request; `PlayerActionController` resolves `Dodge -> Block -> Attack -> Jump`; Free and cancellable ordinary Basic Attack may enter `Dodging`; `PlayerDodge` snapshots unlocked camera-relative or locked target-relative direction and requests progress-based code displacement through `PlayerMovement`. Saved tuning is `0.6s` gameplay duration, `0.6s` movement duration and `3m` distance. The current 8-direction Combat/Combat-to-Run presentation, no-input backward/away fallback, unlocked input-facing snap, locked facing and Attack-to-Dodge cancellation were learner-runtime-tested as usable. I-Frames, Perfect Dodge, Dodge Counter and presentation feedback are not implemented.
+- Grounded Dodge remains code-driven through `PlayerDodge` and `PlayerMovement`, with saved gameplay/movement duration `0.65s / 0.65s` and distance `3m`. Locked Dodge snapshots target-relative direction; unlocked Dodge uses camera-relative input. The saved Scene now uses an I-Frame `0.05..0.45s` and nested Perfect Window `0.05..0.3s`. `PlayerHitReceiver` keeps Ordinary and Perfect handled Dodge results damage-free and routes only Perfect to presentation; earlier forced-result branch tests remain the evidence for damage classification.
+- `PlayerDodgePresentation` leaves one current-pose origin afterimage for the complete modular player and rigid weapon. The learner previously verified synchronized Alpha fade and cleanup at a temporary longer inspection lifetime, then restored the saved `0.35s` lifetime. Dodge Start and bound two-layer Perfect audio use independent players. The learner reported separate Ordinary/Perfect playback, Perfect-only Slow Motion and recovery, and original Hitstop normal on 2026-09-23, and accepted the current saved mix. Slow Motion saves duration `0.25s` and scale `0.25`; exact current audio values are in `COMBAT_SFX_RESOURCE_TRACKING.md`. Simultaneous Slow Motion/Hitstop overlap and disable recovery remain unverified. HDR/Bloom, shallow movement Trail, Distortion and Dodge Counter remain unimplemented.
 
 - The saved Lock-On camera baseline keeps Follow `PlayerCameraRoot`, LookAt `LockOnCameraTarget`, `enemyLookWeight = 0.35`, Rotation Composer Aim Damping `(0.2, 0.2)`, Screen Position `(0, 0)`, Dead Zone `(0, 0)`, Orbital Follow `LockToTargetWithWorldUp`, TrackingTarget recentering and horizontal range `-30..25` without wrap. A small twitch during locked Guard movement/animation transitions remains known and intentionally deferred; a local-direction-after-facing experiment had no visible effect and was reverted.
 
@@ -76,7 +77,7 @@ Component ownership and implemented call chains live in ARCHITECTURE.md. Exact r
 
 ## Exact Next Step
 
-The grounded base Dodge checkpoint is complete enough to continue, while the locked Guard movement/camera twitch is explicitly deferred rather than resolved. The exact next feature must still be selected before behavior changes. The recommended Player progression is one bounded Dodge gameplay-result slice: define `PlayerDodge`'s I-Frame and Perfect-window timing plus the `PlayerHitReceiver` result boundary, then runtime-test ordinary Dodge avoidance before adding Perfect Dodge feedback, Slow Motion, Dodge Counter, Guard Counter, Sprint Attack, Player HitStun/HitReaction or Player Death. Preserve the learner-as-author default unless they explicitly request takeover for that bounded implementation.
+The next single time-control check is simultaneous Slow Motion/Hitstop overlap and disable recovery, which were not established by the learner's separate 2026-09-23 checks. Keep the learner-accepted saved Slow Motion `0.25s / 0.25` and the current Scene audio mix unchanged unless they choose new tuning. After this focused regression, select a separate remaining Perfect Dodge layer with the learner; the isolated Shallow Trail experiment remains paused.
 
 ## Git and Protected Local State
 

@@ -1,6 +1,6 @@
 # Relic Guardian Implemented Architecture
 
-Documentation updated against inspected source and saved assets: 2026-09-18. Runtime acceptance is recorded in CURRENT_STATE.md.
+Documentation updated against inspected source and saved assets: 2026-09-23. Runtime acceptance is recorded in CURRENT_STATE.md.
 
 This file is the compact architecture map for behavior that is currently implemented. Actual code, Unity assets, current Editor state, and Git status remain authoritative. Approved but unimplemented feature designs belong in their feature-design documents and must not be treated as runtime facts.
 
@@ -20,15 +20,15 @@ This file is the compact architecture map for behavior that is currently impleme
 | `PlayerActionController` | Sole owner of the coarse player action state and deterministic Dodge/Block/Attack/Jump request arbitration. |
 | `PlayerCombat` | Owns the four-step Basic Attack sequence, attack targets, windows, queue/restart state, attack facing requests, lunge requests, enemy damage requests, and complete attack cleanup. |
 | `PlayerBlock` | Owns the internal Block `Startup`, `Hold`, and `Release` phases, Ordinary movement-lock deadline and Hold release gate, phase-aware Hold movement permission, directional Guard Coverage decisions, and production of the explicit `GuardResult`. |
-| `PlayerDodge` | Owns one grounded Dodge execution's direction snapshot, scaled-time gameplay/movement deadlines, progress-based distance request and natural finish. It has no hit result, I-Frame or Perfect-window logic yet. |
+| `PlayerDodge` | Owns one grounded Dodge execution's direction snapshot, scaled-time gameplay/movement deadlines, progress-based distance request, natural finish, I-Frame/Perfect-window timing and production of the explicit `DodgeResult`. |
 | `PlayerMovement` | Sole owner of player `CharacterController` movement and actual player Transform-facing application. Other gameplay components request facing or displacement through it. |
 | `PlayerTargeting` | Owns the current Lock-On target, nearest-target acquisition, toggle/cancel behavior, and break-distance validation. Lock-On is orthogonal to the coarse action state. |
 | `PlayerCameraController` | Selects Free/Lock-On Cinemachine camera priorities, input-axis ownership, and the weighted Lock-On camera target. |
 | `PlayerAnimator` | Writes Animator parameters and triggers code-driven presentation changes. It does not decide gameplay permission, damage, coverage, or action state. |
-| `PlayerHitReceiver` | Single entry for defendable incoming hits. It resolves same-frame action requests, asks `PlayerBlock` for a `GuardResult`, forwards `Unhandled` hits to `PlayerHealth`, and routes handled results once to Guard presentation. |
+| `PlayerHitReceiver` | Single entry for defendable incoming hits. It resolves same-frame action requests, asks the active Dodge or Block owner for an explicit result, returns distinct handled `HitResult` values, forwards unhandled hits to `PlayerHealth`, and routes Guard results once to Guard presentation. |
 | `PlayerGuardPresentation` | Consumes GuardResult; owns result-specific VFX/SFX selection, requests Ordinary reaction from PlayerAnimator and Perfect-only Hitstop from the shared owner. |
 | `CombatAudioPlayer` | Reusable presentation component that owns preconfigured `AudioSource` channels, maps one `CombatAudioData` layer array to them, stops prior scheduled playback, and schedules valid layers from one DSP-time base. It does not classify hits or own combat permission. |
-| `HitstopController` | Sole current writer/restorer of global `Time.timeScale` for Hitstop. It uses an unscaled deadline, keeps the pre-Hitstop value across overlaps, extends only to the later requested deadline, restores normally or on disable, and rejects requests while disabled. |
+| `HitstopController` | Sole writer/restorer of global `Time.timeScale` for Hitstop and Slow Motion. Each uses an unscaled deadline; Hitstop takes precedence while active, Slow Motion multiplies the pre-effect scale when Hitstop is absent, and the original scale returns after both expire or the owner disables. |
 | `PlayerHealth` | Stores player health and subtracts integer damage forwarded by `PlayerHitReceiver`. It has no clamp, death flow, or Guard decision logic. |
 | `PlayerAttackPresentation` | Owns transient Trail playback and indexed Whoosh/Windup cue selection. Uses a separate AttackAudio instance; persistent WeaponAura is independent. |
 | `PlayerAttackData` | Serializable per-step Basic Attack configuration for damage, target range, lunge speed, and lunge distance. |
@@ -117,7 +117,20 @@ one-use Dodge request
 -> zero-input presentation may continue as interruptible soft recovery
 ```
 
-Unlocked direction uses the existing camera-relative basis and falls back to opposite current facing with no input. Locked direction is built from horizontal target-forward/target-right and falls back away from the target with no input. The snapshot does not steer after entry. Gameplay duration and displacement remain independent from Clip length. Current Dodge does not participate in incoming-hit resolution; I-Frames and Perfect Dodge are future behavior.
+Unlocked direction uses the existing camera-relative basis and falls back to opposite current facing with no input. Locked direction is built from horizontal target-forward/target-right and falls back away from the target with no input. The snapshot does not steer after entry. Gameplay duration and displacement remain independent from Clip length.
+
+Current incoming-hit Dodge flow is:
+
+```text
+PlayerHitReceiver.ReceiveHit
+-> resolve same-frame action requests
+-> while Dodging, PlayerDodge compares elapsed Dodge time with the I-Frame
+   -> outside I-Frame: DodgeResult.Unhandled; continue to Guard/Health
+   -> inside I-Frame and Perfect Window: DodgeResult.Perfect -> HitResult.PerfectDodge
+   -> inside I-Frame only: DodgeResult.Ordinary -> HitResult.OrdinaryDodge
+```
+
+The saved Scene uses I-Frame `0.05..0.45s` and nested Perfect Window `0.05..0.3s`. The broad eligibility check runs before Perfect classification, so a misconfigured Perfect interval cannot grant immunity outside the I-Frame. Both handled Dodge results avoid damage; only Perfect routes from `PlayerHitReceiver` to `PlayerDodgePresentation`. That component snapshots the Dodge start pose into independent static MeshFilter/MeshRenderer objects: active modular SkinnedMeshRenderers are CPU-baked, active rigid MeshRenderers are copied, and LOD-controlled rigid meshes use only LOD0. Each part receives an independent transparent runtime material and an `AfterimageFade` component; timed cleanup destroys the generated GameObject, Mesh and Material. Every accepted `PlayerDodge.BeginDodge()` requests the one-layer Start cue through presentation. Only the Perfect result requests its separate bound two-layer confirmation cue and shared-owner Slow Motion; independent Scene-local `CombatAudioPlayer` instances preserve the Start tail. Presentation does not decide immunity or write `Time.timeScale` directly. Current Slow Motion duration/scale and audio mix were learner-accepted on 2026-09-23; simultaneous Hitstop overlap and disable recovery remain unverified. Movement Trail, Distortion and Dodge Counter are not implemented.
 
 ## Guard Lifecycle and Presentation
 

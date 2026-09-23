@@ -239,7 +239,14 @@
 - [ ] Perfect Dodge
   - [x] Approve the final feedback direction: one current-pose origin afterimage, shallow movement trail, subtle distortion, brief centrally-owned Slow Motion, dedicated confirmation SFX and a Dodge Counter opportunity.
   - [x] Define replaceable Presentation hooks without letting VFX/SFX decide gameplay results or write `Time.timeScale` directly.
-  - [ ] Add the narrower I-Frame/Perfect-window and incoming-hit result slice; verify avoidance before presentation, Slow Motion or Counter work.
+  - [x] Add and runtime-verify the narrower I-Frame/Perfect-window and incoming-hit result slice, including isolated Perfect, Ordinary and Unhandled outcomes with zero Dodge displacement.
+  - [x] Create `PlayerDodgePresentation` and runtime-verify one replaceable current-pose origin afterimage for the complete modular player and rigid weapon, with LOD0-only equipment capture and clean Console.
+  - [x] Add and learner-runtime-verify gradual Alpha fade through one runtime-owned material per generated part, with synchronized player/weapon fade and timed cleanup.
+  - [x] Connect the selected common Dodge Start cue and bound two-layer Perfect confirmation cue through independent playback instances.
+  - [x] Learner-runtime-test Ordinary/Perfect cue separation and accept the saved mix together with Slow Motion on 2026-09-23; current Volume/Pitch/Delay values are recorded in `COMBAT_SFX_RESOURCE_TRACKING.md`.
+  - [x] Add brief Perfect-only Slow Motion through the existing sole time-scale owner; learner reported activation/recovery and the original Hitstop normal separately at saved `0.25s / 0.25` tuning.
+  - [ ] Focused simultaneous Slow Motion/Hitstop overlap and disable-recovery regression; neither is established by the separate runtime checks.
+  - [ ] Screen and validate one restrained shallow movement-Trail resource; the isolated experiment is paused, and Distortion and Counter behavior remain separate slices.
 - [ ] Guard Counter
   - [ ] Let `PlayerBlock` retain the opportunity while `PlayerActionController` admits and shared `PlayerCombat` executes the Counter.
 - [ ] Dodge Counter
