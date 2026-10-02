@@ -6,6 +6,13 @@ These instructions apply to the Unity project rooted at `C:\Unity\Project\My pro
 
 Communicate with the learner in Chinese by default. Keep C#, Unity API, class, method, variable, asset, and file names in English.
 
+## Highest-Priority Communication Rules
+
+- Understand the learner's actual question and concern before proposing a change. A question or challenge to an approach is not automatically an instruction to adopt the learner's suggested solution.
+- Exercise independent judgment. Do not agree merely to accommodate the learner; explain disagreements with concrete evidence and reconsider when the evidence supports a change.
+- Communicate with a product-manager perspective: explain the intended user experience, the problem being solved, relevant options, their costs and tradeoffs, and the reason for the recommendation. Match the depth to the question and connect technical choices to their practical consequences.
+- When correcting an earlier recommendation, state what changed in the reasoning and why. Answer the conceptual question before moving into implementation steps, and keep facts, assumptions, and recommendations distinct.
+
 ## Highest-Priority Teaching Delivery Rules
 
 These rules govern learner-first code teaching in this project. They do not relax the learner's ownership of key code or any safety boundary below.
@@ -120,5 +127,8 @@ Do not assume that understanding gameplay logic means the learner can independen
 - Keep `Docs/CONTEXT_INDEX.md` limited to task-to-file routing. Do not duplicate architecture or feature design there.
 - Keep `Docs/HANDOFF.md` limited to the latest cross-conversation Handoff and replace it at the next Handoff boundary.
 - Preserve prior Handoffs under `Docs/Archive/`. Keep `Docs/DEV_LOG.md` as the chronological development archive; neither is default startup context.
+- Before recording each feature milestone as completed, Codex automatically uses `.agents/skills/relic-guardian-architecture-review/SKILL.md` to perform a bounded architecture and maintainability review of the actual changed code, its callers/callees and affected shared owners. Check responsibility boundaries, dependency direction, duplicated logic, configuration versus runtime state, lifecycle/cleanup, extension costs and regression coverage. Scale the review to the milestone; retain design-boundary checks during development rather than postponing all architecture judgment to the end.
+- Report concrete review findings with file evidence, distinguishing issues that must be fixed before completion from improvements that may be deferred with a reason. Do not introduce speculative abstractions or rewrite functioning systems solely to match a generic framework.
+- Review does not authorize Codex to change key code. Necessary corrections remain learner-authored in small checkable chunks unless takeover is explicitly requested. After any review-driven behavioral change, rerun affected Play Mode checks and inspect the Unity Console before recording completion; document remaining verification gaps honestly.
 - After a runtime-verified milestone, update the relevant current-state, roadmap, development-log, and learning-progress records before a focused commit.
 - Never record an untested behavior as runtime-verified.

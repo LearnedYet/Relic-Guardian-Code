@@ -1,6 +1,6 @@
 # Player Combat Extension Design
 
-Status: architecture plus Basic/Perfect Dodge gameplay and presentation direction approved on 2026-09-17. Thirty-two selected local Dodge AnimationClips are imported and validated, but no Dodge, Counter, Player HitStun or Player Death gameplay implementation is claimed by this document.
+Status: architecture plus Basic/Perfect Dodge direction approved on 2026-09-17; pending Enchantment contract recorded on 2026-09-30. This is a design document, not implementation evidence; use ARCHITECTURE.md/CURRENT_STATE.md and actual code for connected Basic/Perfect Dodge and Guard Counter behavior.
 
 ## Scope
 
@@ -215,6 +215,26 @@ Keep `PlayerAttackData` as inline serializable configuration until multiple conc
 - `PlayerCombat` executes the selected Counter attack through the shared attack flow.
 
 This allows a short opportunity to remain valid after `Blocking` or `Dodging` returns to `Free` without giving defense components attack authority.
+
+## Paused Timed Enchantment Contract (2026-10-02)
+
+On 2026-10-02 the learner explicitly paused Enchantment and chose Dodge Counter as the next milestone after Guard Counter completion. Pause has no automatic end at Dodge Counter acceptance. Preserve existing PlayerEnchantment.cs (HasEnchantment / RefreshEnchantment), shared PlayerCombat attack/configuration seams and HitContext.FeedbackType/HitIndex presentation selection as extension boundaries. No additional interface hierarchy is required for this pause. Scene attachment, Perfect-result triggers, damage bonus and Enchantment feedback stay deferred until explicit learner resumption. The rules below remain approved future design, not implemented behavior.
+
+- A qualifying Perfect Guard or Perfect Dodge enters an independent timed Enchantment status. It is orthogonal to Free/Blocking/Dodging/Attacking and must not become a mutually exclusive action state.
+- The learner chooses the Inspector duration; retrigger refreshes the end deadline. Counter opportunity and Enchantment deadlines remain independent. Both Counters should benefit from the same status.
+- Initial damage rule is base attack damage plus a configurable integer bonus. Keep the extension boundary open for later effects; concrete additional damage/status effects are deferred.
+- The intended longer-term direction lets enchanted attacks use the Counter-style weapon/hit/audio feedback. Current Counter presentation still needs its own connection before this status is integrated; do not treat these planned routes as implemented.
+- Learner expects duration tuning to avoid unwanted opportunity/buff expiry overlap in the first pass. Exact expiry-during-attack behavior (hit-time sampling versus entry snapshot), interruption/disable rules and final presentation routing still need a bounded decision when integration begins.
+
+## Paused Enemy Blue / Local Time-Slow Idea (2026-10-02)
+
+Store this idea alongside paused Enchantment. The learner explicitly deferred teaching and implementation on 2026-10-02; it is not required for Guard Counter acceptance and has no automatic resume after Dodge Counter.
+
+- Intended experience: a reusable timed status turns the affected enemy blue and slows that enemy only. Player, other enemies and global time are unchanged.
+- First intended caller, if resumed: apply on an accepted Guard Counter hit, not on the Perfect Guard event. Future skills and Enchantment may reuse the effect.
+- No fields, hit payload, component, renderer mutation or gameplay integration was added for this idea. PlayerAttackData and HitContext have no local-time-slow configuration or payload.
+- Implementation boundary to investigate later: keep status orthogonal to enemy coarse states; carry gameplay status requests explicitly rather than deriving them from HitFeedbackType. Reuse one per-enemy local clock for movement, attack phases/animation-relative motion, stagger and cooldowns, AI spacing deadlines and Animator speed. Global HitstopController remains the sole global-time owner.
+- Open decisions: duration/ratio, refresh/stack policy, status lifetime clock, effect-start frame, death/disable restoration, exact renderers/material overrides and threat ExpectedImpactTime updates while Startup is slowed. Current enemy timers use global scaled Time.time/Time.deltaTime, so changing only Animator speed would desynchronize behavior.
 
 ## HitStun, Health and Death Direction
 

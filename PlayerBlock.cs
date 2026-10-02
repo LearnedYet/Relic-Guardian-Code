@@ -5,6 +5,7 @@ public class PlayerBlock : MonoBehaviour
     [SerializeField] private float guardCoverageHalfAngle = 90f;
     [SerializeField] private float facingAssistHalfAngle = 60f;
     [SerializeField] private float ordinaryGuardMovementLockDuration = 0.45f;
+    [SerializeField] private float guardCounterOpportunityDuration = 1f;
 
     private bool isPerfectGuardWindowOpen;
     private PlayerInputReader playerInputReader;
@@ -25,6 +26,7 @@ public class PlayerBlock : MonoBehaviour
     private Vector3 guardFacingBeforeAssist;
     private float guardFacingAssistEndTime;
     private float ordinaryGuardMovementLockEndTime;
+    private float guardCounterOpportunityEndTime;
 
     public bool AllowsMovement
     {
@@ -50,6 +52,27 @@ public class PlayerBlock : MonoBehaviour
     public Vector3 GuardFacingAssistDirection
     {
         get { return guardFacingAssistDirection; }
+    }
+
+    public bool HasGuardCounterOpportunity
+    {
+        get { return Time.time < guardCounterOpportunityEndTime; }
+    }
+
+    public bool TryConsumeGuardCounterOpportunity()
+    {
+        if (!HasGuardCounterOpportunity)
+        {
+            return false;
+        }
+
+        guardCounterOpportunityEndTime = 0f;
+        return true;
+    }
+
+    public void ClearGuardCounterOpportunity()
+    {
+        guardCounterOpportunityEndTime = 0f;
     }
 
     public bool TryStartFacingAssist(AttackThreatContext attackThreatContext)
@@ -141,6 +164,7 @@ public class PlayerBlock : MonoBehaviour
 
         if (isPerfectGuardWindowOpen)
         {
+            guardCounterOpportunityEndTime = Time.time + guardCounterOpportunityDuration;
             return GuardResult.Perfect;
         }
         else
@@ -196,6 +220,13 @@ public class PlayerBlock : MonoBehaviour
         }
 
         playerAnimator.PlayBlockStart();
+    }
+
+    public void CancelBlock()
+    {
+        ClosePerfectGuardWindow();
+        ClearGuardFacingAssist();
+        ordinaryGuardMovementLockEndTime = 0f;
     }
 
     private void OpenPerfectGuardWindow()

@@ -1,6 +1,6 @@
 # Combat SFX Resource Tracking
 
-Resource tracking updated: 2026-09-23. Guard and Attack saved configuration was last audited on 2026-09-06. Runtime acceptance dates are stated separately.
+Resource tracking updated: 2026-10-02. Current Counter cues and outer-volume overrides are recorded in Counter Audio Status; earlier layer tables retain their dated baselines. Runtime acceptance dates are stated separately.
 
 ## Status and Boundary
 
@@ -74,7 +74,7 @@ All paths below are relative to:
 | Perfect confirmation | 1 | `Perfect/noisy_swishes_06_stereo.wav` | `9e1e5886d65b73b4b8d04c8a6c6c7047` | `0.34` | `0.525` | `1.01` | `1.01` | `0` | `0.01` |
 | Perfect confirmation | 2 | `Perfect/noisy_swishes_08_stereo.wav` | `caa25c483db16e74d8d07d6c26183812` | `0.70` | `0.633` | `0.73` | `0.73` | `0.02` | `0.02` |
 
-The current `CombatAudioPlayer.Play()` stops all channels owned by that player before scheduling a new cue. The saved Scene uses independent Dodge Start and Perfect Dodge `CombatAudioPlayer` instances so a later Perfect confirmation does not stop the start cue on the other player. `PlayerDodge.BeginDodge()` requests Start through `PlayerDodgePresentation`; only the actual Perfect result in `PlayerHitReceiver` requests confirmation through the same presentation component. `PlayerDodge` remains the Perfect-window classifier. The learner separately tested Ordinary and Perfect playback with Slow Motion and accepted the current mix. Simultaneous Slow Motion/Hitstop overlap was not explicitly tested in that report.
+The current `CombatAudioPlayer.Play()` stops all channels owned by that player before scheduling a new cue. The saved Scene uses independent Dodge Start and Perfect Dodge `CombatAudioPlayer` instances so a later Perfect confirmation does not stop the start cue on the other player. `PlayerDodge.BeginDodge()` requests Start through `PlayerDodgePresentation`; only the actual Perfect result in `PlayerHitReceiver` requests confirmation through the same presentation component. `PlayerDodge` remains the Perfect-window classifier. The learner separately tested Ordinary and Perfect playback with Slow Motion and accepted the current mix. That 2026-09-23 listening report did not test simultaneous Slow Motion/Hitstop; a separate shared-controller overlap and disable check passed on 2026-09-25 without changing this cue mix.
 
 ## Attack Motion and Hit Resources
 
@@ -126,7 +126,28 @@ Separating the Events keeps both cues pose-authored and lets attack-step validat
 | Sword impact | `Hit/SWSH_Sword Slash Impact V1 Assorted 18_DDUMAIS_NONE.wav` | `a12b51e550e35b247811a0b78c3f49df` |
 | Flesh/gore body | `Hit/GOREFlsh_Flesh And Gore Assorted 08_DDUMAIS_NONE.wav` | `b0a4b84c8a8b7de439d9bf2d474da3a2` |
 
-The earlier screenshots and Lab state contained temporary audition values; the tables above record the accepted runtime Attack Motion mappings. The original Sword Slash Impact contains a long motion lead, so the connected Layer 0 currently uses the learner-trimmed local derivative `Hit/2.wav` (approximately `2.001s`, audible from file time zero) rather than moving confirmed feedback before hit resolution. Current confirmed-hit data on both targets is Master `1`: trimmed Sword Volume `0.8`, Pitch `1`, Delay `0`; Flesh/Gore Volume `0.5`, Pitch `1`, Delay `0.05s`. The temporary `EnemyHitAudioPlayer.prefab` has two bound 2D AudioSources and a `2.0s` lifetime; the learner accepted the current sound at runtime on 2026-09-08. Motion Whoosh and confirmed Hit audio remain separate.
+The earlier screenshots and Lab state contained temporary audition values; the tables above record the accepted runtime Attack Motion mappings. The original Sword Slash Impact contains a long motion lead, so the connected Layer 0 currently uses the learner-trimmed local derivative `Hit/2.wav` (approximately `2.001s`, audible from file time zero) rather than moving confirmed feedback before hit resolution. The 2026-09-08 accepted confirmed-hit data on both targets used Master `1` (the 2026-10-02 outer-volume override is recorded below): trimmed Sword Volume `0.8`, Pitch `1`, Delay `0`; Flesh/Gore Volume `0.5`, Pitch `1`, Delay `0.05s`. The temporary `EnemyHitAudioPlayer.prefab` has two bound 2D AudioSources and a `2.0s` lifetime; the learner accepted the current sound at runtime on 2026-09-08. Motion Whoosh and confirmed Hit audio remain separate.
+
+## Counter Audio Status (2026-10-02)
+
+Guard Counter gameplay/animation/blue Trail, dedicated motion Whoosh and indexed confirmed-hit bing audio are connected. Learner authored the fields/forwarding/selection in small reviewed chunks. HitContext now carries HitFeedbackType and HitIndex with optional Default/0 constructor values. PlayerCombat supplies GuardCounter and hit 1/2, EnemyHitReceiver forwards the context, and EnemyHitPresentation selects guardCounterHitAudioDataByIndex[HitIndex - 1] with null/bounds guards. Each accepted hit uses an independent temporary player, so later Counter hit audio does not stop the first instance.
+
+NearTarget/FarTarget each save two Counter cues: Element 0 bing1, Element 1 bing2, one layer each, Master Volume/Layer Volume/Pitch 1, Delay 0. Current ordinary hit Master is 0.25; its layers remain 0.8/0.5 with Pitch 1 and Delay 0/0.05. Basic Whoosh/Windup outer Masters are 0.25; Ordinary/Perfect Guard and Dodge Start/Perfect Dodge outer Masters are 0.6. These are exact outer-data assignments, not ratios or internal-layer changes.
+
+Current main-project asset identities were verified through Unity. Initial import preserved the selected Lab metadata, but the current bing files have different GUIDs/lengths; this table records the currently loaded assets and does not assume the original import identities still apply.
+
+| Swing | Role | Path relative to GuardCounter | Current GUID | Clip length seconds |
+| ---: | --- | --- | --- | ---: |
+| 1 | Confirmed hit | Hit/bing1.wav | 677aec61c7b43cd46aa2807eede18721 | 0.6930417 |
+| 2 | Confirmed hit | Hit/bing2.wav | 571178a7750047c49b4d566a1c17d506 | 1.33275 |
+| 1 | Motion Whoosh | Whoosh/whoosh1.wav | 7fd8b46073120eb409f7cd90ea254b5d | 1.115 |
+| 2 | Motion Whoosh | Whoosh/whoosh 2 .wav | 4a0725ecc5afe5f4ab8f82b0a3b951a4 | 1.141125 |
+
+Whoosh uses the existing AttackAudio player with Master/Layer Volume/Pitch 1 and Delay 0. With explicit authorization, Codex authored frame 1 / Int 0 and frame 32 / Int 1 PlayGuardCounterWeaponWhoosh Events, preserving the other nine Events and animation data. A later Play stops that player's prior channels; this is the existing motion-audio policy, not separate concurrent Whoosh instances. Hit audio lifetime is 2s, longer than either current bing Clip at Pitch 1 / Delay 0.
+
+Codex configured both targets after explicit learner takeover for this configuration and saved the Scene, checking that all other presentation properties were unchanged. Learner reported the current audio test normal; detailed empty-swing, first-hit-lethal, opportunity and shared-Trail regression are not independently certified by that broad report. Console checks returned zero errors/warnings. Bounded architecture review traced identity, independent hit-audio lifetime, shared execution/cleanup and configuration ownership, finding no required structural correction within that scope. Full Guard Counter completion remains pending FX_hit_04_Ice and focused regression.
+
+Dodge Counter is the next milestone after Guard Counter acceptance. Enchantment is paused by explicit learner decision; preserve existing extension seams and do not automatically connect it after Dodge Counter.
 
 ## Implemented Guard Integration
 

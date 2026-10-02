@@ -28,6 +28,7 @@ public class EnemyHitReceiver : MonoBehaviour
 
     public void ReceiveHit(HitContext hitContext)
     {
+        //保护
         if (!CanReceiveHit)
         {
             return;
@@ -49,7 +50,7 @@ public class EnemyHitReceiver : MonoBehaviour
 
         if (enemyHitPresentation != null)
         {
-            enemyHitPresentation.PresentHit();
+            enemyHitPresentation.PresentHit(hitContext);
         }
 
         if (enemyHealth.IsAlive && enemyStateController != null)

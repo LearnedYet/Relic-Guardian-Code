@@ -2,6 +2,22 @@
 
 This document tracks programming understanding separately from feature completion. It is a learning aid, not an evaluation.
 
+## 2026-10-02 Counter motion audio and per-hit feedback identity
+
+Learner wrote dedicated two-cue Whoosh forwarding and HitFeedbackType / HitContext metadata in guided chunks, corrected missing optional constructor defaults after review, mapped Counter hit indices 1/2 to audio array indices 0/1, and forwarded the immutable message through receiving to presentation. Codex authored the two Whoosh Events and configured bing1/bing2 only after explicit takeover for those scopes. Learner reported the current audio test normal. Keep **Practising**: optional arguments, per-hit message fields versus method-local selection, bounds checks, and motion versus confirmed-hit feedback still need independent reconstruction or explanation evidence.
+
+Learner paused Enchantment and designated Dodge Counter as the next milestone after Guard Counter. Existing placeholder and attack/feedback extension seams remain. Learner then authored per-hit Ice resource selection with method-local selected Prefab/lifetime/scale, corrected the spawn guard to validate hitImpactAnchor, tested the effect and tuned only Counter scale to 0.6. Keep Practising: configuration fields versus per-call locals and resource fallback. Focused Guard Counter regression remains pending. Enemy-blue/local-time-slow was discussed, with victim-only and accepted-Counter-hit intent confirmed, then explicitly paused alongside Enchantment; no implementation or learning exercise was completed for that idea.
+
+## 2026-09-30 Guard Counter ownership, animation recovery and Trail diagnosis
+
+The learner wrote the Guard Counter opportunity/admission/shared-execution code in bounded reviewed chunks, identified two distinct hit segments and Trail windows from the Clip, and reported damage/sequence normal. They questioned why an Animator exit wire was being proposed after choosing a code-driven FSM; the settled implementation uses a guarded late recovery Event and direct CrossFade, and the learner reported natural return normal. Keep **Practising**: distinguish coarse action completion from visual recovery, validate callbacks by current attack family and hit index, and reconstruct shared cleanup.
+
+The learner challenged a color/style explanation when original test-project parameters still produced thin lines. Read-only inspection exposed endpoint Z-axis alignment performed by the vendor script. After the local rotation change they reported improvement; following Replace and Keep, a -90 entered in Bottom Position X instead of Rotation X produced a giant blue surface. Actual binder inspection located the offset; the learner corrected it and accepted the final appearance. This is guided diagnosis/runtime-check evidence, not independent mastery of VFX Graph or Transform orientation. Fixed local alignment is retained; no automatic per-frame correction was added. Next practise Counter motion cues through existing audio playback, then confirmed-hit resource selection.
+
+## 2026-09-25 Controlled overlap test and temporary-code cleanup
+
+The learner added a temporary `ContextMenu` test method to the shared `HitstopController`, extended only the test requests to Slow Motion `5s / 0.25` followed by Hitstop `3s`, and reported the expected pause, remaining slow interval and normal restoration in Play Mode. They then disabled the component during an active effect and reported immediate recovery and a normal Console. After reviewing the actual file, the learner removed the test method while preserving both production request methods and the saved Scene values. Independent compilation passed with zero errors and one pre-existing unused-field warning. Keep **Practising**: explain why unscaled deadlines continue while `timeScale` is zero, and distinguish this controlled same-frame order from the untested reverse order or natural-combat overlap.
+
 ## 2026-09-23 Shared time owner and accepted Dodge feedback tuning
 
 The learner extended `HitstopController` with a second unscaled deadline and a single precedence rule for Hitstop versus Slow Motion. Actual-file review corrected first-effect capture, absolute-time expiry, complete disable restoration and strict positive/less-than-one request bounds. They then connected only the real Perfect result through `PlayerDodgePresentation`, leaving `PlayerDodge` as the classifier and the shared controller as the sole global time writer. Separate Ordinary Dodge, Perfect Dodge with confirmation audio/Slow Motion and recovery, and original Hitstop checks were learner-reported normal; the current saved `0.25s / 0.25` Slow Motion and audio mix were accepted. Keep **Practising**: predict and verify simultaneous overlap and disable recovery rather than treating separate tests as proof of composition.
@@ -222,11 +238,11 @@ Build enough Unity C# understanding to independently create and explain small ga
 
 ## Not Started
 
-- Health clamping, future-skill interruption policies, target stop distance, remaining Perfect Dodge Trail/Distortion/Counter presentation, multi-target switching, lock UI, camera occlusion, enemy target search/patrol, production player death presentation, Boss logic, and exact deadline-synchronized Guard turning. Focused simultaneous Slow Motion/Hitstop overlap and disable recovery remain unverified.
+- Health clamping, future-skill interruption policies, target stop distance, remaining Perfect Dodge Trail/Distortion/Counter presentation, multi-target switching, lock UI, camera occlusion, enemy target search/patrol, production player death presentation, Boss logic, and exact deadline-synchronized Guard turning. Reverse-order and natural-combat Slow Motion/Hitstop overlap have not been independently tested.
 
 ## Next Learning Step
 
-Grounded Dodge, its I-Frame/Perfect result boundary, fading current-pose afterimage, separate Start/Perfect audio and brief Perfect-only Slow Motion are connected. The learner accepted the current Scene mix and Slow Motion tuning after separate Ordinary, Perfect and original-Hitstop checks on 2026-09-23. The next single verification concept is composition when Slow Motion and Hitstop overlap, plus owner-disable recovery; do not infer those cases from the separate checks. The shallow Trail experiment remains paused; Distortion and Dodge Counter remain separate steps.
+Guard Counter opportunity, shared two-hit execution/recovery, blue Trail and dedicated Whoosh/bing audio are connected. Next learner edit adds separate Counter impact Prefab/lifetime/scale configuration in EnemyHitPresentation, then connects FX_hit_04_Ice selection through HitContext. Full feature acceptance requires focused regression. Dodge Counter is the next milestone; Enchantment is paused until explicit resumption, preserving existing extension seams. Shallow Dodge Trail/Distortion remain paused/deferred.
 
 ## Update Rule
 

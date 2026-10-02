@@ -245,12 +245,23 @@
   - [x] Connect the selected common Dodge Start cue and bound two-layer Perfect confirmation cue through independent playback instances.
   - [x] Learner-runtime-test Ordinary/Perfect cue separation and accept the saved mix together with Slow Motion on 2026-09-23; current Volume/Pitch/Delay values are recorded in `COMBAT_SFX_RESOURCE_TRACKING.md`.
   - [x] Add brief Perfect-only Slow Motion through the existing sole time-scale owner; learner reported activation/recovery and the original Hitstop normal separately at saved `0.25s / 0.25` tuning.
-  - [ ] Focused simultaneous Slow Motion/Hitstop overlap and disable-recovery regression; neither is established by the separate runtime checks.
+  - [x] Focused same-frame Slow Motion-then-Hitstop overlap and active-owner disable-recovery regression: a temporary `5s / 0.25` Slow Motion plus `3s` Hitstop test produced the expected pause, remaining slowdown and normal recovery; the learner reported disable recovery and Console normal on 2026-09-25. The temporary test method was removed. Reverse-order and natural-combat overlap were not independently tested.
   - [ ] Screen and validate one restrained shallow movement-Trail resource; the isolated experiment is paused, and Distortion and Counter behavior remain separate slices.
 - [ ] Guard Counter
-  - [ ] Let `PlayerBlock` retain the opportunity while `PlayerActionController` admits and shared `PlayerCombat` executes the Counter.
-- [ ] Dodge Counter
+  - [x] Let PlayerBlock own a one-use Perfect opportunity, PlayerActionController admit grounded Attack from Blocking/Free, and shared PlayerCombat execute GuardCounter in Attacking.
+  - [x] Connect non-looping two-hit Parry_Counter_Attack, frame-42 gameplay cleanup and frame-108 code-driven visual recovery; learner reported damage/return normal.
+  - [x] Connect Counter Trail playback, diagnose endpoint rotation/accidental 90m offset and accept current blue appearance in the main combat camera.
+  - [x] Connect two Counter Whoosh cues and indexed bing1/bing2 through existing playback/receiving infrastructure; learner reported current audio normal on 2026-10-02.
+  - [x] Implement independent Counter impact selection and bind FX_hit_04_Ice on NearTarget; learner reported testing it and tuned Counter size to 0.6, with ordinary Blood unchanged at 0.45. FarTarget remains unbound; final size and full regression are pending.
+  - [ ] Complete integration regression including ordinary AttackTrail/WeaponAura after shared-endpoint rotation; full feature acceptance remains pending.
+- [ ] Dodge Counter — next milestone after Guard Counter acceptance (learner decision 2026-10-02)
   - [ ] Reuse the same attack-entry/execution path while `PlayerDodge` retains its own opportunity.
+  - [x] Import Combo_Attack_01_01 animation only; looping, Events and gameplay integration still need authoring.
+- [ ] Timed Enchantment — paused by learner on 2026-10-02; resume only on explicit request
+  - [x] Agree on independent Perfect Guard/Perfect Dodge-triggered status, refresh on retrigger and base damage plus configurable integer bonus; duration is learner-tuned.
+  - [ ] Paused: preserve the existing unattached PlayerEnchantment placeholder API and attack/feedback extension seams. Perfect-result triggers, damage bonus and feedback integration remain deferred; do not automatically schedule them after Dodge Counter.
+- [ ] Enemy blue / local time-slow status — paused idea beside Enchantment (learner decision 2026-10-02)
+  - [ ] If explicitly resumed, first apply on accepted Guard Counter hit to the affected enemy only; later skills/Enchantment may reuse it. No code/configuration/teaching started; not part of current Guard Counter acceptance. Pending decisions are in PLAYER_COMBAT_EXTENSION_DESIGN.md.
 - [ ] Sprint Attack
   - [ ] Reuse `Attacking` and the shared `PlayerCombat` executor; do not create a parallel attack system.
 - [ ] Player HitStun / HitReaction

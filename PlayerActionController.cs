@@ -76,24 +76,34 @@ public class PlayerActionController : MonoBehaviour
 
         if (dodgeRequested && TryStartDodge())
         {
+            playerBlock.ClearGuardCounterOpportunity();
             return;
         }
         if (blockRequested && TryStartBlock())
+        {
+            playerBlock.ClearGuardCounterOpportunity();
+            return;
+        }
+
+        if (attackRequested && TryStartGuardCounter())
         {
             return;
         }
 
         if (attackRequested && playerCombat.TryHandleAttackRequest())
         {
+            playerBlock.ClearGuardCounterOpportunity();
             return;
         }
 
         if (jumpRequested && playerMovement.CanStartJump)
         {
             wasJumpAcceptedThisFrame = true;
+            playerBlock.ClearGuardCounterOpportunity();
         }
     }
 
+    //尝试开始闪避
     private bool TryStartDodge()
     {
         if (!playerMovement.IsGrounded)
@@ -108,6 +118,7 @@ public class PlayerActionController : MonoBehaviour
             return true;
         }
 
+        //闪避取消攻击
         if (currentActionState == PlayerActionState.Attacking && playerCombat.TryCancelAttack())
         {
             currentActionState = PlayerActionState.Dodging;
@@ -140,6 +151,30 @@ public class PlayerActionController : MonoBehaviour
         }
 
         return false;
+    }
+
+    private bool TryStartGuardCounter()
+    {
+        if (!playerMovement.IsGrounded
+            || (currentActionState != PlayerActionState.Blocking
+                && currentActionState != PlayerActionState.Free))
+        {
+            return false;
+        }
+
+        if (!playerBlock.TryConsumeGuardCounterOpportunity())
+        {
+            return false;
+        }
+
+        if (currentActionState == PlayerActionState.Blocking)
+        {
+            playerBlock.CancelBlock();
+        }
+
+        currentActionState = PlayerActionState.Attacking;
+        playerCombat.BeginGuardCounter();
+        return true;
     }
 
     public bool TryStartAttack(bool isGrounded)

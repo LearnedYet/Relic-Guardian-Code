@@ -28,7 +28,7 @@ Read:
 - `Assets/RelicGuardian/Player/Scripts/CombatAudioPlayer.cs`
 - `Assets/RelicGuardian/Player/Scripts/CombatAudioData.cs`
 - `Assets/RelicGuardian/Player/Scripts/CombatAudioLayer.cs`
-- `Assets/RelicGuardian/Enemy/Scripts/EnemyHitReceiver.cs` and `EnemyHitPresentation.cs` once created; these are planned files, not current implementation evidence.
+- `Assets/RelicGuardian/Enemy/Scripts/EnemyHitReceiver.cs` and `EnemyHitPresentation.cs` for the implemented receiving and resource-selection boundary.
 
 Use this route for enemy receiving, confirmed-hit presentation and lethal-feedback lifetime questions. Consult the dedicated feature design for scope and acceptance requirements.
 
@@ -55,6 +55,9 @@ Read:
 - `Assets/RelicGuardian/Player/Scripts/PlayerCombat.cs`
 - `Assets/RelicGuardian/Player/Scripts/PlayerDodge.cs` when the task concerns Dodge lifetime, direction, movement, I-Frames or Perfect Dodge.
 - `Assets/RelicGuardian/Player/Scripts/PlayerAttackData.cs`
+- `Assets/RelicGuardian/Player/Scripts/PlayerAttackType.cs` for Basic/Counter Event identity.
+- `Assets/RelicGuardian/Player/Scripts/PlayerAttackPresentation.cs` and COMBAT_SFX_RESOURCE_TRACKING.md for Counter motion audio.
+- `Assets/RelicGuardian/Player/Scripts/PlayerEnchantment.cs` and the paused Enchantment / enemy-blue-local-time-slow sections in PLAYER_COMBAT_EXTENSION_DESIGN.md when discussing those ideas; the stub and design do not prove gameplay integration.
 - `Assets/RelicGuardian/Player/Scripts/PlayerAnimator.cs`
 - `Assets/RelicGuardian/Player/Scripts/PlayerMovement.cs`
 
@@ -130,6 +133,18 @@ Learning state and internship preparation:
 - `Docs/GAME_CLIENT_LEARNING_PLAN.md`
 
 Read only the track or feature currently being discussed.
+
+## Milestone Architecture and Maintainability Review
+
+Before recording a completed feature milestone, use:
+
+- `.agents/skills/relic-guardian-architecture-review/SKILL.md`;
+- `AGENTS.md` for the milestone gate and authorship/Git boundaries;
+- `Docs/ARCHITECTURE.md` and `Docs/CURRENT_STATE.md`;
+- the matching feature route above, its actual implementation, direct callers/callees and affected shared owners;
+- current Git status, relevant saved Unity wiring, and the milestone's verification evidence.
+
+The skill routes to focused Unity checks and source/adaptation notes. This route does not certify completion or authorize implementation changes. Routine learner saved-edit checks do not require a full milestone review.
 
 ## Historical Investigation
 

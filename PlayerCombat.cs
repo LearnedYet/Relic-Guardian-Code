@@ -3,6 +3,7 @@ using UnityEngine;
 public class PlayerCombat : MonoBehaviour
 {
     [SerializeField] private PlayerAttackData[] attacks;
+    [SerializeField] private PlayerAttackData guardCounterAttackData = new PlayerAttackData();
     [SerializeField] private LayerMask hitTargetLayers;
 
     private PlayerAnimator playerAnimator;
@@ -22,6 +23,8 @@ public class PlayerCombat : MonoBehaviour
     private Collider currentAttackTarget;
     private Collider confirmedAttackTarget;
     private int currentAttackIndex;
+    private int lastGuardCounterHitIndex;
+    private PlayerAttackType currentAttackType = PlayerAttackType.Basic;
 
     public bool IsHitWindowOpen
     {
@@ -30,7 +33,15 @@ public class PlayerCombat : MonoBehaviour
 
     private PlayerAttackData CurrentAttackData
     {
-        get { return attacks[currentAttackIndex]; }
+        get
+        {
+            if (currentAttackType == PlayerAttackType.GuardCounter)
+            {
+                return guardCounterAttackData;
+            }
+
+            return attacks[currentAttackIndex];
+        }
     }
 
     private bool HasNextAttack
@@ -41,6 +52,7 @@ public class PlayerCombat : MonoBehaviour
     private bool IsCurrentAttackStep(int attackIndex)
     {
         return playerActionController.CurrentActionState == PlayerActionState.Attacking
+            && currentAttackType == PlayerAttackType.Basic
             && attackIndex == currentAttackIndex;
     }
 
@@ -64,6 +76,75 @@ public class PlayerCombat : MonoBehaviour
         isAttackFacingActive = false;
         isBasicAttackLungeActive = false;
 
+        ResolveCurrentAttackHit();
+    }
+
+    public void OpenGuardCounterHitWindow(int hitIndex)
+    {
+        if (playerActionController.CurrentActionState != PlayerActionState.Attacking
+            || currentAttackType != PlayerAttackType.GuardCounter
+            || hitIndex < 1
+            || hitIndex > 2
+            || hitIndex <= lastGuardCounterHitIndex)
+        {
+            return;
+        }
+
+        lastGuardCounterHitIndex = hitIndex;
+        isHitWindowOpen = true;
+        isAttackFacingActive = false;
+        isBasicAttackLungeActive = false;
+        ResolveCurrentAttackHit();
+    }
+
+    public void CloseGuardCounterHitWindow(int hitIndex)
+    {
+        if (playerActionController.CurrentActionState != PlayerActionState.Attacking
+            || currentAttackType != PlayerAttackType.GuardCounter
+            || hitIndex != lastGuardCounterHitIndex)
+        {
+            return;
+        }
+
+        isHitWindowOpen = false;
+        confirmedAttackTarget = null;
+    }
+
+    public void OpenGuardCounterWeaponTrail()
+    {
+        if (playerActionController.CurrentActionState != PlayerActionState.Attacking
+            || currentAttackType != PlayerAttackType.GuardCounter)
+        {
+            return;
+        }
+
+        playerAttackPresentation.OpenCounterWeaponTrail();
+    }
+
+    public void CloseGuardCounterWeaponTrail()
+    {
+        if (playerActionController.CurrentActionState != PlayerActionState.Attacking
+            || currentAttackType != PlayerAttackType.GuardCounter)
+        {
+            return;
+        }
+
+        playerAttackPresentation.CloseCounterWeaponTrail();
+    }
+
+    public void PlayGuardCounterWeaponWhoosh(int swingIndex)
+    {
+        if (playerActionController.CurrentActionState != PlayerActionState.Attacking
+            || currentAttackType != PlayerAttackType.GuardCounter)
+        {
+            return;
+        }
+
+        playerAttackPresentation.PlayGuardCounterWhoosh(swingIndex);
+    }
+
+    private void ResolveCurrentAttackHit()
+    {
         if (IsCurrentAttackTargetInRange())
         {
             confirmedAttackTarget = currentAttackTarget;
@@ -72,9 +153,16 @@ public class PlayerCombat : MonoBehaviour
             if (enemyHitReceiver != null)
             {
                 Vector3 incomingDirection = confirmedAttackTarget.transform.position - transform.position;
+                HitFeedbackType feedbackType = HitFeedbackType.Default;
+                int hitIndex = 0;
 
-                HitContext hitContext = new HitContext(CurrentAttackData.Damage, transform, incomingDirection);
-
+                if (currentAttackType == PlayerAttackType.GuardCounter)
+                {
+                    feedbackType = HitFeedbackType.GuardCounter;
+                    hitIndex = lastGuardCounterHitIndex;
+                }
+                //传递信息
+                HitContext hitContext = new HitContext(CurrentAttackData.Damage, transform, incomingDirection, feedbackType, hitIndex);
                 enemyHitReceiver.ReceiveHit(hitContext);
             }
         }
@@ -178,9 +266,22 @@ public class PlayerCombat : MonoBehaviour
         playerActionController.FinishAttack();
     }
 
+    public void FinishGuardCounter()
+    {
+        if (playerActionController.CurrentActionState != PlayerActionState.Attacking
+            || currentAttackType != PlayerAttackType.GuardCounter)
+        {
+            return;
+        }
+
+        CleanupAttack();
+        playerActionController.FinishAttack();
+    }
+
     public bool TryCancelAttack()
     {
-        if (playerActionController.CurrentActionState != PlayerActionState.Attacking)
+        if (playerActionController.CurrentActionState != PlayerActionState.Attacking
+            || currentAttackType != PlayerAttackType.Basic)
         {
             return false;
         }
@@ -192,6 +293,7 @@ public class PlayerCombat : MonoBehaviour
     private void CleanupAttack()
     {
         playerAttackPresentation.CloseWeaponTrail();
+        playerAttackPresentation.CloseCounterWeaponTrail();
 
         isHitWindowOpen = false;
         isComboWindowOpen = false;
@@ -204,6 +306,7 @@ public class PlayerCombat : MonoBehaviour
         isBasicAttackLungeActive = false;
         basicAttackLungeDistanceTraveled = 0f;
         currentAttackIndex = 0;
+        currentAttackType = PlayerAttackType.Basic;
         playerAnimator.BeginSoftRecovery();
     }
 
@@ -214,7 +317,7 @@ public class PlayerCombat : MonoBehaviour
         {
             isAttackQueued = false;
             hasReachedComboTransitionPoint = false;
-            StartAttackStep(0);
+            StartAttackStep(0, PlayerAttackType.Basic);
             return true;
         }
         else if (playerActionController.CurrentActionState == PlayerActionState.Attacking
@@ -234,11 +337,20 @@ public class PlayerCombat : MonoBehaviour
         {
             isAttackQueued = false;
             hasReachedComboTransitionPoint = false;
-            StartAttackStep(0);
+            StartAttackStep(0, PlayerAttackType.Basic);
             return true;
         }
 
         return false;
+    }
+
+    public void BeginGuardCounter()
+    {
+        isAttackQueued = false;
+        isComboWindowOpen = false;
+        isRestartWindowOpen = false;
+        hasReachedComboTransitionPoint = false;
+        StartAttackStep(0, PlayerAttackType.GuardCounter);
     }
 
     private void Update()
@@ -278,13 +390,15 @@ public class PlayerCombat : MonoBehaviour
         isAttackQueued = false;
         isComboWindowOpen = false;
         hasReachedComboTransitionPoint = false;
-        StartAttackStep(nextAttackIndex);
+        StartAttackStep(nextAttackIndex, PlayerAttackType.Basic);
     }
 
-    private void StartAttackStep(int attackIndex)
+    private void StartAttackStep(int attackIndex, PlayerAttackType attackType)
     {
         playerAttackPresentation.CloseWeaponTrail();
 
+        currentAttackType = attackType;
+        lastGuardCounterHitIndex = 0;
         currentAttackIndex = attackIndex;
         isRestartWindowOpen = false;
 
@@ -306,7 +420,14 @@ public class PlayerCombat : MonoBehaviour
         basicAttackLungeDistanceTraveled = 0f;
         isBasicAttackLungeActive = currentAttackTarget != null;
 
-        playerAnimator.PlayAttack(currentAttackIndex);
+        if (currentAttackType == PlayerAttackType.GuardCounter)
+        {
+            playerAnimator.PlayGuardCounter();
+        }
+        else
+        {
+            playerAnimator.PlayAttack(currentAttackIndex);
+        }
     }
 
     private Collider[] FindBasicAttackCandidates()

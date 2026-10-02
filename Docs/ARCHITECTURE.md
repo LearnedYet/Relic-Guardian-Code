@@ -1,6 +1,6 @@
 # Relic Guardian Implemented Architecture
 
-Documentation updated against inspected source and saved assets: 2026-09-23. Runtime acceptance is recorded in CURRENT_STATE.md.
+Documentation updated: 2026-10-02 for Counter audio, independent Ice hit selection and receiving boundaries; other sections retain their recorded checkpoints. Actual code and assets remain authoritative.
 
 This file is the compact architecture map for behavior that is currently implemented. Actual code, Unity assets, current Editor state, and Git status remain authoritative. Approved but unimplemented feature designs belong in their feature-design documents and must not be treated as runtime facts.
 
@@ -18,8 +18,8 @@ This file is the compact architecture map for behavior that is currently impleme
 | --- | --- |
 | `PlayerInputReader` | Records movement/look values, held Sprint/Block state, and one-use Dodge/Attack/Jump/Lock-On/Block requests. It does not decide whether an action is legal. |
 | `PlayerActionController` | Sole owner of the coarse player action state and deterministic Dodge/Block/Attack/Jump request arbitration. |
-| `PlayerCombat` | Owns the four-step Basic Attack sequence, attack targets, windows, queue/restart state, attack facing requests, lunge requests, enemy damage requests, and complete attack cleanup. |
-| `PlayerBlock` | Owns the internal Block `Startup`, `Hold`, and `Release` phases, Ordinary movement-lock deadline and Hold release gate, phase-aware Hold movement permission, directional Guard Coverage decisions, and production of the explicit `GuardResult`. |
+| `PlayerCombat` | Shared executor for four-step Basic Attack and two-hit Guard Counter, with PlayerAttackType identity, selected configuration, targets, windows, facing/lunge requests, damage delivery and shared cleanup. Combo/Restart remains Basic-only. |
+| `PlayerBlock` | Owns Block Startup/Hold/Release, Ordinary movement-lock deadline/release gate, Hold movement permission, Guard Coverage/classification and the Perfect-created one-use Guard Counter opportunity deadline. It never executes the Counter itself. |
 | `PlayerDodge` | Owns one grounded Dodge execution's direction snapshot, scaled-time gameplay/movement deadlines, progress-based distance request, natural finish, I-Frame/Perfect-window timing and production of the explicit `DodgeResult`. |
 | `PlayerMovement` | Sole owner of player `CharacterController` movement and actual player Transform-facing application. Other gameplay components request facing or displacement through it. |
 | `PlayerTargeting` | Owns the current Lock-On target, nearest-target acquisition, toggle/cancel behavior, and break-distance validation. Lock-On is orthogonal to the coarse action state. |
@@ -30,7 +30,7 @@ This file is the compact architecture map for behavior that is currently impleme
 | `CombatAudioPlayer` | Reusable presentation component that owns preconfigured `AudioSource` channels, maps one `CombatAudioData` layer array to them, stops prior scheduled playback, and schedules valid layers from one DSP-time base. It does not classify hits or own combat permission. |
 | `HitstopController` | Sole writer/restorer of global `Time.timeScale` for Hitstop and Slow Motion. Each uses an unscaled deadline; Hitstop takes precedence while active, Slow Motion multiplies the pre-effect scale when Hitstop is absent, and the original scale returns after both expire or the owner disables. |
 | `PlayerHealth` | Stores player health and subtracts integer damage forwarded by `PlayerHitReceiver`. It has no clamp, death flow, or Guard decision logic. |
-| `PlayerAttackPresentation` | Owns transient Trail playback and indexed Whoosh/Windup cue selection. Uses a separate AttackAudio instance; persistent WeaponAura is independent. |
+| `PlayerAttackPresentation` | Owns ordinary/counter Trail activation, Basic indexed Whoosh/Windup and dedicated two-cue Guard Counter Whoosh selection. It uses the independent AttackAudio player; persistent WeaponAura is independent. |
 | `PlayerAttackData` | Serializable per-step Basic Attack configuration for damage, target range, lunge speed, and lunge distance. |
 | `CombatAudioLayer` / `CombatAudioData` | Serializable presentation data for one Clip/Volume/Pitch/Delay layer and one Master-Volume-plus-layers cue. They contain no playback or gameplay decisions. |
 
@@ -56,9 +56,9 @@ Dodging
 └─ code-owned deadline -> Free
 ```
 
-Current coarse states are `Free`, `Attacking`, `Blocking`, and `Dodging`. Guard phases and Dodge presentation recovery are not additional coarse states.
+Current coarse states are `Free`, `Attacking`, `Blocking`, and `Dodging`. Guard Counter is a `PlayerAttackType` inside Attacking, not an additional coarse state. Guard phases and Dodge presentation recovery are not additional coarse states.
 
-`ResolveActionRequests()` is the single request-arbitration boundary. Multiple components may call it in one frame, but its `Time.frameCount` gate resolves requests only once. The current fixed order is Dodge, then Block, then Attack, then Jump. This request order is separate from authored cancellation permission: current ordinary Basic Attack admits Block and Dodge replacement through its shared cleanup; Blocking and Dodging do not admit each other.
+`ResolveActionRequests()` is the single request-arbitration boundary. Multiple components may call it in one frame, but its `Time.frameCount` gate resolves requests only once. The fixed order is Dodge, Block, Attack and Jump; Attack first attempts a valid Guard Counter, then ordinary Basic/Combo/Restart handling. A successful Dodge, new Block, ordinary Attack or Jump clears the Guard Counter opportunity; rejected inputs do not. Ordinary Basic Attack admits Block/Dodge replacement through shared cleanup; Guard Counter rejects these cancellations through TryCancelAttack's Basic-only check. Blocking and Dodging do not admit each other.
 
 ## Player Permission Model
 
@@ -103,6 +103,16 @@ accepted Attack request
 
 Animation Events include the attack-step index. Events from an outgoing or cancelled step are ignored when the current coarse state or index no longer matches. Attack cleanup is shared by natural finish, Block cancellation and Dodge cancellation.
 
+## Guard Counter Flow
+
+`PlayerBlock.ResolveGuardHit()` sets a scaled opportunity end deadline only after successful coverage and Perfect classification. A repeated Perfect refreshes that deadline; `HasGuardCounterOpportunity` derives expiry and `TryConsumeGuardCounterOpportunity()` clears it once. `CancelBlock()` clears Guard presentation-related execution data without itself choosing the coarse state. This opportunity is independent of the later, unconnected Enchantment stub.
+
+`PlayerActionController.TryStartGuardCounter()` requires grounding and Blocking or Free, consumes the opportunity, cancels Block when necessary, enters Attacking and calls `PlayerCombat.BeginGuardCounter()`. The shared `StartAttackStep(0, GuardCounter)` selects `guardCounterAttackData` and the normal saved target/facing/lunge path, then requests PlayerAnimator's direct CrossFade to Base Layer.GuardCounter. No separate counter FSM or executor exists.
+
+`OpenGuardCounterHitWindow(1/2)` requires Attacking/GuardCounter and a strictly increasing valid hit index, then calls shared ResolveCurrentAttackHit(). Each hit confirms only the original saved target against current range. PlayerCombat maps its current attack family to HitFeedbackType.Default/GuardCounter and supplies 0 or the current Counter hit index. HitContext carries that immutable per-hit identity through EnemyHitReceiver to EnemyHitPresentation; ordinary callers can retain the three-argument constructor through Default/0 optional parameters. Guard Counter Whoosh Events independently route through guarded PlayerCombat forwarding.
+
+Counter Trail Events validate the same current action/type and forward to PlayerAttackPresentation. `FinishGuardCounter` uses shared CleanupAttack, closes both Trails, clears windows/target/lunge/type and begins soft recovery before returning the coarse state to Free. The later `FinishGuardCounterRecovery` Event returns to locomotion only while soft recovery remains active, Base Layer is still GuardCounter and no transition is in progress. Early legal movement/actions can use the existing soft-recovery interruption path. Base Layer.GuardCounter has no outgoing Animator transitions; Clip Events and code own both finish boundaries.
+
 ## Base Dodge Flow
 
 ```text
@@ -130,7 +140,7 @@ PlayerHitReceiver.ReceiveHit
    -> inside I-Frame only: DodgeResult.Ordinary -> HitResult.OrdinaryDodge
 ```
 
-The saved Scene uses I-Frame `0.05..0.45s` and nested Perfect Window `0.05..0.3s`. The broad eligibility check runs before Perfect classification, so a misconfigured Perfect interval cannot grant immunity outside the I-Frame. Both handled Dodge results avoid damage; only Perfect routes from `PlayerHitReceiver` to `PlayerDodgePresentation`. That component snapshots the Dodge start pose into independent static MeshFilter/MeshRenderer objects: active modular SkinnedMeshRenderers are CPU-baked, active rigid MeshRenderers are copied, and LOD-controlled rigid meshes use only LOD0. Each part receives an independent transparent runtime material and an `AfterimageFade` component; timed cleanup destroys the generated GameObject, Mesh and Material. Every accepted `PlayerDodge.BeginDodge()` requests the one-layer Start cue through presentation. Only the Perfect result requests its separate bound two-layer confirmation cue and shared-owner Slow Motion; independent Scene-local `CombatAudioPlayer` instances preserve the Start tail. Presentation does not decide immunity or write `Time.timeScale` directly. Current Slow Motion duration/scale and audio mix were learner-accepted on 2026-09-23; simultaneous Hitstop overlap and disable recovery remain unverified. Movement Trail, Distortion and Dodge Counter are not implemented.
+The saved Scene uses I-Frame `0.05..0.45s` and nested Perfect Window `0.05..0.3s`. The broad eligibility check runs before Perfect classification, so a misconfigured Perfect interval cannot grant immunity outside the I-Frame. Both handled Dodge results avoid damage; only Perfect routes from `PlayerHitReceiver` to `PlayerDodgePresentation`. That component snapshots the Dodge start pose into independent static MeshFilter/MeshRenderer objects: active modular SkinnedMeshRenderers are CPU-baked, active rigid MeshRenderers are copied, and LOD-controlled rigid meshes use only LOD0. Each part receives an independent transparent runtime material and an `AfterimageFade` component; timed cleanup destroys the generated GameObject, Mesh and Material. Every accepted `PlayerDodge.BeginDodge()` requests the one-layer Start cue through presentation. Only the Perfect result requests its separate bound two-layer confirmation cue and shared-owner Slow Motion; independent Scene-local `CombatAudioPlayer` instances preserve the Start tail. Presentation does not decide immunity or write `Time.timeScale` directly. Current Slow Motion duration/scale and audio mix were learner-accepted on 2026-09-23. A focused 2026-09-25 same-frame Slow Motion-then-Hitstop test and active-owner disable recovery passed through the shared controller; reverse-order and natural-combat overlap remain untested. Movement Trail, Distortion and Dodge Counter are not implemented.
 
 ## Guard Lifecycle and Presentation
 
@@ -188,7 +198,7 @@ Soft recovery is presentation state inside `PlayerAnimator`, not a coarse gamepl
 | `EnemySpacingData` | Shared ScriptableObject configuration for attack-admission boundary, distance bands, behavior timing and movement-speed multipliers. It contains no current behavior, timer deadline, strafe side, target or attack state. |
 | `EnemyHealth` | Subtracts integer damage and exposes IsAlive; object lifetime is no longer changed here. |
 | `EnemyHitReceiver` | Rejects ineligible hits through CanReceiveHit; applies health, routes lethal damage to EnterDead (or disables state-less FarTarget), presents the accepted hit, then requests surviving reaction. Static IsValidTarget is shared by PlayerCombat and PlayerTargeting. |
-| `EnemyHitPresentation` | Owns confirmed-hit VFX/SFX references, anchor placement, per-instance scale and cleanup. It spawns an independent Blood effect and a temporary CombatAudioPlayer Prefab so lethal deactivation does not own the feedback lifetime. |
+| `EnemyHitPresentation` | Consumes HitContext for confirmed feedback selection, owns VFX/SFX configuration, placement and cleanup. VFX selects an independently configured Guard Counter impact when FeedbackType is GuardCounter and that Prefab exists, otherwise ordinary Blood; selected Prefab/lifetime/scale share the existing placement/spawn/cleanup path. NearTarget binds Ice; FarTarget currently falls back to Blood. Audio selects ordinary hitAudioData or Guard Counter cue by HitIndex minus one, with null/bounds guards. Each accepted hit spawns an independent temporary CombatAudioPlayer, preserving lethal-feedback lifetime. |
 
 Current spacing flow is:
 
@@ -253,11 +263,13 @@ Current confirmed Player Attack hit flow is:
 ```text
 PlayerCombat.OpenHitWindow(int)
 -> preserve current step and saved-target-in-range confirmation
--> construct HitContext(CurrentAttackData.Damage, player Transform, source-to-victim direction)
+-> construct HitContext(damage, player source, direction, FeedbackType, HitIndex)
 -> EnemyHitReceiver.ReceiveHit(HitContext)
    -> EnemyHealth.TakeDamage(int)
-   -> optional EnemyHitPresentation.PresentHit()
-      -> independent FX_hit_03_Blood instance and timed cleanup
+   -> optional EnemyHitPresentation.PresentHit(HitContext)
+      -> select ordinary Blood or configured Counter Ice Prefab/lifetime/scale
+      -> independent selected VFX instance and timed cleanup
+      -> select ordinary audio or indexed Counter bing1/bing2
       -> independent temporary two-channel CombatAudioPlayer and timed cleanup
 ```
 
@@ -302,7 +314,7 @@ Range and horizontal facing angle are checked before attack Startup. When only r
 
 ## Attack Motion Presentation
 
-PlayerCombat validates indexed Trail, Whoosh and Windup Events against the current Attacking state and attack index, then forwards them to PlayerAttackPresentation. StartAttackStep and shared EndAttack close the transient Trail; presentation Awake/OnDisable also close it. The independent WeaponAura is not controlled by these windows.
+PlayerCombat validates Basic indexed Trail/Whoosh/Windup Events against Attacking, Basic attack type and current index, then forwards to PlayerAttackPresentation. Counter Trail Events validate Attacking/GuardCounter separately. StartAttackStep closes ordinary Trail; shared CleanupAttack and presentation Awake/OnDisable close both ordinary and counter Trails. The independent WeaponAura is not controlled by these windows. Counter Whoosh Events validate Attacking/GuardCounter and select the two configured cues through the same AttackAudio player.
 
 Attack motion audio uses a separate CombatAudioPlayer instance from Guard audio. Each Play call stops that instance's previous channels before DSP scheduling the new cue. Attack4 Windup and main Whoosh use separate authored Events; other attacks use one Whoosh cue. Cancellation rejects future mismatched Events but does not explicitly stop already scheduled/playing motion audio. Index validation does not uniquely distinguish two executions of the same attack step; do not claim a general execution-token guarantee.
 

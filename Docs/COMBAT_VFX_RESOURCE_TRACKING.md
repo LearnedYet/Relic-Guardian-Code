@@ -1,6 +1,6 @@
 # Combat VFX Resource Tracking
 
-Saved configuration audit: 2026-09-06. Historical import/runtime verification dates are retained below.
+Counter configuration audit: 2026-09-30. Basic/Guard saved audit was 2026-09-06. Historical import/runtime verification dates are retained below.
 
 This document records local licensed Combat VFX dependencies, AssetLab validation results, and the current selected candidates. It does not prove that any VFX is connected to gameplay in the main project.
 
@@ -49,7 +49,7 @@ Current selected roles:
 
 - connected persistent WeaponAura: `Selected/WeaponTrails/Subtle 1 Ice.prefab`, a restrained ice-blue recolor of vendor `Subtle 1`;
 - connected Attack1-4 transient AttackTrail: `Selected/WeaponTrails/Subtle 2 Ice.prefab`, a slightly stronger ice-blue recolor of vendor `Subtle 2`;
-- future Perfect Guard Counter candidate: `Selected/WeaponTrails/Ice Stylized 3.prefab`;
+- accepted Guard Counter blue weapon Trail: Scene reference currently uses `Selected/WeaponTrails/Ice Stylized 3 Before Original Comparison.prefab` after Replace and Keep; original `Ice Stylized 3.prefab` remains local. Future Dodge Counter should reuse the accepted visual direction, but is not connected yet;
 - other higher-emphasis Attack candidates: `Ice Water 1.prefab` and `Ice Water 2.prefab`, with Water 2 retained at one brightness step below Water 1.
 
 The two Subtle Prefabs preserve their vendor GUIDs `dd506520638422b488b79ab9ee75186f` and `a37e8b71f3b77d443a68f3e279bac75b`. Their shared missing dependency `INab_Noise_21.png` was added under `Dependencies/INab Studio/Common/Textures/Noise/` with GUID `14d21f23f8c0e564697377fe780a21bc`.
@@ -78,6 +78,18 @@ Historical 2026-09-03 accepted Attack1 opening was 0.18911798; the current saved
 
 WeaponAura is the independent Subtle 1 Scene instance with OnPlay; AttackTrail is the Subtle 2 instance controlled through PlayerAttackPresentation. Both use weapon-child endpoints through binders. Scene tuning is authoritative over the historical import palette; no Apply-to-Prefab operation is implied.
 
+### Guard Counter Trail: Current Scene Configuration (2026-09-30)
+
+PlayerAttackPresentation.counterTrail controls a separate VFX instance, currently named Ice Stylized 3 Before Original Comparison. Its backup-looking name does not mean it is unused: this is now the active Scene source. Current instance values are Length0.23, Main Color(4,10,16,1), Secondary Color(0.15,1,3,1), LineCount4 and second noise disabled/strength0. Counter Events set Effect Active/Value true/1 on opening and false/0 on closing/cleanup. Do not Apply Scene overrides broadly to a protected Prefab.
+
+The two VFXLossyTransformBinders target TrailTip/TrailBottom under Frozen_Katana_Blue_Equipped. Local positions are (0.005,0.980,-0.041) and (0,0.127,0.001); both local rotations are (270,0,0), equivalent to (-90,0,0). Final points are shared by ordinary AttackTrail, with WeaponAura sharing Bottom. Dedicated Counter points were proposed but were not retained in final live wiring; ordinary visual regression remains pending.
+
+Parry_Counter_Attack is a non-looping 60 FPS Clip: Trail opens at frames1/32, first closes8, second closes through gameplay cleanup42. Hit Windows2..5 and37..40 are separate. FinishGuardCounterRecovery at108 returns the visual tail to locomotion in code. Current Animator state Speed1. Learner reported the corrected blue appearance fully satisfactory. Dedicated Counter hit audio and separate Ice impact selection are connected. NearTarget binds FX_hit_04_Ice; FarTarget currently retains Blood fallback. Ordinary hits still select Blood.
+
+Diagnosis: test-project vendor WeaponTrailEffect.Update points endpoint Z toward the blade with Quaternion.LookRotation(tip-bottom), while main initially supplied identity rotations with blade along Y. Same Inspector settings alone did not align these inputs. Main/test noise images/importers matched; graph differences concerned exposed-property ordering. Local rotations improved the appearance. A later -90 in Bottom Position X instead of Rotation X stretched the trail about90m into a large blue surface; learner corrected the field and accepted the result. No automatic per-frame calibration was added. Original LookRotation world-up roll differs from fixed local rotation; revisit on concrete flip artifacts.
+
+Source reference is AssetLab `Assets/INab Studio/Vfx Assets/Weapon FX Series/Weapon Trails FX/Trail Prefabs/Stylized 3.prefab`, GUID4e5665f6456bf074d992dcc2f6fe242f, shared VFX Graph GUID3b5956a5416040d42a1e3211ea44c72b. Test demo Length2 was a comparison value, not the accepted main Scene setting.
+
 ### Hit Impact
 
 Current basic-Attack selection:
@@ -91,6 +103,8 @@ Reserved ice candidates:
 
 - `Selected/AttackHits/FX_hit_04_Ice.prefab`;
 - `Selected/AttackHits/FX_hit_11_Ice.prefab`.
+
+The learner selected the main-project Ice hit family for both Perfect Guard and Perfect Dodge Counters on 2026-09-25. On 2026-10-01, the learner chose `FX_hit_04_Ice` as the initial Guard Counter hit effect. `FX_hit_11_Ice` remains a local candidate; Dodge Counter selection is still pending. On 2026-10-02 the learner authored independent Counter Prefab/lifetime/scale selection through HitContext.FeedbackType and bound FX_hit_04_Ice on NearTarget. Learner reported testing the effect before asking to tune only Ice size; final saved Counter scale is 0.6 and lifetime 1.2s, while ordinary Blood stays 0.45. FarTarget Counter Prefab remains empty (Blood fallback at 0.33). Final size acceptance and focused integration regression remain pending. Scene configuration is saved locally; all licensed resources and mixed Scene assets remain outside code/document Git checkpoints.
 
 `FX_hit_11_Ice` keeps its first slash-shaped layer thin and compresses the other layers to approximately `50%` of their original world-space Y extent. Both Ice Prefabs use the local independent material `M_AttackHit_Ice_Add_HDR.mat`. Its currently persisted `Emission_Power` is `6.6`; treat this as an AssetLab value, not a final main-project brightness decision.
 
@@ -125,7 +139,7 @@ The final local composition checkpoint is `Assets/LocalLicensed/CombatVFX/Valida
 - The snapshot includes active modular SkinnedMeshRenderer parts and rigid MeshRenderer equipment, selecting only LOD0 for LOD-controlled rigid meshes. It is result-driven and replaceable; VFX resources do not decide Dodge classification.
 - Current placeholder: transparent ice-blue with gradual Alpha fade through `AfterimageFade.cs` and timed cleanup at the saved `0.35s` lifetime. HDR emission and Bloom remain unimplemented.
 - Next resource-screening role: one restrained shallow movement Trail along the Dodge direction. Reject large crescents, explosions, teleport rings, long afterimage chains and Perfect-Guard-style collision impacts. Validate candidates in an isolated local scene before any main-Scene connection.
-- Distortion remains a later independent selection pass. Dedicated Dodge Start and Perfect confirmation SFX are connected and tracked in `COMBAT_SFX_RESOURCE_TRACKING.md`; Perfect-only Slow Motion is implemented through the shared time-control owner, with simultaneous Hitstop overlap and disable recovery still awaiting focused runtime checks.
+- Distortion remains a later independent selection pass. Dedicated Dodge Start and Perfect confirmation SFX are connected and tracked in `COMBAT_SFX_RESOURCE_TRACKING.md`; Perfect-only Slow Motion is implemented through the shared time-control owner. A focused same-frame Slow Motion-then-Hitstop and active-owner disable test passed on 2026-09-25; reverse-order and natural-combat overlap were not separately tested.
 
 - `Sword slashes PRO 3.0` was not imported into the main project. It is an optional energy-slash layer for later Counter, Skill, or Finisher work.
 - Large crescents, cross slashes, explosions, teleporter rings, and other skill-scale effects are excluded from ordinary Attack1-4.

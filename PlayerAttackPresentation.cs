@@ -4,32 +4,50 @@ using UnityEngine.VFX;
 public class PlayerAttackPresentation : MonoBehaviour
 {
     [SerializeField] private VisualEffect attackTrail;
+    [SerializeField] private VisualEffect counterTrail;
     [SerializeField] private CombatAudioPlayer attackAudioPlayer;
     [SerializeField] private CombatAudioData[] attackWhooshAudioDataByIndex = new CombatAudioData[0];
     [SerializeField] private CombatAudioData[] attackWindupAudioDataByIndex = new CombatAudioData[0];
+    [SerializeField] private CombatAudioData[] guardCounterWhooshAudioDataByIndex = new CombatAudioData[2];
 
     public void OpenWeaponTrail()
     {
-        if (attackTrail == null)
-        {
-            return;
-        }
-
-        attackTrail.SetBool("Effect Active", true);
-        attackTrail.SetFloat("Effect Value", 1f);
-        attackTrail.Play();
+        SetTrailActive(attackTrail, true);
     }
 
     public void CloseWeaponTrail()
     {
-        if (attackTrail == null)
+        SetTrailActive(attackTrail, false);
+    }
+
+    public void OpenCounterWeaponTrail()
+    {
+        SetTrailActive(counterTrail, true);
+    }
+
+    public void CloseCounterWeaponTrail()
+    {
+        SetTrailActive(counterTrail, false);
+    }
+
+    private void SetTrailActive(VisualEffect trail, bool isActive)
+    {
+        if (trail == null)
         {
             return;
         }
 
-        attackTrail.SetBool("Effect Active", false);
-        attackTrail.SetFloat("Effect Value", 0f);
-        attackTrail.Stop();
+        trail.SetBool("Effect Active", isActive);
+        trail.SetFloat("Effect Value", isActive ? 1f : 0f);
+
+        if (isActive)
+        {
+            trail.Play();
+        }
+        else
+        {
+            trail.Stop();
+        }
     }
 
     public void PlayWeaponWhoosh(int attackIndex)
@@ -45,6 +63,19 @@ public class PlayerAttackPresentation : MonoBehaviour
         attackAudioPlayer.Play(
             attackWhooshAudioDataByIndex[attackIndex]
         );
+    }
+
+    public void PlayGuardCounterWhoosh(int swingIndex)
+    {
+        if (attackAudioPlayer == null
+            || guardCounterWhooshAudioDataByIndex == null
+            || swingIndex < 0
+            || swingIndex >= guardCounterWhooshAudioDataByIndex.Length)
+        {
+            return;
+        }
+
+        attackAudioPlayer.Play(guardCounterWhooshAudioDataByIndex[swingIndex]);
     }
 
     public void PlayWeaponWindup(int attackIndex)
@@ -65,10 +96,12 @@ public class PlayerAttackPresentation : MonoBehaviour
     private void Awake()
     {
         CloseWeaponTrail();
+        CloseCounterWeaponTrail();
     }
 
     private void OnDisable()
     {
         CloseWeaponTrail();
+        CloseCounterWeaponTrail();
     }
 }

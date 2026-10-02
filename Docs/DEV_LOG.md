@@ -4,6 +4,57 @@ This file records daily progress, learned concepts, problems, and solutions.
 
 ---
 
+## 2026-10-02
+
+### Guard Counter Ice progress, deferred enemy status and authorized checkpoint
+
+- Learner authored Counter-specific impact Prefab/lifetime/scale and per-hit selection in EnemyHitPresentation. HitContext.FeedbackType selects the variant; null Counter Prefab preserves ordinary fallback. Spawn checks the shared hitImpactAnchor and selected Prefab. Ordinary Blood and Counter Ice use the same independent spawn/cleanup path.
+- Learner reported testing the Ice effect and requested separate size tuning. Fresh native Editor audit found NearTarget Ice scale 0.6/lifetime 1.2s and unchanged Blood scale 0.45; FarTarget Counter Prefab remains empty with Blood scale 0.33. Backed up the pre-save Scene and saved current Inspector state without changing configuration. Scene is clean in Editor, but remains intentionally modified in Git.
+- Bounded architecture review traced PlayerBlock opportunity -> deterministic PlayerActionController admission -> shared PlayerCombat execution/cleanup -> immutable hit identity -> EnemyHitReceiver -> selected VFX/audio. No must-fix structural defect found in this scope. Defaults/null fallback remain compatible; no new status/coarse state/time writer was introduced. Same-index late callbacks, ordinary shared Trail endpoints and composition ownership remain previously documented limits. Full Counter acceptance is still pending empty/miss/lethal/opportunity/cleanup and ordinary presentation regression; final Ice 0.6 appearance was not separately accepted.
+- Independent Assembly-CSharp build succeeded with zero errors and one pre-existing CS0414 warning for PlayerAnimator.dodgeExitCrossFadeDuration. Native Unity was idle/out of Play Mode, compiling=false; Console returned zero errors/warnings. Build/Console checks do not substitute for missing Play Mode acceptance.
+- Learner confirmed an enemy-blue/local-time-slow idea should affect only the enemy hit by Guard Counter, on accepted Counter hit, then explicitly deferred both teaching and implementation. Stored beside paused Enchantment in PLAYER_COMBAT_EXTENSION_DESIGN.md. No PlayerAttackData fields, HitContext status payload, local-clock component or renderer changes were added. This idea is outside current Guard Counter acceptance; Dodge Counter remains the next milestone.
+- Learner explicitly authorized this checkpoint's commit and GitHub sync without another push question. Publication covers current project-owned source and maintained documents, including required new attack/feedback identity types and the existing Enchantment stub; excludes paid resources, mixed Scene/Prefab/Animator assets, metadata in the mirror and local mirror tooling. Mirror preparation uses fetched origin/main in an isolated worktree, preserving remote-only files. Commit/remote identities will be recorded after verification.
+
+
+### Counter audio progress and revised milestone scope
+
+- Learner authored dedicated two-cue Counter Whoosh and immutable HitFeedbackType/HitIndex delivery through PlayerCombat -> HitContext -> EnemyHitReceiver -> EnemyHitPresentation. Optional Default/0 constructor values preserve existing callers; audio selects Counter hits 1/2 as array elements 0/1 with null/bounds guards.
+- Codex authored Whoosh Events frame 1/Int 0 and frame 32/Int 1 only after explicit authorization, preserving the existing nine Events. After separate configuration takeover, Codex bound bing1/bing2 on NearTarget/FarTarget with outer/Layer Volume/Pitch 1, Delay 0 and independent temporary hit-audio instances; Scene save and unchanged surrounding properties were verified. Current bing lengths are 0.6930417/1.33275s, within the 2s audio lifetime.
+- At learner request, ordinary outer audio values were set exactly to 0.25 and then Guard/Dodge outer values to 0.6, retaining Counter Whoosh 1 and all internal Layers. Learner reported the current Counter audio test normal; no full boundary acceptance is inferred. Console checks were clean.
+- Bounded architecture review checked attack admission/shared execution and cleanup, hit metadata propagation, receiving/presentation ownership and temporary playback lifetime; no required structural correction was found within that scope. Full Guard Counter remains pending selected FX_hit_04_Ice integration and focused empty/miss/lethal/opportunity/shared-Trail regression.
+- Learner explicitly paused Enchantment, retaining existing PlayerEnchantment placeholder APIs and shared attack/feedback extension seams, with no automatic restart after Counter completion. Finish Guard Counter; Dodge Counter is the next milestone. No gameplay code was changed for this scope decision, and no Git staging/commit/push was authorized.
+
+## 2026-09-30
+
+### Perfect Guard Counter gameplay, recovery and accepted blue Trail
+
+- Learner-authored PlayerBlock opportunity uses a configurable scaled deadline (Scene 1s), Perfect refresh and one-use consume. PlayerActionController attempts it before ordinary Attack while grounded in Blocking/Free; accepted other actions clear the opportunity. PlayerCombat introduces Basic/GuardCounter identity while retaining one executor/shared target/facing/lunge/hit/cleanup path; Counter rejects Basic cancellation and uses two increasing hit-index Events.
+- Parry_Counter_Attack is non-looping at 60 FPS / 1.833333s. Events: Trail open1, hit1 open2/close5, Trail close8, Trail open32, hit2 open37/close40, gameplay finish42, visual recovery finish108. Current state Speed1, zero transitions, Root Motion off. Guarded FinishGuardCounterRecovery returns to locomotion in code. Learner reported sequence/damage and automatic return normal.
+- User explicitly requested MCP authoring of Events earlier in this feature and later authorized local Prefab backup/test-instance parameter comparison. Codex copied the local Ice Stylized 3 backup and initially aligned visual parameters, including demo Length2 and red/black colors; learner comparison showed this alone did not fix thin lines. Noise image/import settings matched. Graph differences concerned exposed-property ordering. Vendor WeaponTrailEffect.Update aligns endpoints using LookRotation(tip-bottom), while main endpoints originally had blade direction along Y instead of Z.
+- Learner applied -90 local X rotation and reported improvement. After Replace and Keep with the blue backup, -90 in Bottom Position X instead of Rotation X pulled the endpoint about 90m away. MCP located the mismatch; learner restored positionX0/rotationX-90, then explicitly accepted the appearance. Final Scene references Ice Stylized 3 Before Original Comparison.prefab; Length0.23, Main Color(4,10,16,1), Secondary Color(0.15,1,3,1), LineCount4, second noise off. Final binders use shared TrailTip/TrailBottom, rotations270/0/0; proposed independent endpoints were not retained.
+- Fixed local orientation is retained for the rigid weapon. No per-frame endpoint alignment added; world-up roll behavior differs from vendor LookRotation. Ordinary AttackTrail/WeaponAura visual regression remains pending after the shared-endpoint change.
+- Dedicated Counter motion sound/Ice hit VFX/SFX are still unconnected; HitContext/EnemyHitPresentation still use ordinary feedback. Dodge Counter remains animation import only. PlayerEnchantment.cs is an unattached/uncalled duration-deadline stub without damage/feedback integration. Approved order: finish both Counters, then connect independent timed Enchantment with refresh and configurable integer damage addition; later effects remain open.
+- Handoff audit confirmed saved Events, state Speed1/no transitions/Root Motion off, Scene bindings/data and isDirty=false; Console returned zero errors/warnings. No full Counter regression is claimed. Old Handoff archived verbatim; current-state, architecture, roadmap, learning, resource/design docs refreshed. No staging, commit, push or gameplay mutation in this Handoff pass; protected dirty Unity assets/licensed resources preserved.
+
+## 2026-09-25
+
+### Prepared Perfect Guard Counter animation and local Ice VFX candidate
+
+- The learner selected the AssetLab Humanoid `Parry_Counter_Attack` animation for the future Perfect Guard Counter and requested main-project import with an existing Ice-series effect direction.
+- Copied only `Parry_Counter_Attack.anim` and its original `.meta` into ignored `Assets/LocalLicensed/SwordAnimationPack/Guard/`. Source/destination SHA-256 hashes match; Unity recognized the preserved GUID `2eda5b55b2e475c409f1058e63eefc03` as an `AnimationClip`, and the Console returned zero errors/warnings.
+- The source clip is approximately `1.833s`, has Loop Time enabled, and contains no Animation Events. It has not been changed or connected to an Animator state; one-shot playback and any attack timing remain future work.
+- Confirmed the existing local `Ice Stylized 3.prefab` as the first Counter VFX audition candidate. No VFX selection was runtime-accepted, and no Scene, Prefab, Animator, gameplay/presentation code, staging, commit, or push was changed by this preparation step.
+- The learner then chose AssetLab Humanoid `Combo_Attack_01_01` for the future Perfect Dodge Counter. Copied only its `.anim` and original `.meta` into ignored `Assets/LocalLicensed/SwordAnimationPack/Dodge/`; source/destination hashes match, Unity recognized GUID `dd32d216de68f9141aeed3894f1126b3` as an `AnimationClip`, and the Console returned zero errors/warnings. Source duration is approximately `1.583s`, Loop Time is enabled, and it has no Events. No Animator or gameplay connection was made.
+- Both Counters are intended to use the same Counter weapon VFX direction. Existing main-project `FX_hit_04_Ice` and `FX_hit_11_Ice` were confirmed as hit-VFX candidates for both, without deciding their final mapping/layering or claiming a runtime test.
+
+### Focused shared time-control overlap and disable regression
+
+- The learner temporarily added a `ContextMenu` test method to the existing `HitstopController`, requested Slow Motion `5s / 0.25` and then Hitstop `3s` in the same frame, and reported the expected roughly `3s` pause, `2s` remaining slowdown and return to normal speed in Play Mode.
+- During a repeated active-effect test, disabling only the `HitstopController` component immediately restored normal speed; the learner reported a normal Unity Console. This validates the tested request order and active-owner disable path, not the reverse order or a naturally occurring combat overlap.
+- The temporary method was removed from the actual file. Independent `Assembly-CSharp.csproj` compilation then passed with zero errors and one existing `PlayerAnimator.dodgeExitCrossFadeDuration` unused-field warning. The saved `SampleScene` Slow Motion `0.25s / 0.25` and Dodge audio mix were not changed. No Git staging, commit or push accompanies this local documentation checkpoint.
+
+---
+
 ## 2026-09-23
 
 ### Accepted current Perfect Dodge Slow Motion and layered audio mix

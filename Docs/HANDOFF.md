@@ -1,58 +1,34 @@
 # Relic Guardian Current Handoff
 
-Updated: 2026-09-22. The learner is switching conversations to resume script development in the main Relic Guardian project. The isolated Shallow Trail experiment is paused.
+Updated: 2026-10-02. Checkpoint after Guard Counter audio and NearTarget Ice impact integration. Prior Handoff preserved verbatim at Docs/Archive/HANDOFF_2026-09-30_GUARD_COUNTER_PRESENTATION.md.
 
-This is the 2026-09-22 Handoff snapshot, not the current configuration record. `CURRENT_STATE.md` and `COMBAT_SFX_RESOURCE_TRACKING.md` supersede its Dodge timing/audio/Slow-Motion values and next step after the learner's 2026-09-23 runtime acceptance.
+## Resume Contract
 
-## Resume
+Follow AGENTS.md and relic-guardian-context bootstrap, then CURRENT_STATE.md Exact Next Step and the Player Action / Enemy Receiving routes in CONTEXT_INDEX.md. Actual code/assets/Editor/Git outrank docs. Learner remains author of key code in small independently checkable chunks; explain new identifiers and provide exact file/class/method/anchor/placement plus code, then inspect the saved edit. Continue/好了 does not authorize takeover. Cosmetic corrections remain Codex-owned.
 
-Follow `AGENTS.md` and the `relic-guardian-context` bootstrap. Actual code, saved Unity assets, current Editor state and Git status remain authoritative. Use `Docs/CURRENT_STATE.md` for the sole active Exact Next Step, `Docs/PLAYER_COMBAT_EXTENSION_DESIGN.md` for the approved Perfect Dodge stack, and inspect `PlayerDodgePresentation.cs` before teaching its next change.
+## Current Guard Counter
 
-The learner remains the author of key gameplay and presentation code. Codex took over only the bounded multi-Renderer afterimage correction after the learner explicitly requested it. Teaching has returned to learner authorship, with unfamiliar Unity APIs and methods explained before use. No commit or push accompanies this Handoff.
+- PlayerBlock owns a refreshed scaled 1s one-use opportunity after covered Perfect Guard; PlayerActionController admits grounded Blocking/Free Counter before Basic Attack using deterministic Dodge -> Block -> Attack -> Jump arbitration. Accepted other actions clear the opportunity. Counter does not inherit Basic Block/Dodge cancellation.
+- PlayerCombat remains shared Basic/GuardCounter executor for target/facing/lunge/damage and cleanup. Two increasing hit indices 1/2 each resolve once against the original saved target; no second-hit retarget. HitContext now includes optional Default/0 FeedbackType/HitIndex; EnemyHitReceiver forwards that immutable hit identity.
+- Parry_Counter_Attack is local licensed, non-looping, 60 FPS / 1.833333s. Events: Trail open1/32, Whoosh1 Int0 /32 Int1, hit1 open2/close5, hit2 open37/close40, Trail close8, gameplay finish42, guarded visual recovery finish108. Animator Speed1, no outgoing transitions, Root Motion off; entry/exit CrossFade 0.02/0.1s.
+- PlayerAttackPresentation shares Trail/audio infrastructure. Blue Counter Trail is learner-accepted; shared endpoint rotations remain -90 X and ordinary AttackTrail/WeaponAura regression is pending. Whoosh uses two indexed cues through independent AttackAudio; confirmed hits spawn independent audio players and select bing1/bing2 with null/bounds checks. Scene lifetime2s covers current 0.6930417/1.33275s clips. Motion audio remains independent from confirmed-hit delivery.
+- EnemyHitPresentation now selects independent Counter impact Prefab/lifetime/scale when FeedbackType is GuardCounter and a Prefab exists, otherwise ordinary Blood. NearTarget binds FX_hit_04_Ice with scale0.6/lifetime1.2s; Blood stays0.45. FarTarget has no Ice binding and falls back to Blood0.33. Learner reported testing Ice before size tuning; final size and full integration acceptance remain pending.
+- Outer audio values: ordinary Master Volume0.25, Guard/Dodge0.6, Counter Whoosh/hit1. Internal Layers were preserved. Resource records contain exact bindings.
 
-The learner explicitly asked to resume the earlier script work in a new conversation. Do not resume the Shallow Trail tuning automatically.
+## Paused Ideas and Next Milestone
 
-## Current Perfect Dodge Checkpoint
+Enchantment and enemy-blue/local-time-slow are explicitly paused together in PLAYER_COMBAT_EXTENSION_DESIGN.md until learner resumes them. PlayerEnchantment remains an unattached/uncalled duration-deadline stub with HasEnchantment/RefreshEnchantment; no damage or feedback integration. Enemy status intent: only the victim of an accepted Counter hit becomes blue/slower; future skills/Enchantment may reuse it. No new status fields/payload/component or teaching has started. Do not apply this status at Perfect Guard or make it required for current Counter acceptance.
 
-- `PlayerDodge.ResolveDodgeHit()` classifies `Unhandled / Ordinary / Perfect` through the saved `0.1..0.45s` I-Frame and nested `0.1..0.2s` Perfect Window.
-- `PlayerHitReceiver` routes only `Perfect` to `PlayerDodgePresentation`; both handled Dodge results avoid damage and Unhandled continues to Guard/Health.
-- `PlayerDodge` snapshots Dodge start position and rotation. `PlayerDodgePresentation` leaves one static current-pose silhouette at that origin.
-- Active modular `SkinnedMeshRenderer` parts are baked separately. Active rigid `MeshRenderer + MeshFilter` equipment is copied separately; LOD-controlled rigid meshes use only LOD0.
-- Each generated part receives an independent runtime clone of `PerfectDodgeAfterimage.mat`, disables shadows, adds `AfterimageFade` and owns timed cleanup of the generated GameObject, Mesh and Material.
-- The learner runtime-verified the complete player-and-weapon silhouette, continuous synchronized Alpha fade and cleanup with a temporary `1.5s` lifetime, then confirmed the saved `0.35s` value returned and the Unity Console remained clean. Independent C# build passed with zero errors; the pre-existing unused `PlayerAnimator.dodgeExitCrossFadeDuration` warning remains.
+Dodge Counter is the next milestone after Guard Counter acceptance. Only Combo_Attack_01_01 is imported locally (about1.583s, looping, no Events); no opportunity, enum entry, executor or Animator integration. Reuse shared attack execution. Shallow Dodge Trail is paused; Distortion deferred.
 
-## Isolated AssetLab Experiment
+## Verification and Exact Continuation
 
-The separate project `C:\Unity\Project\RelicGuardianAssetLab` contains project-owned V2, V3 and Final Shallow Trail candidates and a shared comparison scene under `Assets/RelicGuardianAssetLab/PerfectDodge/ShallowTrail/Candidates/`. They are visual experiments only; no candidate was accepted or integrated into the main project. The latest capture still showed a jagged edge. An experimental straight `Width Curve` was applied to the selected V2 waist scene instance, but its visual effect was not validated; do not describe it as a fix. The learner stopped tuning and may buy a more suitable resource pack. The Asset Store originals were not intentionally edited.
+Learner reported Counter sequence/damage, automatic return, blue Trail and current audio normal, then reported testing Ice. Fresh audit: saved NearTarget Ice0.6/Blood0.45, FarTarget fallback, Editor idle/outside Play and Scene saved clean; Unity Console zero errors/warnings. Independent build: zero errors, one existing unused-field warning. Bounded architecture review found no must-fix structural issue in the reviewed chain. This is a progress checkpoint, not full Counter milestone acceptance.
 
-## Diagnosed False Leads
+Resume the focused checks in CURRENT_STATE.md: empty/missed swings, first-hit lethal, opportunity expiry/one-use, cleanup, ordinary Blood/Trail/WeaponAura/Guard/Dodge. Consider FarTarget binding only if needed for that test. Review after behavioral fixes, then record acceptance and begin Dodge Counter. Do not resume deferred status ideas automatically.
 
-- The initial cyan fragment was not proof of a broken skeleton or bad material. Runtime logging showed the singular lookup had selected only `Female_Face_01`.
-- `GetComponentInChildren<SkinnedMeshRenderer>()` returned one modular part; plural `GetComponentsInChildren<SkinnedMeshRenderer>()` was required.
-- The rigid Katana uses ordinary MeshRenderer/MeshFilter components and was therefore absent until that path was added. Its Prefab contains LOD0/1/2, so blindly copying every MeshRenderer would overlap multiple LOD meshes.
+## Save / Git Boundaries
 
-## Not Implemented
+Learner authorized this checkpoint commit and mirror publication without another push confirmation. Local code/document checkpoint and flattened GitHub mirror have separate histories. Current publication excludes Assets/LocalLicensed, mixed SampleScene/Player Prefab/Animator and binary resources; local Scene configuration has been saved with a pre-save backup. Local architecture-review Skill and mirror-audit tooling remain outside public mirror scope. Preserve all remaining dirty assets; a source/document commit is not a complete portable Unity asset backup. Read fresh Git status and CURRENT_STATE checkpoint identities on resume.
 
-- The placeholder has no HDR emission or Bloom.
-- The selected Dodge Start and Perfect confirmation SFX resources are copied, tracked and connected through two independent Scene-local players. Saved volumes `0.8 / 0.52 / 0.63` are learner-chosen; actual Ordinary/Perfect playback and final listening balance are pending the Slow Motion pass. Shallow movement Trail, subtle Distortion, centrally-owned Slow Motion and Dodge Counter opportunity remain unimplemented.
-- Guard Counter, Sprint Attack, Player HitStun/HitReaction and Player Death remain later slices.
-- The locked Guard movement/camera twitch remains known and deliberately deferred.
-
-## Exact Next Step
-
-Resume learner-authored Perfect Dodge Slow Motion. First inspect `HitstopController`, the sole current `Time.timeScale` writer, and teach a small overlap-safe extension with unscaled deadlines and exact original-scale recovery; then connect a Perfect-only request through `PlayerDodgePresentation`. Do not change Dodge classification or let presentation directly set global time. Explain every new identifier and unfamiliar API before asking the learner to edit. Runtime-test Ordinary exclusion, Perfect activation/recovery, Hitstop overlap and a clean Console; in the same Play Mode pass, listen to Start plus the bound Perfect pair using the saved values and `0 / 0.01 / 0.02s` delays from `COMBAT_SFX_RESOURCE_TRACKING.md`. Keep Shallow Trail resource selection paused unless the learner explicitly returns to it.
-
-## Protected Local State
-
-The working tree intentionally contains mixed learner work. Preserve every current change shown by `git status`, especially:
-
-- `.agents/skills/relic-guardian-github-mirror/scripts/inspect-mirror-stage.ps1`;
-- `Assets/RelicGuardian/Enemy/Data/Move/Goblin_Spacing.asset`;
-- `Assets/RelicGuardian/Player/Animator/RelicGuardianPlayer.controller`;
-- `Assets/RelicGuardian/Player/RelicGuardianPlayer.prefab`;
-- `Assets/RelicGuardian/Player/Scripts/HitResult.cs`, `PlayerDodge.cs`, `PlayerHealth.cs`, and `PlayerHitReceiver.cs`;
-- new `DodgeResult.cs`, `PlayerDodgePresentation.cs`, their metadata, and `Assets/RelicGuardian/Player/Materials/`;
-- `Assets/Scenes/SampleScene.unity`;
-- all currently modified maintained documents.
-
-`Assets/LocalLicensed/` and `Assets/LocalLicensed.meta` remain ignored local-only content and must never be committed or uploaded. The preceding Handoff is archived at `Docs/Archive/HANDOFF_2026-09-21_PERFECT_DODGE_AFTERIMAGE.md`.
+Last main MCP instance: My project@f22d513a32eb5447; Lab: RelicGuardianAssetLab@d0fae1ba933aab0e. Rediscover/pin the appropriate instance before shared Editor operations.

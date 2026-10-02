@@ -10,6 +10,8 @@ public class PlayerAnimator : MonoBehaviour
     [SerializeField] private float guardReactionCrossFadeDuration = 0.03f;
     [SerializeField] private float dodgeCrossFadeDuration = 0.05f;
     [SerializeField] private float dodgeExitCrossFadeDuration = 0.1f;
+    [SerializeField] private float guardCounterCrossFadeDuration = 0.02f;
+    [SerializeField] private float guardCounterExitCrossFadeDuration = 0.1f;
     [SerializeField] private float debugBodyYawOffset;
 
     private Animator animator;
@@ -216,5 +218,31 @@ public class PlayerAnimator : MonoBehaviour
         }
 
         animator.SetTrigger("Attack");
+    }
+
+    public void PlayGuardCounter()
+    {
+        isBlockHoldPresentationActive = false;
+        isSoftRecoveryActive = false;
+        hasSoftRecoveryTransitionStarted = false;
+        ClearGuardReaction();
+
+        animator.CrossFadeInFixedTime(
+            "Base Layer.GuardCounter",
+            guardCounterCrossFadeDuration
+        );
+    }
+
+    public void FinishGuardCounterRecovery()
+    {
+        if (!isSoftRecoveryActive
+            || animator.IsInTransition(0)
+            || !animator.GetCurrentAnimatorStateInfo(0)
+                .IsName("Base Layer.GuardCounter"))
+        {
+            return;
+        }
+
+        CrossFadeToLocomotion(guardCounterExitCrossFadeDuration);
     }
 }
